@@ -170,3 +170,21 @@ describe('별 조건 기록', () => {
     expect(b.anyAllyDied).toBe(true);
   });
 });
+
+describe('혈월 사냥꾼', () => {
+  it('쓰러뜨리면 다음 적을 또 쏜다(최대 3번)', () => {
+    const b = createBattle({ team: team('bloodmoon'), foes: [{ mon: 'slime', lv: 1 }, { mon: 'slime', lv: 1 }, { mon: 'slime', lv: 1 }], seed: 30 });
+    for (const f of foes(b)) f.hp = 1;
+    const me = allies(b)[0];
+    me.cd = 0; queueSkill(b, me.uid);
+    act(b, me, { auto: false });
+    expect(foes(b).filter(f => f.alive).length).toBe(0);
+  });
+  it('못 쓰러뜨리면 한 번만 쏜다', () => {
+    const b = createBattle({ team: team('bloodmoon'), foes: [{ mon: 'golem', lv: 30 }, { mon: 'golem', lv: 30 }], seed: 31 });
+    const me = allies(b)[0];
+    me.cd = 0; queueSkill(b, me.uid);
+    const ev = act(b, me, { auto: false });
+    expect(ev.filter(e => e.type === 'damage' && e.from === me.uid).length).toBe(1);
+  });
+});

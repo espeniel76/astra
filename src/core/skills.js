@@ -102,6 +102,15 @@ const FX = {
       if (t.statuses.length !== before) ev.push({ type: 'cleanse', to: t.uid });
     }
   },
+  // 사냥: 가장 약한 적을 쏘고, 쓰러뜨리면 다음 가장 약한 적을 또 쏜다(최대 max번)
+  hunt(b, u, f, ev) {
+    for (let i = 0; i < f.max; i++) {
+      const [t] = targetsFor(b, u, 'lowest');
+      if (!t) break;
+      hitOne(b, u, t, f.mult, ev);
+      if (t.alive) break;
+    }
+  },
   rage(b, u, f, ev) {
     const [t] = targetsFor(b, u, 'one');
     const lost = 1 - u.hp / u.maxHp;

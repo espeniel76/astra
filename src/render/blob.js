@@ -616,6 +616,8 @@ const OUTFIT = {
   magnetist: { split: ['#d8323c', '#2f6fd0'], inner: '#d7dde2', v: 8, trim: '#ffffff', belt: ['#2a2a2a', '#d7dde2'] },
   clown: { coat: '#f4f4f4', inner: '#ff4d6a', v: 6, diamonds: ['#ff4d6a', '#4aa3ff', '#ffd84a'], ruff: '#ffffff', buttons: '#ff4d6a' },
   swamp: { coat: '#3a4a22', inner: '#6a5a3a', v: 8, hem: '#2a3a18', belt: ['#8a6436', '#c9a24a'] },
+  bloodmoon: { coat: '#3a1018', inner: '#ff4a5a', v: 9, trim: '#c8303e', collar: '#3a1018', belt: ['#1a0a0e', '#c9a24a'], cape: ['#2a0a10', '#8a1a2a'] },
+  chainjudge: { coat: '#f0ead8', inner: '#c9a24a', v: 8, ridge: true, trim: '#ffd84a', pauldron: ['#e8d070', '#fff3c0'], cape: ['#e8e0c8', '#c9a24a'] },
   gravity: { coat: '#22184a', inner: '#8a6cff', v: 10, trim: '#c9b8ff', stars: '#c9b8ff', cape: ['#22184a', '#8a6cff'] },
   demon: { coat: '#1a0e12', inner: '#ff1f1f', v: 12, lapel: '#2a1218', tie: '#ff1f1f' },
   puppeteer: { stripes: ['#3a1a4a', '#6a3a7a'], inner: '#ffffff', v: 9, bow: '#d28aff', buttons: '#ffd84a' },
@@ -968,6 +970,49 @@ function heroDeco(ctx, id, phase) {
         circle(ctx, 0, -29, 4, '#ff4d6a', 1.4);
         glint(ctx, -1.2, -30.2, 1.2);
         ctx.restore();
+      }
+      break;
+    case 'bloodmoon': // 혈월 사냥꾼: 머리 뒤 붉은 초승달 + 챙 넓은 사냥꾼 모자
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(-4, top - 6, 4, -4, top - 6, 34);
+        g.addColorStop(0, 'rgba(255,58,74,0.35)'); g.addColorStop(1, 'rgba(255,58,74,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(-4, top - 6, 34, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-6, top - 8, 22, 0, Math.PI * 2); ctx.arc(2, top - 13, 19, 0, Math.PI * 2, true);
+        ctx.fillStyle = '#e8303e'; ctx.fill('evenodd');
+      }
+      if (phase === 'front') {
+        ctx.beginPath(); ctx.ellipse(0, top + 6, 29, 6.5, -0.08, 0, Math.PI * 2); fillStroke(ctx, '#1e0a10', 1.8);
+        rr(ctx, -12, top - 14, 24, 20, [8, 8, 2, 2]); fillStroke(ctx, '#2e0e16', 1.8);
+        ctx.fillStyle = '#c8303e'; ctx.fillRect(-12, top - 1, 24, 4);
+        rr(ctx, 4, top - 2, 6, 6, 1); fillStroke(ctx, '#c9d3de', 1);
+        sheen(ctx, 0, top - 6, 11, 1.1, 1.5);
+      }
+      break;
+    case 'chainjudge': // 사슬 심판관: 머리 위 황금 저울 + 몸을 감은 금 사슬 + 뒤의 빛 고리
+      if (phase === 'back') {
+        ctx.strokeStyle = 'rgba(255,216,74,0.85)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.ellipse(0, top - 2, 26, 9, 0, Math.PI * 0.95, Math.PI * 2.05); ctx.stroke();
+      }
+      if (phase === 'mid') {
+        ctx.save(); ctx.beginPath(); ctx.arc(0, BY, R - 0.5, 0, Math.PI * 2); ctx.clip();
+        ctx.strokeStyle = '#8a6a10'; ctx.lineWidth = 3.4;
+        for (let k = 0; k < 7; k++) { ctx.beginPath(); ctx.ellipse(-18 + k * 6, BY + 17 - k * 1.4, 3.6, 2.4, -0.3, 0, Math.PI * 2); ctx.stroke(); }
+        ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2;
+        for (let k = 0; k < 7; k++) { ctx.beginPath(); ctx.ellipse(-18 + k * 6, BY + 17 - k * 1.4, 3.6, 2.4, -0.3, 0, Math.PI * 2); ctx.stroke(); }
+        ctx.restore();
+      }
+      if (phase === 'front') {
+        // 황금 저울
+        ctx.strokeStyle = '#8a6410'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(0, top + 2); ctx.lineTo(0, top - 24); ctx.moveTo(-16, top - 18); ctx.lineTo(16, top - 18); ctx.stroke();
+        ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(0, top + 2); ctx.lineTo(0, top - 24); ctx.moveTo(-16, top - 18); ctx.lineTo(16, top - 18); ctx.stroke();
+        ctx.lineWidth = 1; ctx.strokeStyle = '#c9a24a';
+        for (const sx of [-1, 1]) {
+          ctx.beginPath(); ctx.moveTo(sx * 16, top - 18); ctx.lineTo(sx * 11, top - 8); ctx.moveTo(sx * 16, top - 18); ctx.lineTo(sx * 21, top - 8); ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(sx * 16, top - 7, 6, 2.4, 0, 0, Math.PI); fillStroke(ctx, '#ffd84a', 1.2);
+        }
+        circle(ctx, 0, top - 26, 3.2, '#fff3c0', 1.2);
       }
       break;
     case 'gravity': // 중력 조종자: 머리 둘레 고리 + 떠다니는 돌
