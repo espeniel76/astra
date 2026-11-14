@@ -8,7 +8,11 @@ describe('영웅 데이터', () => {
     expect(HEROES.length).toBe(73);
     const by = {};
     for (const h of HEROES) by[h.star] = (by[h.star] || 0) + 1;
-    expect(by).toEqual({ 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 22, 7: 1 });
+    expect(by).toEqual({ 1: 10, 2: 10, 3: 10, 4: 10, 5: 11, 6: 21, 7: 1 });
+  });
+  it('자력술사는 ★5지만 좀비 생존자 영웅 모습 그대로', () => {
+    expect(HERO.magnetist.star).toBe(5);
+    expect(HERO.magnetist.hero).toBe(true);
   });
   it('id는 겹치지 않는다', () => {
     expect(new Set(HEROES.map(h => h.id)).size).toBe(HEROES.length);

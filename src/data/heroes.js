@@ -27,7 +27,7 @@ function base(star, role, spdAdj = 0) {
 // H(id, 이름, 별, 역할, 스킬, 모습, 대사, 추가)
 const H = (id, name, star, role, skill, look, quote, extra = {}) => ({
   id, name, star, role, skill, look, quote,
-  hero: star >= 6,
+  hero: star >= 6 || !!extra.zs, // 좀비 생존자 영웅(옷·머리 장식 그림)
   base: base(star, role, extra.spd || 0),
   passive: extra.passive || null,
 });
@@ -215,9 +215,9 @@ export const HEROES = [
   H('wisp', '도깨비불 술사', 6, 'dps',
     S('도깨비불', '도깨비불이 무작위 적에게 4번 날아가요.', 3, dmg('random', 0.7, { hits: 4 })),
     { shirt: 0xf2efe6, gun: 'talisman', glow: 0x5fb0ff }, '불을 끄려 해 봐. 쫓아가는 건 불 쪽이니까.'),
-  H('magnetist', '자력술사', 6, 'tank',
+  H('magnetist', '자력술사', 5, 'tank', // 아들 요청으로 ★6 → ★5
     S('밀어내기', '적 전체를 때리고 행동 게이지를 뒤로 밀어내요.', 3, dmg('all', 0.8), { t: 'gauge', target: 'all', v: -400 }),
-    { shirt: 0xd8323c, gun: 'magnet', glow: 0xff6a6a }, '같은 극끼리는 만날 수 없지.'),
+    { shirt: 0xd8323c, gun: 'magnet', glow: 0xff6a6a }, '같은 극끼리는 만날 수 없지.', { zs: true }),
   // 폭탄 광대·늪지 마녀 자리(아들이 "이상해"라고 해서 바꿈, 2026-11-14)
   H('bloodmoon', '혈월 사냥꾼', 6, 'dps',
     S('혈월 추적', '체력이 가장 적은 적을 쏴요. 쓰러뜨리면 다음 적을 또 쏴요(최대 3번).', 3, { t: 'hunt', mult: 1.7, max: 3 }),
