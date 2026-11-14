@@ -47,6 +47,9 @@ export function createBattle({ team = [], stageId = null, foes = null, seed = Da
   team.forEach((t, i) => { if (t && HERO[t.id]) b.units.push(heroUnit(b, i, t)); });
   const list = foes || STAGE[stageId]?.foes || [];
   list.forEach((f, i) => b.units.push(monsterUnit(b, i, f)));
+  // 최후의 심판자: 전투가 시작되면 적 전체에 선고(방어 -30%, 전투 내내)
+  const judge = b.units.find(u => u.side === 'ally' && u.passive?.k === 'sentence');
+  if (judge) for (const f of b.units.filter(u => u.side === 'foe')) f.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });
   b.attack = (src, tgt, mult, ev, opts) => attack(b, src, tgt, mult, ev, opts);
   b.hurt = (src, tgt, amount, ev, opts) => hurt(b, src, tgt, amount, ev, opts);
   checkEnd(b);
@@ -146,6 +149,8 @@ function afterHit(b, u, ev) {
       const used = new Set(alive(b, 'foe').map(x => x.slot));
       const slot = [0, 1, 2].find(s => !used.has(s));
       const m = monsterUnit(b, slot, { mon: sk.mon, lv: u.lv });
+      const judge = alive(b, 'ally').find(x => x.passive?.k === 'sentence');
+      if (judge) m.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });
       b.units.push(m);
       ev.push({ type: 'summon', from: u.uid, to: m.uid, name: sk.name });
     }

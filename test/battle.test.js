@@ -204,3 +204,19 @@ describe('별을 삼킨 자', () => {
     expect(me.atk).toBe(before);
   });
 });
+
+describe('최후의 심판자', () => {
+  it('전투가 시작되면 적 전체의 방어가 30% 깎인다(선고)', () => {
+    const b = createBattle({ team: team('judge'), foes: [{ mon: 'golem', lv: 1 }, { mon: 'rockgiant', lv: 30 }], seed: 50 });
+    for (const f of foes(b)) expect(f.statuses.find(s => s.k === 'defDown')?.v).toBe(0.3);
+  });
+  it('최후의 판결: 체력이 절반 이하인 적은 2배 피해', () => {
+    const mk = () => createBattle({ team: team('judge'), foes: [{ mon: 'golem', lv: 30 }], seed: 51 });
+    const a = mk(), z = mk();
+    foes(z)[0].hp = Math.floor(foes(z)[0].maxHp * 0.5);
+    for (const b of [a, z]) { const me = allies(b)[0]; me.cd = 0; queueSkill(b, me.uid); }
+    const da = act(a, allies(a)[0], { auto: false }).find(e => e.type === 'damage').amount;
+    const dz = act(z, allies(z)[0], { auto: false }).find(e => e.type === 'damage').amount;
+    expect(dz / da).toBeGreaterThan(1.7);
+  });
+});

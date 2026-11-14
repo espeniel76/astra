@@ -102,6 +102,10 @@ const FX = {
       if (t.statuses.length !== before) ev.push({ type: 'cleanse', to: t.uid });
     }
   },
+  // 판결: 적 전체를 때리고, 체력이 below 이하인 적은 bonus 배
+  verdict(b, u, f, ev) {
+    for (const t of enemiesOf(b, u)) hitOne(b, u, t, f.mult * (t.hp <= t.maxHp * f.below ? f.bonus : 1), ev);
+  },
   // 사냥: 가장 약한 적을 쏘고, 쓰러뜨리면 다음 가장 약한 적을 또 쏜다(최대 max번)
   hunt(b, u, f, ev) {
     for (let i = 0; i < f.max; i++) {
