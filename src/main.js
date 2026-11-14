@@ -18,7 +18,7 @@ const save = loadSave();
 if (TEST && !save.tips.testInit) {
   save.diamonds = 1_000_000;
   save.gold = 1_000_000;
-  save.pity = 50;
+  save.pity = 299;
   save.tips.testInit = true;
 }
 ensureToday(save);
