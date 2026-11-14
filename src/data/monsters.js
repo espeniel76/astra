@@ -1,6 +1,21 @@
 // 몬스터. 능력치는 레벨 1 기준이고 스테이지 레벨에 따라 1.11^(lv-1) 배가 된다(src/core/battle.js).
 // look.kind 로 그림 모양을 고른다(src/render/monsters.js).
-const M = (id, name, hp, atk, def, spd, look, more = {}) => ({ id, name, hp, atk, def, spd, look, boss: false, skill: null, ...more });
+const M = (id, name, hp, atk, def, spd, look, more = {}) => ({ id, name, hp, atk, def, spd, look, boss: false, skill: null, desc: DESC[id], ...more });
+
+const DESC = {
+  slime: '말랑말랑한 첫 상대. 약해요!',
+  rat: '빨라서 먼저 때려요.',
+  bee: '몸은 약하지만 아프게 쏘아요.',
+  kingslime: '보스! 체력이 절반이 되면 슬라임 둘로 갈라져요.',
+  goblin: '몽둥이를 든 숲의 말썽꾼.',
+  wolf: '아주 빠르고 세게 물어요.',
+  mushroom: '독 포자를 뿌려요. 독은 매 턴 아파요.',
+  goblinchief: '보스! 돌격 명령으로 졸개들을 세게 만들어요.',
+  bat: '동굴에서 가장 빨라요.',
+  golem: '느리지만 엄청 단단해요.',
+  spider: '거미줄로 영웅을 묶어요.',
+  rockgiant: '보스! 지진으로 영웅 모두를 때려요.'
+};
 
 export const MONSTERS = Object.fromEntries([
   // 초원
@@ -24,3 +39,12 @@ export const MONSTERS = Object.fromEntries([
   M('rockgiant', '바위 거인', 820, 34, 16, 75, { kind: 'golem', body: '#6a645a', crown: true, s: 1.9 },
     { boss: true, skill: { k: 'quake', cd: 3, mult: 1.2, name: '지진' } }),
 ].map(m => [m.id, m]));
+
+// 몬스터 세기: 레벨마다 MON_GROWTH 배, 전체 세기 MON_BASE (밸런스: node scripts/sim.mjs)
+export const MON_GROWTH = 1.03;
+export const MON_BASE = 3.4;
+export function monStats(mon, lv) {
+  const m = MONSTERS[mon];
+  const k = MON_GROWTH ** (lv - 1);
+  return { hp: Math.round(m.hp * k * MON_BASE), atk: Math.round(m.atk * k * MON_BASE), def: Math.round(m.def * k), spd: m.spd };
+}

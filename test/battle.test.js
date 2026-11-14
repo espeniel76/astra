@@ -29,7 +29,7 @@ describe('전투 기본', () => {
   it('몬스터는 스테이지 레벨만큼 세진다', () => {
     const b1 = createBattle({ team: team('slinger'), foes: [{ mon: 'slime', lv: 1 }], seed: 1 });
     const b11 = createBattle({ team: team('slinger'), foes: [{ mon: 'slime', lv: 11 }], seed: 1 });
-    expect(foes(b11)[0].maxHp).toBe(Math.round(foes(b1)[0].maxHp * 1.045 ** 10));
+    expect(foes(b11)[0].maxHp).toBe(Math.round(foes(b1)[0].maxHp * 1.03 ** 10));
   });
 });
 
@@ -157,5 +157,16 @@ describe('자기에게 건 상태', () => {
     expect(me.statuses.find(s => s.k === 'taunt')?.turns).toBe(2);
     act(b, me, { auto: false });
     expect(me.statuses.find(s => s.k === 'taunt')?.turns).toBe(1);
+  });
+});
+
+describe('별 조건 기록', () => {
+  it('아군이 진짜 쓰러지면 anyAllyDied, 부활하면 아님', () => {
+    const b = createBattle({ team: team('slinger', 'phoenix'), foes: [{ mon: 'golem', lv: 1 }], seed: 6 });
+    const ev = [];
+    b.hurt(foes(b)[0], allies(b)[0], 1e9, ev);
+    expect(b.anyAllyDied).toBe(false);
+    b.hurt(foes(b)[0], allies(b)[0], 1e9, ev);
+    expect(b.anyAllyDied).toBe(true);
   });
 });

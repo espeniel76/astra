@@ -1,7 +1,7 @@
 // 턴제 전투 엔진(화면 없음). 화면(BattleScene)은 step()이 돌려주는 이벤트를 차례로 재생한다.
 // 행동 순서: 모든 유닛의 행동 게이지가 속도만큼 차오르고, 1000이 먼저 넘은 유닛이 행동한다.
 import { HERO } from '../data/heroes.js';
-import { MONSTERS } from '../data/monsters.js';
+import { MONSTERS, monStats, MON_GROWTH, MON_BASE } from '../data/monsters.js';
 import { STAGE } from '../data/stages.js';
 import { heroStats } from './progress.js';
 import { makeRng } from './rng.js';
@@ -31,21 +31,19 @@ function heroUnit(b, slot, { id, level = 1, dupes = 0 }) {
   });
 }
 
-export const MON_GROWTH = 1.045;
-export const MON_BASE = 3.4; // 몬스터 전체 세기(밸런스: node scripts/sim.mjs)
+export { MON_GROWTH, MON_BASE };
 
 export function monsterUnit(b, slot, { mon, lv }) {
   const m = MONSTERS[mon];
-  const k = MON_GROWTH ** (lv - 1);
   return makeUnit(b, 'foe', slot, {
     id: mon, name: m.name, boss: m.boss, lv,
-    hp: Math.round(m.hp * k * MON_BASE), atk: Math.round(m.atk * k * MON_BASE), def: Math.round(m.def * k), spd: m.spd,
+    ...monStats(mon, lv),
     mskill: m.skill, cdMax: m.skill?.cd || 0, cd: m.skill?.cd || 0,
   });
 }
 
 export function createBattle({ team = [], stageId = null, foes = null, seed = Date.now() }) {
-  const b = { units: [], rng: makeRng(seed), result: null, goldMul: 1, kills: 0, nextUid: 1, turn: 0, stageId };
+  const b = { units: [], rng: makeRng(seed), result: null, goldMul: 1, kills: 0, nextUid: 1, turn: 0, stageId, anyAllyDied: false };
   team.forEach((t, i) => { if (t && HERO[t.id]) b.units.push(heroUnit(b, i, t)); });
   const list = foes || STAGE[stageId]?.foes || [];
   list.forEach((f, i) => b.units.push(monsterUnit(b, i, f)));
@@ -168,6 +166,7 @@ function die(b, u, ev) {
   }
   u.alive = false;
   u.hp = 0;
+  if (u.side === 'ally') b.anyAllyDied = true;
   u.queued = false;
   ev.push({ type: 'death', to: u.uid });
   if (u.side === 'foe') {
