@@ -635,7 +635,7 @@ const OUTFIT = {
   tornado: { coat: '#6a4a30', inner: '#d7eef8', v: 8, zipper: '#d7dde2', fur: '#f0e8d8' },
   emperor: { coat: '#1a1020', inner: '#9a3aff', v: 11, trim: '#d8b84a', lapel: '#2a1830', cape: ['#120a18', '#6a1a8a'] },
   goldlord: { coat: '#c8961a', inner: '#fff3c0', v: 10, trim: '#fff3c0', belt: ['#8a6410', '#fff3c0'], cape: ['#8a6410', '#ffd84a'] },
-  judge: { coat: '#16204a', inner: '#d8203a', v: 10, ridge: true, trim: '#d8203a', collar: '#16204a', pauldron: ['#22306a', '#ff4a5a'], belt: ['#0c1230', '#d8203a'], cape: ['#a8142a', '#16204a'] },
+  judge: { coat: '#141418', inner: '#f4f4f4', v: 10, ridge: true, trim: '#f4f4f4', collar: '#141418', pauldron: ['#2a2a30', '#ffffff'], belt: ['#08080a', '#d7dde2'], cape: ['#f2f2f2', '#141418'] },
   stareater: { coat: '#140c2a', inner: '#b06aff', v: 10, trim: '#e0c8ff', stars: '#e0c8ff', collar: '#140c2a', cape: ['#0a0618', '#4a1a8a'] },
   guardian: { coat: '#e8c040', inner: '#ffffff', v: 9, ridge: true, trim: '#fff6c8', pauldron: ['#ffe680', '#fff6c8'], cape: ['#fff3c0', '#e8b923'] },
 };
@@ -1302,30 +1302,30 @@ function heroDeco(ctx, id, phase) {
         circle(ctx, 0, top + 4, 2.6, '#ffffff', 1);
       }
       break;
-    case 'judge': // 최후의 심판자: 등 뒤에 엇갈린 붉은 검 두 자루 + 남색 투구에 붉은 깃털 장식과 붉은 눈가리개 띠(눈은 보이게 위쪽)
+    case 'judge': // 최후의 심판자: 등 뒤에 엇갈린 은빛 검 두 자루 + 검은 투구에 흰 깃털 장식과 흰 이마 띠
       if (phase === 'back') {
         for (const sx of [-1, 1]) {
           ctx.save(); ctx.translate(0, BY - 6); ctx.rotate(sx * 0.55);
-          rr(ctx, -3, -54, 6, 70, 2); fillStroke(ctx, '#d8203a', 1.6, '#5a0812');
+          rr(ctx, -3, -54, 6, 70, 2); fillStroke(ctx, '#e8ecf0', 1.6, '#3a3f45');
           ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fillRect(-1, -50, 1.6, 60);
-          poly(ctx, [[-3, -54], [3, -54], [0, -64]], '#ff4a5a', 1.4);
-          rr(ctx, -10, 14, 20, 5, 2); fillStroke(ctx, '#16204a', 1.4);
-          rr(ctx, -2.5, 19, 5, 10, 2); fillStroke(ctx, '#22306a', 1.2);
+          poly(ctx, [[-3, -54], [3, -54], [0, -64]], '#ffffff', 1.4);
+          rr(ctx, -10, 14, 20, 5, 2); fillStroke(ctx, '#141418', 1.4);
+          rr(ctx, -2.5, 19, 5, 10, 2); fillStroke(ctx, '#2a2a30', 1.2);
           ctx.restore();
         }
-        ctx.strokeStyle = 'rgba(255,42,74,0.6)'; ctx.lineWidth = 2.4;
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2.4;
         ctx.beginPath(); ctx.arc(0, BY - 6, R + 15, 0, Math.PI * 2); ctx.stroke();
       }
       if (phase === 'front') {
-        // 남색 투구(정수리) + 이마 띠
+        // 검은 투구(정수리) + 흰 이마 띠
         ctx.beginPath(); ctx.arc(0, BY, R + 1.5, Math.PI * 1.08, Math.PI * 1.92); ctx.lineTo(R * 0.92, BY - 11); ctx.lineTo(-R * 0.92, BY - 11); ctx.closePath();
-        fillStroke(ctx, '#16204a', 2, '#070b1e');
-        rr(ctx, -R * 0.9, BY - 13, R * 1.8, 4, 2); fillStroke(ctx, '#d8203a', 1.2, '#5a0812');
-        circle(ctx, 0, BY - 11, 3, '#ffd84a', 1);
-        // 붉은 깃털 장식
+        fillStroke(ctx, '#141418', 2, '#000000');
+        rr(ctx, -R * 0.9, BY - 13, R * 1.8, 4, 2); fillStroke(ctx, '#f4f4f4', 1.2, '#3a3f45');
+        circle(ctx, 0, BY - 11, 3, '#d7dde2', 1);
+        // 흰 깃털 장식
         ctx.beginPath(); ctx.moveTo(-2, top + 2); ctx.quadraticCurveTo(-14, top - 14, 2, top - 26); ctx.quadraticCurveTo(10, top - 12, 4, top + 2); ctx.closePath();
-        fillStroke(ctx, '#ff2a4a', 1.6, '#7a0a1a');
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.2;
+        fillStroke(ctx, '#ffffff', 1.6, '#3a3f45');
+        ctx.strokeStyle = 'rgba(60,63,69,0.45)'; ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.moveTo(0, top); ctx.quadraticCurveTo(-6, top - 12, 2, top - 22); ctx.stroke();
       }
       break;

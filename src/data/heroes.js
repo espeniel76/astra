@@ -288,11 +288,11 @@ export const HEROES = [
     S('블랙홀', '블랙홀로 적 전체를 빨아들여 크게 때리고, 행동 게이지를 날려 버려요. (적이 쓰러질 때마다 공격력 +15%, 최대 5번)', 3,
       dmg('all', 2.2), { t: 'gauge', target: 'all', v: -1000 }),
     { shirt: 0x140c2a, gun: 'orb', glow: 0xb06aff }, '별 하나가 꺼질 때마다, 나는 조금 더 밝아진다.', { passive: { k: 'devour', v: 0.15, max: 5 } }),
-  // 세 번째 ★7(아들 요청: 빨강·남색이 메인인 심판자, 2026-11-14)
+  // 세 번째 ★7(아들 요청, 2026-11-14): 흰색·검은색 심판자(처음엔 빨강·남색이었으나 정치색 연상 때문에 바꿈)
   H('judge', '최후의 심판자', 7, 'dps',
-    S('최후의 판결', '하늘에서 붉은 검들을 떨어뜨려 적 전체를 베어요. 체력이 절반 이하인 적은 2배로 아파요. (전투가 시작되면 적 전체의 방어 -30%)', 3,
+    S('최후의 판결', '하늘에서 은빛 검들을 떨어뜨려 적 전체를 베어요. 체력이 절반 이하인 적은 2배로 아파요. (전투가 시작되면 적 전체의 방어 -30%)', 3,
       { t: 'verdict', mult: 1.8, below: 0.5, bonus: 2 }),
-    { shirt: 0x16204a, gun: 'greatsword', glow: 0xff2a4a }, '저울은 이미 기울었다. 판결을 내린다.', { passive: { k: 'sentence', v: 0.3 } }),
+    { shirt: 0x141418, gun: 'greatsword', glow: 0xffffff }, '저울은 이미 기울었다. 판결을 내린다.', { passive: { k: 'sentence', v: 0.3 } }),
 ];
 
 export const HERO = Object.fromEntries(HEROES.map(h => [h.id, h]));

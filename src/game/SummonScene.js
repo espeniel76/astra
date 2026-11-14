@@ -206,8 +206,8 @@ export class SummonScene extends Phaser.Scene {
   async mythicReveal(slot, r) {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
-    const col = seven ? ({ stareater: 0xb06aff, judge: 0xff2a4a }[r.id] ?? 0xffe066) : 0xff3a3a;
-    const outer = r.id === 'judge' ? 0x2a3a9a : col; // 심판자는 빨강 번개 + 남색 테두리 빛
+    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff }[r.id] ?? 0xffe066) : 0xff3a3a;
+    const outer = r.id === 'judge' ? 0x8a8f99 : col; // 심판자는 흰 번개 + 회색 테두리 빛
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
     this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
@@ -457,13 +457,13 @@ export class SummonScene extends Phaser.Scene {
     layer.destroy();
   }
 
-  // 최후의 심판자 전용(약 10초, 탭하면 넘어감). 빨강·남색. 번쩍임 없음.
-  // 1) 붉은 칼금이 화면을 위에서 아래로 가르고 2) 왼쪽은 남색, 오른쪽은 진홍으로 갈라진다
-  // 3) 붉은 심판의 고리가 그려지며 돈다 4) 하늘에서 붉은 검 일곱 자루가 하나씩 꽂힌다
+  // 최후의 심판자 전용(약 10초, 탭하면 넘어감). 흰색·검은색. 번쩍임 없음.
+  // 1) 흰 칼금이 화면을 위에서 아래로 가르고 2) 왼쪽은 검정, 오른쪽은 흰색으로 천천히 갈라진다
+  // 3) 심판의 고리가 그려지며 돈다 4) 하늘에서 은빛 검 일곱 자루가 하나씩 꽂힌다
   // 5) 심판자가 어둠에서 걸어 나온다 6) ETERNAL + 이름 + 별 일곱
   async finalJudgment(r) {
     const hero = HERO[r.id];
-    const RED = 0xff2a4a, NAVY = 0x16204a;
+    const LIGHT = 0xffffff, DARK = 0x141418, MID = 0x8a8f99;
     const layer = this.add.container(0, 0).setDepth(170);
     const cx = W / 2, cy = H / 2 - 60;
     let skipped = false;
@@ -474,17 +474,17 @@ export class SummonScene extends Phaser.Scene {
     const fast = ms => (skipped ? 1 : ms);
 
     // 1) 칼금
-    const slash = this.add.rectangle(cx, 0, 6, 0, RED, 1).setOrigin(0.5, 0);
+    const slash = this.add.rectangle(cx, 0, 6, 0, LIGHT, 1).setOrigin(0.5, 0);
     layer.add(slash);
     sfx.play('crit');
     await tween(this, { targets: slash, height: H, duration: fast(600), ease: 'Cubic.in' });
-    // 2) 남색·진홍으로 갈라짐
-    const left = this.add.rectangle(cx, H / 2, W / 2, H, NAVY, 1).setOrigin(1, 0.5).setAlpha(0);
-    const right = this.add.rectangle(cx, H / 2, W / 2, H, 0x6a0a1a, 1).setOrigin(0, 0.5).setAlpha(0);
+    // 2) 검정·흰색으로 갈라짐(천천히 밝아짐, 번쩍임 아님)
+    const left = this.add.rectangle(cx, H / 2, W / 2, H, 0x0a0a0c, 1).setOrigin(1, 0.5).setAlpha(0);
+    const right = this.add.rectangle(cx, H / 2, W / 2, H, 0xe8e8ec, 1).setOrigin(0, 0.5).setAlpha(0);
     layer.addAt([left, right], 1);
     this.tweens.add({ targets: [left, right], alpha: 1, duration: fast(1200) });
     this.tweens.add({ targets: slash, width: 14, duration: fast(600), yoyo: true, onComplete: () => this.tweens.add({ targets: slash, alpha: 0, duration: 800 }) });
-    setBackdrop('#16204a', '#6a0a1a');
+    setBackdrop('#0a0a0c', '#e8e8ec');
     await pause(1300);
 
     // 3) 심판의 고리(그려지며 돈다)
@@ -494,29 +494,33 @@ export class SummonScene extends Phaser.Scene {
     const prog = { p: 0 };
     const drawRing = () => {
       ringG.clear();
-      ringG.lineStyle(8, RED, 0.95).beginPath().arc(0, 0, 250, -Math.PI / 2, -Math.PI / 2 + prog.p * Math.PI * 2).strokePath();
-      ringG.lineStyle(3, 0xffffff, 0.6).beginPath().arc(0, 0, 228, -Math.PI / 2, -Math.PI / 2 + prog.p * Math.PI * 2).strokePath();
+      ringG.lineStyle(12, DARK, 0.9).beginPath().arc(0, 0, 250, -Math.PI / 2, -Math.PI / 2 + prog.p * Math.PI * 2).strokePath();
+      ringG.lineStyle(7, LIGHT, 1).beginPath().arc(0, 0, 250, -Math.PI / 2, -Math.PI / 2 + prog.p * Math.PI * 2).strokePath();
+      ringG.lineStyle(3, MID, 0.9).beginPath().arc(0, 0, 228, -Math.PI / 2, -Math.PI / 2 + prog.p * Math.PI * 2).strokePath();
       const n = Math.floor(prog.p * 12);
       for (let i = 0; i < n; i++) {
         const a = -Math.PI / 2 + (i / 12) * Math.PI * 2;
-        ringG.fillStyle(RED, 1).fillRect(Math.cos(a) * 239 - 5, Math.sin(a) * 239 - 5, 10, 10);
+        ringG.fillStyle(DARK, 1).fillRect(Math.cos(a) * 239 - 7, Math.sin(a) * 239 - 7, 14, 14);
+        ringG.fillStyle(LIGHT, 1).fillRect(Math.cos(a) * 239 - 5, Math.sin(a) * 239 - 5, 10, 10);
       }
     };
     await tween(this, { targets: prog, p: 1, duration: fast(1500), ease: 'Sine.inOut', onUpdate: drawRing });
     drawRing();
     this.tweens.add({ targets: ringG, angle: 360, duration: 20000, repeat: -1 });
 
-    // 4) 붉은 검 일곱 자루가 하나씩 꽂힌다
+    // 4) 은빛 검 일곱 자루가 하나씩 꽂힌다
     for (let i = 0; i < 7; i++) {
       const x = cx + (i - 3) * 95, y = cy + 120 - Math.abs(i - 3) * 30;
       const sw = this.add.container(x, -200).setScale(1.5);
       const g = this.add.graphics();
-      g.fillStyle(0x5a0812, 1).fillRect(-6, -150, 12, 140);
-      g.fillStyle(RED, 1).fillRect(-4, -148, 8, 136);
-      g.fillStyle(0xffffff, 0.55).fillRect(-1, -146, 2, 130);
-      g.fillStyle(0xc9a24a, 1).fillRect(-22, -14, 44, 9);
-      g.fillStyle(0x0c1230, 1).fillRect(-5, -6, 10, 26);
-      g.fillStyle(0xffd84a, 1).fillCircle(0, 24, 6);
+      g.fillStyle(DARK, 1).fillRect(-6, -150, 12, 140);
+      g.fillStyle(0xd7dde2, 1).fillRect(-4, -148, 8, 136);
+      g.fillStyle(0xffffff, 0.9).fillRect(-1, -146, 2, 130);
+      g.fillStyle(DARK, 1).fillRect(-23, -15, 46, 11);
+      g.fillStyle(0xf4f4f4, 1).fillRect(-21, -13, 42, 7);
+      g.fillStyle(DARK, 1).fillRect(-5, -6, 10, 26);
+      g.fillStyle(0xf4f4f4, 1).fillCircle(0, 24, 6);
+      g.lineStyle(2, DARK, 1).strokeCircle(0, 24, 6);
       sw.add(g);
       sw.setRotation(Math.PI); // 칼끝이 아래로
       layer.add(sw);
@@ -533,9 +537,9 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: img, y: cy + 190, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     // 6) 이름
-    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#ffffff', { stroke: '#a8142a', strokeThickness: 7 }).setAlpha(0).setScale(1.6);
-    const name = text(this, W / 2, H - 250, '', 54, '#ffffff', { stroke: '#16204a', strokeThickness: 9 });
-    const stars = text(this, W / 2, H - 180, '', 42, '#ff4a5a', { stroke: '#16204a', strokeThickness: 6 });
+    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#ffffff', { stroke: '#000000', strokeThickness: 8 }).setAlpha(0).setScale(1.6);
+    const name = text(this, W / 2, H - 250, '', 54, '#ffffff', { stroke: '#000000', strokeThickness: 9 });
+    const stars = text(this, W / 2, H - 180, '', 42, '#ffffff', { stroke: '#000000', strokeThickness: 7 });
     layer.add([eternal, name, stars]);
     this.tweens.add({ targets: eternal, alpha: 1, scale: 1, duration: 1000, ease: 'Back.out' });
     for (let i = 1; i <= hero.name.length && !skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 130); }
