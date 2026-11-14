@@ -148,3 +148,33 @@ textarea { width: 100%; min-height: 90px; border-radius: 10px; border: 1px solid
 .icon-btn span { font-size: 24px; }
 .icon-btn small { font-size: 12px; font-weight: 700; }
 .icon-btn.dot::after { top: 4px; right: 6px; }
+
+/* 영웅의 집 */
+.team-panel { background: linear-gradient(#2a2f5a, #1a1f40); border: 1px solid var(--line); border-radius: 16px; padding: 10px; margin-bottom: 10px; }
+.tslots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tslot { position: relative; border-radius: 12px; border: 3px solid var(--c); cursor: pointer; overflow: hidden; text-align: center;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c) 55%, #fff 10%), color-mix(in srgb, var(--c) 35%, #10142c)); }
+.tslot canvas { width: 100%; height: auto; display: block; margin-top: -4px; }
+.tslot .tname { background: rgba(0,0,0,0.55); font-size: 12px; font-weight: 800; padding: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tslot .tx { position: absolute; top: 3px; right: 3px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.6); color: #fff; font-size: 13px; cursor: pointer; }
+.tslot.empty { border: 2px dashed var(--line); background: rgba(255,255,255,0.03); display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.15; color: var(--dim); }
+.tslot.empty span { font-size: 34px; line-height: 1; }
+.tslot.empty small { font-size: 12px; }
+.party { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-top: 10px; }
+.party > div { background: rgba(0,0,0,0.25); border-radius: 10px; padding: 6px 10px; }
+.party small { display: block; font-size: 11px; color: var(--dim); }
+.party b { font-size: 19px; }
+.party .btn { min-height: 48px; font-size: 15px; padding: 0 12px; }
+.edit-tip { text-align: center; color: var(--gold); font-weight: 800; font-size: 14px; margin: -2px 0 8px; }
+.hstars { position: absolute; top: 3px; left: 0; right: 0; text-align: center; font-size: 11px; letter-spacing: -1px; color: #ffd84a;
+  text-shadow: 0 1px 0 #000, 0 0 2px #000; z-index: 1; }
+.hgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.hcard2 { position: relative; border-radius: 10px; overflow: hidden; cursor: pointer; border: 2px solid color-mix(in srgb, var(--c) 70%, #000);
+  background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--c) 60%, #fff 8%), color-mix(in srgb, var(--c) 30%, #0d1020) 80%); }
+.hcard2 canvas { width: 100%; height: auto; display: block; margin-top: 6px; }
+.hcard2 .hlv { background: rgba(0,0,0,0.6); font-size: 11px; font-weight: 800; text-align: center; padding: 3px 0; }
+.hcard2 .hdupe { position: absolute; top: 16px; right: 4px; font-size: 11px; font-weight: 900; color: var(--gold); text-shadow: 0 1px 0 #000; }
+.hcard2 .hcheck { position: absolute; top: 16px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--good); color: #062; font-size: 12px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; }
+.hcard2.inteam { box-shadow: 0 0 0 3px var(--good); }
+.hcard2.off { filter: grayscale(0.85) brightness(0.6); }
