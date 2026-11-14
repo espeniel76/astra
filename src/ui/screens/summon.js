@@ -25,7 +25,7 @@ export function render(root, app) {
       if (!s.team.includes(id) && free >= 0) s.team[free] = id;
     } else bump(s, 'summon');
     app.persist();
-    app.startSummon(r.results);
+    app.startSummon(r.results, count === 'ticket');
   };
   root.append(
     app.top('소환'),

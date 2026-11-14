@@ -53,4 +53,4 @@ async function run(key, data) {
 }
 
 export const startBattle = (app, stageId) => run('battle', { app, stageId });
-export const startSummon = (app, results) => run('summon', { app, results });
+export const startSummon = (app, results, ticket = false) => run('summon', { app, results, ticket });

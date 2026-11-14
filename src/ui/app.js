@@ -47,6 +47,8 @@ export function createApp(root, save, screens) {
     current: null, params: null,
     persist() { writeSave(app.save); },
     show(name, params = {}) {
+      // 이전 화면 정리(로비 마을 애니메이션 멈추기 등)
+      if (app.cleanup) { app.cleanup(); app.cleanup = null; }
       ensureToday(app.save);
       app.current = name; app.params = params;
       root.replaceChildren();

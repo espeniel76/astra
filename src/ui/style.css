@@ -134,3 +134,17 @@ textarea { width: 100%; min-height: 90px; border-radius: 10px; border: 1px solid
 .chest.got { opacity: 0.5; }
 .newcard { border-color: #7dff8a; }
 .newcard canvas { width: 70px; height: 70px; }
+
+/* v2 로비 마을 */
+.town-wrap { position: relative; margin: 0 -14px; }
+.town { display: block; width: 100%; height: auto; aspect-ratio: 720 / 840; cursor: pointer; touch-action: manipulation; }
+.town-logo { position: absolute; top: 10px; left: 0; right: 0; text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 0.25em;
+  color: #fff6c8; text-shadow: 0 2px 0 #c98a1a, 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; }
+.adventure-btn { width: 100%; min-height: 76px; font-size: 24px; margin-top: 12px; }
+.adventure-btn small { font-size: 14px; }
+.icon-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+.icon-btn { position: relative; min-height: 64px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.icon-btn span { font-size: 24px; }
+.icon-btn small { font-size: 12px; font-weight: 700; }
+.icon-btn.dot::after { top: 4px; right: 6px; }

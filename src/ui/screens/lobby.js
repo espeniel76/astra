@@ -1,38 +1,50 @@
+// 로비: 살아 있는 마을(건물 = 메뉴, 영웅이 걸어 다님) + 아래 큰 모험 버튼과 아이콘 줄.
 import { h, fmt } from '../app.js';
-import { HERO, STAR_COLOR } from '../../data/heroes.js';
-import { heroCanvas } from '../../render/portrait.js';
+import { HERO } from '../../data/heroes.js';
+import { STAGES } from '../../data/stages.js';
 import { claimable } from '../../core/daily.js';
+import { teamPower } from '../../core/progress.js';
+import { startTown } from '../../render/town.js';
 
 export function render(root, app) {
   const s = app.save;
-  const owned = Object.keys(s.heroes).length;
-  const team = h('div.team-show',
-    ...s.team.map(id => h('div.slot',
-      id ? [heroCanvas(id, 150), h('div.nm', { style: `color:${STAR_COLOR[HERO[id].star]}` }, HERO[id].name)]
-        : h('div.empty-slot', '빈 자리'))));
-  team.addEventListener('click', () => app.show('team'));
-
+  const owned = Object.keys(s.heroes);
+  const next = STAGES.find(st => !s.cleared.includes(st.id));
   const missions = claimable(s);
+  const hasTeam = s.team.some(Boolean);
+
+  // 튜토리얼 안내: 선물 소환권 → 모험의 문
+  let hint = null;
+  if (s.tickets.star4 > 0) hint = { building: 'summon', text: '선물이 있어요! 눌러 봐요' };
+  else if (hasTeam && !s.cleared.includes('1-1')) hint = { building: 'adventure', text: '첫 모험을 떠나요!' };
+  else if (!hasTeam && owned.length) hint = { building: 'team', text: '영웅을 편성해요' };
+
+  // 걸어 다닐 영웅: 팀 먼저, 그다음 별 높은 순
+  const walkers = [...new Set([...s.team.filter(Boolean), ...owned.sort((a, b) => HERO[b].star - HERO[a].star)])];
+  const canvas = h('canvas.town');
+  const go = { summon: 'summon', heroes: 'heroes', adventure: 'adventure', team: 'team', missions: 'missions' };
+  app.cleanup = startTown(canvas, {
+    heroes: walkers,
+    badges: { missions: missions > 0, summon: s.tickets.star4 > 0 },
+    hint,
+    onBuilding: k => app.show(go[k]),
+    onHero: id => app.show('heroDetail', { id, from: 'lobby' }),
+  });
+
+  const icon = (emoji, label, screen, dot) =>
+    h('button.icon-btn' + (dot ? '.dot' : ''), { onclick: () => app.show(screen) }, h('span', emoji), h('small', label));
+
   root.append(...[
     app.top('', null),
-    h('div.logo', 'ASTRA'),
-    h('div.center.dim', { style: 'font-size:13px;margin-bottom:4px' }, '별에서 내려온 영웅들'),
-    team,
-    owned === 0 ? h('div.bubble', '먼저 소환해서 영웅을 모아요!') : null,
-    h('div.menu',
-      h('button.btn.gold.big', { onclick: () => app.show('summon') }, '✨ 소환'),
-      h('button.btn.big', { onclick: () => app.show('adventure') }, '⚔️ 모험', h('small', nextStageText(s))),
-      h('button.btn.ghost', { onclick: () => app.show('heroes') }, `영웅 (${owned})`),
-      h('button.btn.ghost', { onclick: () => app.show('team') }, '편성'),
-      h('button.btn.ghost' + (missions ? '.dot' : ''), { onclick: () => app.show('missions') }, '오늘의 미션'),
-      h('button.btn.ghost', { onclick: () => app.show('settings') }, '⚙️ 설정')),
-    h('div.center.dim', { style: 'margin-top:14px;font-size:12px' }, `💎 ${fmt(s.diamonds)} · 🪙 ${fmt(s.gold)}`),
+    h('div.town-wrap', canvas, h('div.town-logo', 'ASTRA')),
+    h('button.btn.adventure-btn', { onclick: () => app.show('adventure') },
+      h('div', '⚔️ 모험 떠나기'),
+      h('small', `${next ? `다음: ${next.id}${next.boss ? ' 보스' : ''}` : '모든 스테이지 완료!'} · 팀 전투력 ${fmt(teamPower(s))}`)),
+    h('div.icon-row',
+      icon('🌟', '소환', 'summon', s.tickets.star4 > 0),
+      icon('🏠', '영웅', 'heroes'),
+      icon('🛡️', '편성', 'team'),
+      icon('📜', '미션', 'missions', missions > 0),
+      icon('⚙️', '설정', 'settings')),
   ].filter(Boolean));
-}
-
-function nextStageText(s) {
-  const n = s.cleared.length;
-  if (n >= 30) return '모든 스테이지 완료!';
-  const c = Math.floor(n / 10) + 1, k = (n % 10) + 1;
-  return `다음: ${c}-${k}`;
 }

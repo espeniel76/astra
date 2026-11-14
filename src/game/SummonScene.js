@@ -15,9 +15,10 @@ const W = 720, H = 1280;
 export class SummonScene extends Phaser.Scene {
   constructor() { super('summon'); }
 
-  init({ app, results }) {
+  init({ app, results, ticket = false }) {
     this.app = app;
     this.results = results;
+    this.ticket = ticket;
     this.flash = app.save.settings.flash;
     this.skipAll = false;
   }
@@ -279,6 +280,12 @@ export class SummonScene extends Phaser.Scene {
 
   showEnd() {
     const s = this.app.save;
+    if (this.ticket) {
+      // 시작 선물: 편성에 넣어 줬으니 바로 마을로 돌아가 첫 모험으로
+      text(this, W / 2, 1090, '편성에 넣어 뒀어요! 이제 첫 모험을 떠나요', 28, '#ffe9a0');
+      button(this, W / 2, 1200, 420, 96, '좋아요!', () => closeStage(this.app, 'lobby'), { size: 32, fill: 0x3cb94e });
+      return;
+    }
     const count = this.results.length;
     const again = button(this, W / 2 - 160, 1200, 290, 90, `다시 ${count === 11 ? '10+1' : '1회'} 💎${COST[count]}`, () => {
       if (s.diamonds < COST[count]) return;

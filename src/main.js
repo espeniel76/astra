@@ -30,7 +30,7 @@ const app = createApp(document.getElementById('app'), save,
 
 // 전투·소환 연출(Phaser)은 처음 쓸 때 불러온다
 app.startBattle = async stageId => (await import('./game/phaser.js')).startBattle(app, stageId);
-app.startSummon = async results => (await import('./game/phaser.js')).startSummon(app, results);
+app.startSummon = async (results, ticket = false) => (await import('./game/phaser.js')).startSummon(app, results, ticket);
 
 app.show('lobby');
 // 탭을 닫거나 다른 앱으로 갈 때 저장
