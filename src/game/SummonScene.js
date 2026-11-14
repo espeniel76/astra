@@ -223,7 +223,7 @@ export class SummonScene extends Phaser.Scene {
     const line = `“${hero.quote}”`;
     for (let i = 1; i <= line.length && !skip; i++) { quote.setText(line.slice(0, i)); await wait(this, 55); }
     quote.setText(line);
-    await wait(this, skip ? 250 : 700);
+    await wait(this, 2000); // 대사를 다 읽을 수 있게 2초 기다림
 
     // 3) 쾅: 번쩍 + 화면 흔들림
     sfx.play(seven ? 'star7' : 'star6');
