@@ -178,3 +178,7 @@ textarea { width: 100%; min-height: 90px; border-radius: 10px; border: 1px solid
   display: flex; align-items: center; justify-content: center; }
 .hcard2.inteam { box-shadow: 0 0 0 3px var(--good); }
 .hcard2.off { filter: grayscale(0.85) brightness(0.6); }
+
+/* PC처럼 화면이 낮을 때 로비가 한 화면에 들어오게(스크롤로 화면이 움직이지 않게) */
+.town { width: min(100%, calc((100vh - 290px) * 720 / 840)); margin: 0 auto; }
+#stage canvas { margin: 0 !important; }

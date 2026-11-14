@@ -118,8 +118,11 @@ export class SummonScene extends Phaser.Scene {
     this.skipBtn = button(this, W / 2, 1200, 300, 80, '전부 보기', () => { this.skipAll = true; this.skipBtn.setEnabled(false); }, { size: 26, fill: 0x3a3f55 });
     for (let k = 0; k < order.length; k++) {
       const r = order[k];
-      if (r.star >= 5) await this.cutscene(r);
-      await this.flipCard(cards[k], r);
+      if (r.star >= 6) await this.mythicReveal(cards[k], r);
+      else {
+        if (r.star >= 5) await this.cutscene(r);
+        await this.flipCard(cards[k], r);
+      }
       if (!this.skipAll) await wait(this, r.star >= 4 ? 260 : 120);
     }
     this.skipBtn.destroy();
@@ -195,6 +198,107 @@ export class SummonScene extends Phaser.Scene {
     const tag = r.isNew ? 'NEW' : r.overflowGold ? `+🪙${r.overflowGold}` : `+${r.dupes}`;
     c.add(text(this, slot.w / 2 - 22, -slot.h / 2 + 18, tag, big ? 26 : 16, r.isNew ? '#7dff8a' : '#ffd36a').setOrigin(1, 0.5));
     if (!quick) await tween(this, { targets: c, scaleX: 1, duration: 160, ease: 'Back.out' });
+    return c;
+  }
+
+  // ★6 이상 카드: 화면이 까맣게 → 빛나는 흰 글씨로 대사 → 번쩍(번쩍임 설정이 꺼져 있으면 부드러운 빛) + 흔들림
+  // → 어둠이 천천히 걷히며 카드가 뒤집힘 → 카드 주변에 찌릿찌릿 번개(★6 빨강, ★7 금색)
+  async mythicReveal(slot, r) {
+    const hero = HERO[r.id];
+    const seven = r.star >= 7;
+    const col = seven ? 0xffe066 : 0xff3a3a;
+    // 1) 암전: 이 카드만 빼고 까맣게
+    const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
+    slot.back.setDepth(150);
+    const aura = this.add.circle(slot.x, slot.y, Math.max(slot.w, slot.h) * 0.75, col, 0.18).setDepth(149).setAlpha(0);
+    this.tweens.add({ targets: dark, alpha: 0.93, duration: 450 });
+    setBackdrop('#000000', '#000000');
+    this.tweens.add({ targets: aura, alpha: 1, duration: 900 });
+    this.tweens.add({ targets: slot.back, scale: 1.08, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    sfx.play('summon');
+    await wait(this, 500);
+
+    // 2) 빛나는 흰 글씨 대사(한 글자씩). 탭하면 바로 다 나온다.
+    const qy = slot.y > 640 ? 300 : 1000;
+    const quote = text(this, W / 2, qy, '', 40, '#ffffff', { wordWrap: { width: W - 90 }, strokeThickness: 0, fontStyle: 'bold' })
+      .setDepth(160).setShadow(0, 0, '#ffffff', 22, true, true);
+    let skip = false;
+    dark.once('pointerdown', () => { skip = true; });
+    const line = `“${hero.quote}”`;
+    for (let i = 1; i <= line.length && !skip; i++) { quote.setText(line.slice(0, i)); await wait(this, 55); }
+    quote.setText(line);
+    await wait(this, skip ? 250 : 700);
+
+    // 3) 쾅: 번쩍 + 화면 흔들림
+    sfx.play(seven ? 'star7' : 'star6');
+    this.cameras.main.shake(seven ? 900 : 650, this.flash ? 0.02 : 0.012);
+    if (this.flash) {
+      // 번쩍임 효과가 켜져 있을 때만 진짜 점멸(세 번)
+      for (let i = 0; i < 3; i++) {
+        const f = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.9).setDepth(200);
+        await tween(this, { targets: f, alpha: 0, duration: 80 });
+        f.destroy();
+        await wait(this, 60);
+      }
+    } else {
+      // 기본: 깜빡이지 않는 부드러운 빛 한 번(천천히 밝아졌다 천천히 사라짐)
+      const f = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 1).setAlpha(0).setDepth(200);
+      await tween(this, { targets: f, alpha: 0.55, duration: 260, ease: 'Sine.out' });
+      this.tweens.add({ targets: f, alpha: 0, duration: 800, ease: 'Sine.in', onComplete: () => f.destroy() });
+    }
+
+    // 4) 어둠이 천천히 걷히며 카드가 뒤집힌다
+    this.tweens.killTweensOf(slot.back);
+    slot.back.setScale(1);
+    this.tweens.add({ targets: [dark, quote, aura], alpha: 0, duration: 900, onComplete: () => { dark.destroy(); quote.destroy(); aura.destroy(); setBackdrop('#05060f', '#1a1f4a'); } });
+    await wait(this, 250);
+    this.skipAll = false;
+    const card = await this.flipCard(slot, r);
+    card.setDepth(150);
+    await tween(this, { targets: card, scale: 1.18, duration: 160, yoyo: true, ease: 'Quad.out' });
+    card.setDepth(6);
+    // 5) 찌릿찌릿
+    this.crackle(card, slot, col);
+  }
+
+  // 카드 둘레의 번개. 번쩍임이 꺼져 있으면 밝기는 그대로 두고 모양만 천천히 바뀐다.
+  crackle(card, slot, col) {
+    const g = this.add.graphics();
+    card.add(g);
+    const hw = slot.w / 2, hh = slot.h / 2;
+    const edgePoint = () => {
+      const side = Math.floor(Math.random() * 4), t = Math.random() * 2 - 1;
+      return side === 0 ? [t * hw, -hh] : side === 1 ? [hw, t * hh] : side === 2 ? [t * hw, hh] : [-hw, t * hh];
+    };
+    const bolt = (len) => {
+      const [x0, y0] = edgePoint();
+      const ang = Math.atan2(y0, x0) + (Math.random() - 0.5) * 1.2;
+      const pts = [[x0, y0]];
+      let x = x0, y = y0;
+      for (let i = 0; i < 5; i++) {
+        x += Math.cos(ang) * (len / 5) + (Math.random() - 0.5) * 14;
+        y += Math.sin(ang) * (len / 5) + (Math.random() - 0.5) * 14;
+        pts.push([x, y]);
+      }
+      return pts;
+    };
+    const draw = () => {
+      g.clear();
+      const n = 4 + Math.floor(Math.random() * 3);
+      for (let k = 0; k < n; k++) {
+        const pts = bolt(slot.w * (0.25 + Math.random() * 0.25));
+        for (const [w, c, a] of [[7, col, 0.35], [3.5, col, 0.95], [1.4, 0xffffff, 1]]) {
+          g.lineStyle(w, c, a);
+          g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+          for (const [px, py] of pts.slice(1)) g.lineTo(px, py);
+          g.strokePath();
+        }
+      }
+      g.lineStyle(4, col, 0.9).strokeRoundedRect(-hw, -hh, slot.w, slot.h, 16);
+      if (this.flash) g.setAlpha(0.55 + Math.random() * 0.45);
+    };
+    draw();
+    this.time.addEvent({ delay: this.flash ? 80 : 420, loop: true, callback: draw });
   }
 
   whiteFlash() {

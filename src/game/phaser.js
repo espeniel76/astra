@@ -8,7 +8,7 @@ const stage = () => document.getElementById('stage');
 
 // 휴대폰이 게임 비율보다 길면 위아래가 남는다. 그 자리를 장면 색으로 채워 검은 띠가 안 보이게.
 export function setBackdrop(top, bottom = top) {
-  stage().style.background = `linear-gradient(${top} 0 50%, ${bottom} 50% 100%)`;
+  stage().style.background = `linear-gradient(${top}, ${bottom})`;
 }
 
 function ensureGame() {
@@ -20,7 +20,8 @@ function ensureGame() {
       width: 720,
       height: 1280,
       backgroundColor: '#0d1020',
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+      // 가운데 맞춤은 #stage(flex)가 한다. Phaser도 맞추면 PC에서 두 번 밀려 오른쪽으로 치우친다.
+      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.NO_CENTER },
       render: { antialias: true },
       callbacks: { postBoot: () => resolve(game) },
     });
