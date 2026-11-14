@@ -1,5 +1,5 @@
 import { h } from '../app.js';
-import { exportCode, importCode } from '../../core/save.js';
+import { exportCode, importCode, defaultSave } from '../../core/save.js';
 import { sfx } from '../../core/sfx.js';
 
 export function render(root, app) {
@@ -37,7 +37,14 @@ export function render(root, app) {
             h('div.row', h('button.btn.ghost.grow', { onclick: close }, '취소'),
               h('button.btn.grow', { onclick: () => { app.save = s; app.persist(); close(); app.toast('불러왔어요!'); app.show('lobby'); } }, '바꾸기'))));
         } }, '불러오기')),
-      h('div.center.dim', { style: 'font-size:12px;margin-top:8px' }, '아스트라 v0.1'),
+      h('button.btn.ghost', { style: 'margin-top:6px', onclick: () => app.modal(close => h('div.col',
+        h('b', '처음부터 다시 할까요?'),
+        h('div.dim', { style: 'font-size:14px' }, '영웅, 다이아, 별이 전부 사라지고 처음 선물(★4 확정 소환권)부터 다시 시작해요. 되돌릴 수 없어요!'),
+        h('div.row', h('button.btn.ghost.grow', { onclick: close }, '취소'),
+          h('button.btn.grow', { style: 'background:linear-gradient(#ff7a7a,#d84a4a);box-shadow:0 4px 0 #8a2a2a', onclick: () => {
+            app.save = defaultSave(); app.persist(); close(); app.toast('새로 시작해요!'); app.show('lobby');
+          } }, '다시 시작')))) }, '처음부터 다시 하기'),
+      h('div.center.dim', { style: 'font-size:12px;margin-top:8px' }, '아스트라 v0.2'),
     ),
   );
 }

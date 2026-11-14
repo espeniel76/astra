@@ -91,3 +91,13 @@ describe('v2 저장', () => {
     expect(s.tickets.star4).toBe(2);
   });
 });
+
+describe('v2 별 상자 저장', () => {
+  it('받은 별 상자는 다시 불러와도 받은 걸로 남는다', () => {
+    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 2, starChests: ['1-10', '2-20', 'x'] }) }));
+    expect(s.starChests).toEqual(['1-10', '2-20']);
+  });
+  it('천장 카운트는 299를 넘지 않는다', () => {
+    expect(loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 2, pity: 900 }) })).pity).toBe(299);
+  });
+});

@@ -282,7 +282,8 @@ export class SummonScene extends Phaser.Scene {
     const s = this.app.save;
     if (this.ticket) {
       // 시작 선물: 편성에 넣어 줬으니 바로 마을로 돌아가 첫 모험으로
-      text(this, W / 2, 1090, '편성에 넣어 뒀어요! 이제 첫 모험을 떠나요', 28, '#ffe9a0');
+      const inTeam = s.team.includes(this.results[0].id);
+      text(this, W / 2, 1090, inTeam ? '편성에 넣어 뒀어요! 이제 첫 모험을 떠나요' : '편성에서 이 영웅을 넣어 보세요!', 28, '#ffe9a0');
       button(this, W / 2, 1200, 420, 96, '좋아요!', () => closeStage(this.app, 'lobby'), { size: 32, fill: 0x3cb94e });
       return;
     }

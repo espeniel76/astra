@@ -149,7 +149,10 @@ export class BattleScene extends Phaser.Scene {
     // 처음 전투: 스킬이 준비되면 "눌러 보세요!" 화살표
     const tips = this.app.save.tips;
     const readyBtn = this.skillBtns.find(sb => sb.u.alive && sb.u.cd === 0 && !sb.u.queued);
-    if (!tips.skill && readyBtn && !this.skillTip && !this.ended) {
+    // 가리키던 영웅이 더는 준비 상태가 아니면(자동·쓰러짐·쿨타임) 말풍선을 치운다
+    if (this.skillTip && (this.settings.auto || !readyBtn || readyBtn.u.slot !== this.skillTipSlot)) { this.skillTip.destroy(); this.skillTip = null; }
+    if (!tips.skill && !this.settings.auto && readyBtn && !this.skillTip && !this.ended) {
+      this.skillTipSlot = readyBtn.u.slot;
       const x = SLOT_X[readyBtn.u.slot];
       this.skillTip = this.add.container(x, 1000).setDepth(50);
       const bubble = this.add.graphics().fillStyle(0xffffff, 1).fillRoundedRect(-110, -34, 220, 56, 16)

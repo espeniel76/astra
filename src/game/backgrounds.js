@@ -232,10 +232,15 @@ function dotTexture(scene) {
 export function addAmbient(scene, kind) {
   if (kind === 'meadow') {
     const key = cloudTexture(scene);
+    // 구름은 오른쪽으로 천천히 흘러가고, 화면을 벗어나면 왼쪽 밖에서 다시 들어온다
+    const clouds = [];
     for (let i = 0; i < 4; i++) {
       const cl = scene.add.image(-200 + i * 260, 60 + (i % 2) * 70 + i * 12, key).setScale(0.8 + (i % 3) * 0.25).setAlpha(0.95);
-      scene.tweens.add({ targets: cl, x: cl.x + 900, duration: 70000 + i * 9000, repeat: -1, onRepeat: () => { cl.x = -260; } });
+      clouds.push({ cl, v: 9 + i * 2 });
     }
+    const move = (t, dt) => { for (const c of clouds) { c.cl.x += (c.v * dt) / 1000; if (c.cl.x > 900) c.cl.x = -260; } };
+    scene.events.on('update', move);
+    scene.events.once('shutdown', () => scene.events.off('update', move));
     return;
   }
   const key = dotTexture(scene);

@@ -146,11 +146,13 @@ function bubble(ctx, x, y, str, t) {
   const bob = Math.sin(t / 500) * 6;
   ctx.font = 'bold 24px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
   const w = ctx.measureText(str).width + 30;
+  const rect = { x0: x - w / 2, x1: x + w / 2, y0: y - 64, y1: y + 10 };
   ctx.save(); ctx.translate(0, bob);
   rr(ctx, x - w / 2, y - 58, w, 46, 14, '#ffffff', '#ffd36a');
   poly(ctx, [[x - 12, y - 13], [x + 12, y - 13], [x, y + 4]], '#ffffff');
   ctx.fillStyle = '#222'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(str, x, y - 35);
   ctx.restore();
+  return rect;
 }
 
 export function startTown(canvas, { heroes = [], badges = {}, hint = null, onBuilding, onHero }) {
@@ -169,7 +171,7 @@ export function startTown(canvas, { heroes = [], badges = {}, hint = null, onBui
   const pickTarget = w => { const a = rng() * Math.PI * 2, r = 0.3 + rng() * 0.7; w.tx = 360 + Math.cos(a) * 240 * r; w.ty = 600 + Math.sin(a) * 75 * r; };
   walkers.forEach(pickTarget);
 
-  let raf = 0, last = performance.now(), alive = true;
+  let raf = 0, last = performance.now(), alive = true, hintRect = null;
   const frame = now => {
     if (!alive) return;
     raf = requestAnimationFrame(frame);
@@ -190,7 +192,7 @@ export function startTown(canvas, { heroes = [], badges = {}, hint = null, onBui
     for (const it of items) it.draw();
     if (hint) {
       const b = BUILDINGS.find(x => x.key === hint.building);
-      if (b) bubble(ctx, b.x, b.key === 'summon' ? b.y - 150 : b.y - b.h + 10, hint.text, now);
+      if (b) hintRect = bubble(ctx, b.x, b.key === 'summon' ? b.y - 150 : b.y - b.h + 10, hint.text, now);
     }
   };
   function stepWalker(w, dt) {
@@ -220,10 +222,12 @@ export function startTown(canvas, { heroes = [], badges = {}, hint = null, onBui
   };
   const onClick = e => {
     const p = toLocal(e);
+    // 안내 말풍선을 누르면 그 건물로
+    if (hintRect && p.x > hintRect.x0 && p.x < hintRect.x1 && p.y > hintRect.y0 && p.y < hintRect.y1) return onBuilding?.(hint.building);
     // 영웅 먼저(앞에 있으니까)
     const w = [...walkers].sort((a, b) => b.y - a.y).find(w => Math.abs(p.x - w.x) < 34 && p.y < w.y + 10 && p.y > w.y - 80);
     if (w) return onHero?.(w.id);
-    const b = [...BUILDINGS].sort((a, c) => c.y - a.y).find(b => p.x > b.x - b.w / 2 && p.x < b.x + b.w / 2 && p.y > b.y - b.h && p.y < b.y + 44);
+    const b = [...BUILDINGS].sort((a, c) => c.y - a.y).find(b => p.x > b.x - b.w / 2 - 10 && p.x < b.x + b.w / 2 + 10 && p.y > b.y - b.h - 40 && p.y < b.y + 46);
     if (b) onBuilding?.(b.key);
   };
   canvas.addEventListener('click', onClick);

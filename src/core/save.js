@@ -39,7 +39,7 @@ export function normalize(raw) {
   const s = d;
   s.diamonds = num(raw.diamonds, d.diamonds);
   s.gold = num(raw.gold, d.gold);
-  s.pity = num(raw.pity, 0, 0, 1000);
+  s.pity = num(raw.pity, 0, 0, 299); // 천장 300번째가 확정이므로 299가 최대
   if (isObj(raw.heroes)) {
     for (const [id, h] of Object.entries(raw.heroes)) {
       if (!HERO[id] || !isObj(h)) continue;
@@ -62,7 +62,7 @@ export function normalize(raw) {
     for (const id of raw.cleared) if (STAGE[id]) s.stars[id] = 1;
   }
   s.cleared = STAGES.filter(st => s.stars[st.id]).map(st => st.id);
-  if (Array.isArray(raw.starChests)) s.starChests = [...new Set(raw.starChests.filter(x => typeof x === 'string' && /^d-d+$/.test(x)))];
+  if (Array.isArray(raw.starChests)) s.starChests = [...new Set(raw.starChests.filter(x => typeof x === 'string' && /^\d+-\d+$/.test(x)))];
   s.tickets.star4 = isObj(raw.tickets) ? num(raw.tickets.star4, 0, 0, 99) : 0;
   if (isObj(raw.daily)) {
     s.daily.date = typeof raw.daily.date === 'string' ? raw.daily.date : '';
