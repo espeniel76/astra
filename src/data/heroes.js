@@ -10,12 +10,16 @@ const ROLE = {
   support: { hp: 1.1, atk: 0.8, def: 1.1, spd: 100 },
 };
 
+// 별 배율: ★6은 ★5의 3배, ★7은 ★6의 2배. 방어는 너무 단단해지지 않게 0.7제곱만.
+export const STAR_MULT = [0, 1, 1.3, 1.7, 2.2, 2.9, 8.7, 17.4];
+
 function base(star, role, spdAdj = 0) {
   const r = ROLE[role];
+  const m = STAR_MULT[star];
   return {
-    hp: Math.round(260 * 1.32 ** (star - 1) * r.hp),
-    atk: Math.round(36 * 1.32 ** (star - 1) * r.atk),
-    def: Math.round(8 * 1.3 ** (star - 1) * r.def),
+    hp: Math.round(260 * m * r.hp),
+    atk: Math.round(36 * m * r.atk),
+    def: Math.round(8 * m ** 0.7 * r.def),
     spd: r.spd + spdAdj,
   };
 }

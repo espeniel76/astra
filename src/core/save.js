@@ -2,9 +2,10 @@
 // 나중에 서버(대전)로 옮기기 쉽게 단순한 JSON 모양을 유지한다.
 import { HERO } from '../data/heroes.js';
 import { STAGE } from '../data/stages.js';
-import { MAX_LEVEL, DUPE_MAX } from './progress.js';
+import { maxLevel, DUPE_MAX } from './progress.js';
+import { STAGES } from '../data/stages.js';
 
-export const VERSION = 1;
+export const VERSION = 2;
 const TEST = typeof location !== 'undefined' && /[?&]test\b/.test(location.search);
 export const SAVE_KEY = TEST ? 'astra.save.test' : 'astra.save';
 // 테스트판(?test) 코드는 진짜 게임에 못 들어오게 머리말을 다르게 한다
@@ -18,6 +19,9 @@ export function defaultSave() {
     heroes: {},
     team: [null, null, null],
     cleared: [],
+    stars: {}, // 스테이지별 최고 별(1~3)
+    starChests: [], // 받은 별 상자 id(예: '1-10')
+    tickets: { star4: 1 }, // 처음 시작 선물: ★4 확정 소환권
     pity: 0,
     daily: { date: '', progress: { battle: 0, summon: 0, levelup: 0 }, claimed: [] },
     settings: { flash: false, sound: true, auto: false, speed: 1 },
@@ -39,7 +43,7 @@ export function normalize(raw) {
   if (isObj(raw.heroes)) {
     for (const [id, h] of Object.entries(raw.heroes)) {
       if (!HERO[id] || !isObj(h)) continue;
-      s.heroes[id] = { level: num(h.level, 1, 1, MAX_LEVEL), dupes: num(h.dupes, 0, 0, DUPE_MAX) };
+      s.heroes[id] = { level: num(h.level, 1, 1, maxLevel(id)), dupes: num(h.dupes, 0, 0, DUPE_MAX) };
     }
   }
   if (Array.isArray(raw.team)) {
@@ -51,7 +55,15 @@ export function normalize(raw) {
       return id;
     });
   }
-  if (Array.isArray(raw.cleared)) s.cleared = [...new Set(raw.cleared.filter(id => STAGE[id]))];
+  // 별 기록(v2). 옛 v1 저장은 깬 스테이지를 별 1개로 인정한다.
+  if (isObj(raw.stars)) {
+    for (const [id, n] of Object.entries(raw.stars)) if (STAGE[id] && Number.isFinite(n) && n >= 1) s.stars[id] = Math.min(3, Math.floor(n));
+  } else if (Array.isArray(raw.cleared)) {
+    for (const id of raw.cleared) if (STAGE[id]) s.stars[id] = 1;
+  }
+  s.cleared = STAGES.filter(st => s.stars[st.id]).map(st => st.id);
+  if (Array.isArray(raw.starChests)) s.starChests = [...new Set(raw.starChests.filter(x => typeof x === 'string' && /^d-d+$/.test(x)))];
+  s.tickets.star4 = isObj(raw.tickets) ? num(raw.tickets.star4, 0, 0, 99) : 0;
   if (isObj(raw.daily)) {
     s.daily.date = typeof raw.daily.date === 'string' ? raw.daily.date : '';
     if (isObj(raw.daily.progress)) for (const k of Object.keys(s.daily.progress)) s.daily.progress[k] = num(raw.daily.progress[k], 0);
@@ -92,7 +104,7 @@ export function importCode(code, test = TEST) {
   try {
     const bin = atob(c.slice(prefix.length));
     const raw = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))));
-    if (!isObj(raw) || raw.version !== VERSION) return null;
+    if (!isObj(raw) || !(raw.version >= 1 && raw.version <= VERSION)) return null;
     return normalize(raw);
   } catch {
     return null;

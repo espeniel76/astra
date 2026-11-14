@@ -38,12 +38,47 @@ describe('레벨업', () => {
     expect(s.heroes.slinger.level).toBe(2);
   });
   it('최대 레벨이면 더 안 오른다', () => {
-    const s = mkSave(1e9, { slinger: { level: MAX_LEVEL, dupes: 0 } });
+    const s = mkSave(1e9, { slinger: { level: 10, dupes: 0 } });
     expect(levelUp(s, 'slinger')).toEqual({ ok: false, reason: 'max' });
-    expect(MAX_LEVEL).toBe(30);
+    expect(MAX_LEVEL).toBe(50);
     expect(DUPE_MAX).toBe(5);
   });
   it('없는 영웅은 레벨업 불가', () => {
     expect(levelUp(mkSave(1e9, {}), 'slinger').ok).toBe(false);
+  });
+});
+
+import { STAR_MULT, MAX_LEVEL_BY_STAR, maxLevel, power, teamPower } from '../src/core/progress.js';
+import { HEROES } from '../src/data/heroes.js';
+
+describe('v2: 높은 별은 진짜 세다', () => {
+  const byStarRole = (star, role) => HEROES.find(h => h.star === star && h.role === role);
+  it('별 배율과 최대 레벨', () => {
+    expect(STAR_MULT.slice(1)).toEqual([1, 1.3, 1.7, 2.2, 2.9, 8.7, 17.4]);
+    expect(MAX_LEVEL_BY_STAR.slice(1)).toEqual([10, 15, 20, 25, 30, 40, 50]);
+    expect(maxLevel('slinger')).toBe(10);
+    expect(maxLevel('guardian')).toBe(50);
+  });
+  it('★6은 같은 역할 ★5의 3배, ★7은 ★6 탱커의 2배', () => {
+    const a5 = heroStats(byStarRole(5, 'dps').id).atk, a6 = heroStats(byStarRole(6, 'dps').id).atk;
+    expect(Math.abs(a6 - 3 * a5)).toBeLessThanOrEqual(2);
+    const t6 = heroStats(byStarRole(6, 'tank').id).hp, t7 = heroStats('guardian').hp;
+    expect(Math.abs(t7 - 2 * t6)).toBeLessThanOrEqual(2);
+  });
+  it('꽉 채운 ★1도 막 뽑은 ★6보다 약하다', () => {
+    for (const one of HEROES.filter(h => h.star === 1)) for (const six of HEROES.filter(h => h.star === 6)) {
+      expect(heroStats(one.id, maxLevel(one.id), 5).atk).toBeLessThan(heroStats(six.id, 1, 0).atk);
+    }
+  });
+  it('레벨업은 별마다 최대 레벨에서 멈춘다', () => {
+    const s = mkSave(1e9, { slinger: { level: 10, dupes: 0 } });
+    expect(levelUp(s, 'slinger')).toEqual({ ok: false, reason: 'max' });
+  });
+  it('전투력', () => {
+    const st = heroStats('executioner', 3, 1);
+    expect(power('executioner', 3, 1)).toBe(Math.round(st.hp * 0.2 + st.atk * 3 + st.def * 2));
+    const s = mkSave(0, { slinger: { level: 2, dupes: 0 }, herbalist: { level: 1, dupes: 0 } });
+    s.team = ['slinger', null, 'herbalist'];
+    expect(teamPower(s)).toBe(power('slinger', 2, 0) + power('herbalist', 1, 0));
   });
 });

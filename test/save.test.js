@@ -69,3 +69,25 @@ describe('테스트판 코드', () => {
     expect(importCode(code, true)).not.toBe(null);
   });
 });
+
+describe('v2 저장', () => {
+  it('새 저장에는 ★4 확정 소환권 1장, 별 기록은 비어 있다', () => {
+    const s = defaultSave();
+    expect(s.tickets.star4).toBe(1);
+    expect(s.stars).toEqual({});
+    expect(s.starChests).toEqual([]);
+  });
+  it('옛 v1 저장: 레벨은 별 최대로, 깬 스테이지는 별 1개, 소환권은 없음', () => {
+    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 1, heroes: { slinger: { level: 30, dupes: 0 } }, cleared: ['1-1', '1-2'], pity: 49 }) }));
+    expect(s.heroes.slinger.level).toBe(10);
+    expect(s.stars).toEqual({ '1-1': 1, '1-2': 1 });
+    expect(s.tickets.star4).toBe(0);
+    expect(s.pity).toBe(49);
+  });
+  it('별 기록은 0~3으로 고친다', () => {
+    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 2, stars: { '1-1': 9, '1-2': -1, '9-9': 3 }, tickets: { star4: 2 } }) }));
+    expect(s.stars).toEqual({ '1-1': 3 });
+    expect(s.cleared).toEqual(['1-1']);
+    expect(s.tickets.star4).toBe(2);
+  });
+});

@@ -1,7 +1,7 @@
 import { h, stars, fmt } from '../app.js';
 import { HERO, STAR_COLOR, ROLE_NAME } from '../../data/heroes.js';
 import { heroCanvas } from '../../render/portrait.js';
-import { heroStats, levelCost, levelUp, MAX_LEVEL, DUPE_MAX } from '../../core/progress.js';
+import { heroStats, levelCost, levelUp, maxLevel, power, DUPE_MAX } from '../../core/progress.js';
 import { bump } from '../../core/daily.js';
 import { sfx } from '../../core/sfx.js';
 
@@ -14,7 +14,7 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
     return;
   }
   const st = heroStats(id, own.level, own.dupes);
-  const maxed = own.level >= MAX_LEVEL;
+  const maxed = own.level >= maxLevel(id);
   const cost = levelCost(own.level);
   const stat = (label, v) => h('div', h('b' + (pop ? '.pop' : ''), fmt(v)), h('span', label));
   root.append(
@@ -22,7 +22,7 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
     h('div.detail-art', heroCanvas(id, 260)),
     h('div.center', stars(hero.star), ' ', h('span.dim', ROLE_NAME[hero.role])),
     h('div.center', { style: 'font-size:22px;font-weight:900;margin:4px 0' },
-      h('span' + (pop ? '.pop' : ''), `Lv ${own.level}`),
+      h('span' + (pop ? '.pop' : ''), `Lv ${own.level}`), h('span.dim', { style: 'font-size:15px' }, ` / ${maxLevel(id)}`),
       own.dupes ? h('span', { style: 'color:var(--gold);margin-left:8px' }, `+${own.dupes}`) : null),
     h('p.quote', `“${hero.quote}”`),
     h('div.stat', stat('체력', st.hp), stat('공격', st.atk), stat('방어', st.def), stat('속도', st.spd)),
