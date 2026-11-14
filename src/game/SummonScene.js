@@ -80,10 +80,10 @@ export class SummonScene extends Phaser.Scene {
     inner.lineStyle(3, color, 0.8).strokeCircle(0, 0, 90);
     const glowFloor = this.add.circle(0, 0, 240, color, 0.18);
     circle.add([glowFloor, outer, inner]);
-    this.tweens.add({ targets: circle, alpha: 1, scaleX: 1.35, scaleY: 0.45, duration: 700, ease: 'Cubic.out' });
+    this.tweens.add({ targets: circle, alpha: 1, scaleX: 1.35, scaleY: 0.45, duration: 1200, ease: 'Cubic.out' });
     this.tweens.add({ targets: outer, angle: 360, duration: 14000, repeat: -1 });
     this.tweens.add({ targets: inner, angle: -360, duration: 9000, repeat: -1 });
-    await this.tapOrWait(750);
+    await this.tapOrWait(1400);
 
     // 2) 빛기둥이 솟고 3) 빛 알갱이가 빨려 들어온다
     // 빛기둥: 가운데가 하얗고 가장자리·위쪽으로 갈수록 부드럽게 사라지는 그림
@@ -91,7 +91,7 @@ export class SummonScene extends Phaser.Scene {
     pillar.setScale(0, 1);
     const pw = { w: 0 };
     const drawPillar = w => pillar.setScale(w / 128, 1);
-    this.tweens.add({ targets: pw, w: big ? 260 : 190, duration: 700, ease: 'Cubic.out', onUpdate: () => drawPillar(pw.w) });
+    this.tweens.add({ targets: pw, w: big ? 260 : 190, duration: 1100, ease: 'Cubic.out', onUpdate: () => drawPillar(pw.w) });
     const motes = this.add.particles(W / 2, 560, 'dot', {
       emitZone: { type: 'random', source: new Phaser.Geom.Circle(0, 0, 440) },
       moveToX: W / 2, moveToY: 600, lifespan: 1100, scale: { start: 0.9, end: 0.2 }, alpha: { start: 0.9, end: 0.2 },
@@ -100,7 +100,7 @@ export class SummonScene extends Phaser.Scene {
     if (top >= 7) { // ★7: 금빛 가루가 더 많이, 더 길게
       motes.setFrequency(15);
     }
-    await this.tapOrWait(big ? 2000 : 1300);
+    await this.tapOrWait(big ? 3000 : 2000);
     motes.stop();
     if (this.flash && big) this.whiteFlash();
 
@@ -109,10 +109,10 @@ export class SummonScene extends Phaser.Scene {
     const cards = this.layoutCards(res.length);
     await Promise.all(cards.map((slot, k) => {
       slot.back.setPosition(W / 2, 600).setScale(0.15).setAngle(-30 + k * 6);
-      return tween(this, { targets: slot.back, x: slot.x, y: slot.y, scale: 1, angle: 0, delay: k * 60, duration: 420, ease: 'Back.out' });
+      return tween(this, { targets: slot.back, x: slot.x, y: slot.y, scale: 1, angle: 0, delay: k * 110, duration: 650, ease: 'Back.out' });
     }));
-    this.tweens.add({ targets: [circle], alpha: 0.35, duration: 500 });
-    this.tweens.add({ targets: pw, w: 0, duration: 500, onUpdate: () => drawPillar(pw.w) });
+    this.tweens.add({ targets: [circle], alpha: 0.35, duration: 800 });
+    this.tweens.add({ targets: pw, w: 0, duration: 800, onUpdate: () => drawPillar(pw.w) });
 
     // 5) 낮은 별부터 뒤집는다
     this.skipBtn = button(this, W / 2, 1200, 300, 80, '전부 보기', () => { this.skipAll = true; this.skipBtn.setEnabled(false); }, { size: 26, fill: 0x3a3f55 });
@@ -123,10 +123,10 @@ export class SummonScene extends Phaser.Scene {
         if (r.star >= 5) await this.cutscene(r);
         await this.flipCard(cards[k], r);
       }
-      if (!this.skipAll) await wait(this, r.star >= 4 ? 260 : 120);
+      if (!this.skipAll) await wait(this, r.star >= 4 ? 500 : 280);
     }
     this.skipBtn.destroy();
-    await wait(this, 300);
+    await wait(this, 600);
     this.showEnd();
   }
 
@@ -172,7 +172,7 @@ export class SummonScene extends Phaser.Scene {
   async flipCard(slot, r) {
     const quick = this.skipAll;
     // 뒷면이 옆으로 돌아 사라지고
-    if (!quick) await tween(this, { targets: slot.back, scaleX: 0, duration: 110, ease: 'Quad.in' });
+    if (!quick) await tween(this, { targets: slot.back, scaleX: 0, duration: 220, ease: 'Quad.in' });
     slot.back.destroy();
     sfx.play('reveal');
     const c = this.add.container(slot.x, slot.y).setScale(quick ? 1 : 0, 1).setDepth(6);
@@ -197,7 +197,7 @@ export class SummonScene extends Phaser.Scene {
     c.add([g, img, name, st]);
     const tag = r.isNew ? 'NEW' : r.overflowGold ? `+🪙${r.overflowGold}` : `+${r.dupes}`;
     c.add(text(this, slot.w / 2 - 22, -slot.h / 2 + 18, tag, big ? 26 : 16, r.isNew ? '#7dff8a' : '#ffd36a').setOrigin(1, 0.5));
-    if (!quick) await tween(this, { targets: c, scaleX: 1, duration: 160, ease: 'Back.out' });
+    if (!quick) await tween(this, { targets: c, scaleX: 1, duration: 300, ease: 'Back.out' });
     return c;
   }
 
@@ -209,10 +209,10 @@ export class SummonScene extends Phaser.Scene {
     const col = seven ? 0xffe066 : 0xff3a3a;
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
-    this.tweens.add({ targets: dark, alpha: 1, duration: 450 }); // 화면 전체 암전(카드도 안 보임)
+    this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
     setBackdrop('#000000', '#000000');
     sfx.play('summon');
-    await wait(this, 500);
+    await wait(this, 1000);
 
     // 2) 빛나는 흰 글씨 대사(한 글자씩). 탭하면 바로 다 나온다.
     const qy = H / 2; // 화면 정가운데
@@ -221,7 +221,7 @@ export class SummonScene extends Phaser.Scene {
     let skip = false;
     dark.once('pointerdown', () => { skip = true; });
     const line = `“${hero.quote}”`;
-    for (let i = 1; i <= line.length && !skip; i++) { quote.setText(line.slice(0, i)); await wait(this, 55); }
+    for (let i = 1; i <= line.length && !skip; i++) { quote.setText(line.slice(0, i)); await wait(this, 85); }
     quote.setText(line);
     await wait(this, 2000); // 대사를 다 읽을 수 있게 2초 기다림
 
@@ -246,18 +246,18 @@ export class SummonScene extends Phaser.Scene {
       // 기본: 깜빡이지 않는 부드러운 빛 한 번(천천히 밝아졌다 천천히 사라짐)
       const f = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 1).setAlpha(0).setDepth(200);
       await tween(this, { targets: f, alpha: 0.55, duration: 260, ease: 'Sine.out' });
-      this.tweens.add({ targets: f, alpha: 0, duration: 800, ease: 'Sine.in', onComplete: () => f.destroy() });
+      this.tweens.add({ targets: f, alpha: 0, duration: 1200, ease: 'Sine.in', onComplete: () => f.destroy() });
     }
 
     // 4) 어둠이 천천히 걷히며 카드가 뒤집힌다
 
 
-    this.tweens.add({ targets: [dark, quote], alpha: 0, duration: 900, onComplete: () => { dark.destroy(); quote.destroy(); setBackdrop('#05060f', '#1a1f4a'); } });
-    await wait(this, 250);
+    this.tweens.add({ targets: [dark, quote], alpha: 0, duration: 1500, onComplete: () => { dark.destroy(); quote.destroy(); setBackdrop('#05060f', '#1a1f4a'); } });
+    await wait(this, 500);
     this.skipAll = false;
     const card = await this.flipCard(slot, r);
     card.setDepth(150);
-    await tween(this, { targets: card, scale: 1.18, duration: 160, yoyo: true, ease: 'Quad.out' });
+    await tween(this, { targets: card, scale: 1.18, duration: 300, yoyo: true, ease: 'Quad.out' });
     card.setDepth(6);
     // 5) 찌릿찌릿
     this.crackle(card, slot, col);
@@ -281,7 +281,7 @@ export class SummonScene extends Phaser.Scene {
     // 1) 금빛 선
     const seam = this.add.rectangle(W / 2, cy, 4, 4, GOLD, 1);
     layer.add(seam);
-    await tween(this, { targets: seam, width: W, duration: 500, ease: 'Cubic.out' });
+    await tween(this, { targets: seam, width: W, duration: 900, ease: 'Cubic.out' });
     // 2) 하늘이 열린다(금빛 그라데이션이 위아래로 벌어짐)
     const sky = this.add.graphics();
     const drawSky = h => {
@@ -291,7 +291,7 @@ export class SummonScene extends Phaser.Scene {
     };
     layer.addAt(sky, 1);
     const open = { h: 0 };
-    await tween(this, { targets: open, h: H / 2 + 60, duration: 1100, ease: 'Sine.inOut', onUpdate: () => drawSky(open.h) });
+    await tween(this, { targets: open, h: H / 2 + 60, duration: 1800, ease: 'Sine.inOut', onUpdate: () => drawSky(open.h) });
     setBackdrop('#fff6c8', '#fff6c8');
     this.tweens.add({ targets: seam, alpha: 0, duration: 400 });
     if (!skipped) sfx.play('star7');
@@ -306,12 +306,12 @@ export class SummonScene extends Phaser.Scene {
     }
     rays.setAlpha(0);
     layer.add(rays);
-    this.tweens.add({ targets: rays, alpha: 1, duration: 900 });
+    this.tweens.add({ targets: rays, alpha: 1, duration: 1400 });
     this.tweens.add({ targets: rays, angle: 360, duration: 24000, repeat: -1 });
     for (let i = 0; i < 3; i++) {
       const ring = this.add.circle(W / 2, cy, 120 + i * 70).setStrokeStyle(6 - i, 0xffffff, 0.75 - i * 0.18).setScale(0.4).setAlpha(0);
       layer.add(ring);
-      this.tweens.add({ targets: ring, scale: 1, alpha: 1, duration: 1200, delay: i * 250, ease: 'Cubic.out' });
+      this.tweens.add({ targets: ring, scale: 1, alpha: 1, duration: 1800, delay: i * 400, ease: 'Cubic.out' });
     }
     const feathers = this.add.particles(0, 0, 'dot', {
       x: { min: 0, max: W }, y: -30, lifespan: 5000, speedY: { min: 70, max: 140 }, speedX: { min: -30, max: 30 },
@@ -323,7 +323,7 @@ export class SummonScene extends Phaser.Scene {
     // 4) 수호신이 내려온다
     const img = this.add.image(W / 2, -260, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.6);
     layer.add(img);
-    await tween(this, { targets: img, y: cy + 200, duration: skipped ? 1 : 1700, ease: 'Sine.out' });
+    await tween(this, { targets: img, y: cy + 200, duration: skipped ? 1 : 2700, ease: 'Sine.out' });
     this.cameras.main.shake(500, this.flash ? 0.018 : 0.01);
     const dust = this.add.ellipse(W / 2, cy + 205, 80, 20, 0xffffff, 0.8);
     layer.addAt(dust, layer.getIndex(img));
@@ -343,10 +343,10 @@ export class SummonScene extends Phaser.Scene {
       g.lineStyle(3, 0x8a6410, 1).strokeTriangle(-13, -10, 13, -10, 0, -52);
       sp.add(g);
       spears.add(sp);
-      this.tweens.add({ targets: sp, x: Math.cos(a) * 310, y: Math.sin(a) * 310, duration: skipped ? 1 : 650, delay: skipped ? 0 : i * 140, ease: 'Back.out' });
+      this.tweens.add({ targets: sp, x: Math.cos(a) * 310, y: Math.sin(a) * 310, duration: skipped ? 1 : 900, delay: skipped ? 0 : i * 240, ease: 'Back.out' });
     }
     this.tweens.add({ targets: spears, angle: 360, duration: 16000, repeat: -1 });
-    await pause(1000);
+    await pause(1800);
 
     // 6) 이름 + 별 일곱 + ETERNAL
     const name = text(this, W / 2, H - 250, '', 54, '#fff6c8', { stroke: '#6a4a00', strokeThickness: 8 });
@@ -354,15 +354,15 @@ export class SummonScene extends Phaser.Scene {
     const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#ffffff', { stroke: '#8a6410', strokeThickness: 6 }).setAlpha(0).setScale(1.6);
     layer.add([name, stars, eternal]);
     this.tweens.add({ targets: eternal, alpha: 1, scale: 1, duration: 700, ease: 'Back.out' });
-    for (let i = 1; i <= hero.name.length && !skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 80); }
+    for (let i = 1; i <= hero.name.length && !skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 120); }
     name.setText(hero.name);
-    for (let i = 1; i <= 7 && !skipped; i++) { stars.setText('★'.repeat(i)); await wait(this, 110); }
+    for (let i = 1; i <= 7 && !skipped; i++) { stars.setText('★'.repeat(i)); await wait(this, 170); }
     stars.setText('★'.repeat(7));
-    await pause(2500);
+    await pause(3500);
 
     // 끝: 천천히 사라지고 원래 연출(쾅 → 카드 뒤집기)로
     feathers.stop();
-    await tween(this, { targets: layer, alpha: 0, duration: 600 });
+    await tween(this, { targets: layer, alpha: 0, duration: 1000 });
     layer.destroy();
   }
 
@@ -419,7 +419,7 @@ export class SummonScene extends Phaser.Scene {
     const layer = this.add.container(0, 0).setDepth(150);
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0).setInteractive();
     layer.add(dark);
-    this.tweens.add({ targets: dark, fillAlpha: 0.9, duration: 300 });
+    this.tweens.add({ targets: dark, fillAlpha: 0.9, duration: 600 });
     sfx.play(seven ? 'star7' : 'star6');
 
     // 빛줄기: 천천히 돌며 밝아진다
@@ -432,7 +432,7 @@ export class SummonScene extends Phaser.Scene {
     }
     beams.setAlpha(0);
     layer.add(beams);
-    this.tweens.add({ targets: beams, alpha: 1, duration: 700 });
+    this.tweens.add({ targets: beams, alpha: 1, duration: 1100 });
     this.tweens.add({ targets: beams, angle: 30, duration: seven ? 6000 : 4000 });
 
     // ★7: 금빛 가루가 천천히 떨어진다
@@ -447,7 +447,7 @@ export class SummonScene extends Phaser.Scene {
     const img = this.add.image(W / 2, 1400, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.6);
     layer.add(img);
     if (this.flash) this.time.delayedCall(500, () => this.whiteFlash());
-    this.tweens.add({ targets: img, y: 760, scale: seven ? 3.2 : 2.8, duration: 800, delay: 300, ease: 'Back.out' });
+    this.tweens.add({ targets: img, y: 760, scale: seven ? 3.2 : 2.8, duration: 1300, delay: 500, ease: 'Back.out' });
 
     const name = text(this, W / 2, 860, '', 60, '#ffffff');
     const stars = text(this, W / 2, 940, '', 44, STAR_COLOR[r.star]);
@@ -457,11 +457,11 @@ export class SummonScene extends Phaser.Scene {
       const nw = text(this, W - 110, 200, 'NEW!', 54, '#7dff8a');
       nw.setAngle(12).setAlpha(0);
       layer.add(nw);
-      this.tweens.add({ targets: nw, alpha: 1, scale: { from: 1.6, to: 1 }, duration: 400, delay: 1100, ease: 'Back.out' });
+      this.tweens.add({ targets: nw, alpha: 1, scale: { from: 1.6, to: 1 }, duration: 400, delay: 1800, ease: 'Back.out' });
     } else {
       const dp = text(this, W - 120, 200, r.overflowGold ? `+🪙${r.overflowGold}` : `+${r.dupes}`, 46, '#ffd36a');
       layer.add(dp.setAlpha(0));
-      this.tweens.add({ targets: dp, alpha: 1, duration: 400, delay: 1100 });
+      this.tweens.add({ targets: dp, alpha: 1, duration: 400, delay: 1800 });
     }
 
     let skipped = false;
@@ -471,19 +471,19 @@ export class SummonScene extends Phaser.Scene {
       for (let i = 1; i <= str.length && !skipped; i++) { obj.setText(str.slice(0, i)); await wait(this, each); }
       obj.setText(str);
     };
-    await wait(this, 900);
-    if (!skipped) await type(name, hero.name, 70);
-    if (!skipped) await type(stars, '★'.repeat(r.star), 90);
-    if (!skipped) await type(quote, `“${hero.quote}”`, 35);
+    await wait(this, 1500);
+    if (!skipped) await type(name, hero.name, 110);
+    if (!skipped) await type(stars, '★'.repeat(r.star), 140);
+    if (!skipped) await type(quote, `“${hero.quote}”`, 60);
     name.setText(hero.name); stars.setText('★'.repeat(r.star)); quote.setText(`“${hero.quote}”`);
-    const hold = seven ? 2200 : 1200;
+    const hold = seven ? 3200 : 2200;
     for (let t = 0; t < hold && !skipped; t += 100) await wait(this, 100);
     if (!skipped) {
       const tip = text(this, W / 2, 1200, '눌러서 계속', 26, '#aab0d0');
       layer.add(tip);
       await new Promise(res => { if (skipped) res(); else { dark.removeAllListeners('pointerdown'); dark.once('pointerdown', res); } });
     }
-    await tween(this, { targets: layer, alpha: 0, duration: 250 });
+    await tween(this, { targets: layer, alpha: 0, duration: 500 });
     layer.destroy();
   }
 
