@@ -4,11 +4,11 @@ import { MONSTERS } from '../src/data/monsters.js';
 import { STAGES, STAGE, CHAPTERS } from '../src/data/stages.js';
 
 describe('영웅 데이터', () => {
-  it('영웅은 43명이고 별 분포가 정해진 대로다', () => {
-    expect(HEROES.length).toBe(43);
+  it('영웅은 73명이고 별 분포가 정해진 대로다', () => {
+    expect(HEROES.length).toBe(73);
     const by = {};
     for (const h of HEROES) by[h.star] = (by[h.star] || 0) + 1;
-    expect(by).toEqual({ 1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 22, 7: 1 });
+    expect(by).toEqual({ 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 22, 7: 1 });
   });
   it('id는 겹치지 않는다', () => {
     expect(new Set(HEROES.map(h => h.id)).size).toBe(HEROES.length);

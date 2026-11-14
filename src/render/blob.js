@@ -369,6 +369,72 @@ function fantasyWeapon(ctx, gun, box) {
       for (const x of [9, 14]) { ctx.beginPath(); ctx.moveTo(x, -12); ctx.quadraticCurveTo(x + 2, 0, x, 12); ctx.stroke(); }
       for (const [x, y] of [[8, -10], [17, 6]]) { ctx.beginPath(); ctx.ellipse(x, y, 4, 2.4, 0.5, 0, Math.PI * 2); fillStroke(ctx, '#6acf4a', 1); }
       break;
+    // ── 영웅 늘리기(2026-11-14) ──
+    case 'pickaxe': // 광부 곡괭이
+      stick(ctx, -4, 22);
+      ctx.beginPath(); ctx.moveTo(14, -12); ctx.quadraticCurveTo(24, -4, 22, 0); ctx.quadraticCurveTo(24, 4, 14, 12); ctx.lineTo(18, 0); ctx.closePath();
+      fillStroke(ctx, '#9aa6b2', 1.6);
+      break;
+    case 'drum': // 작은 북
+      ctx.beginPath(); ctx.ellipse(12, 0, 11, 9, 0, 0, Math.PI * 2); fillStroke(ctx, '#d84a4a');
+      ctx.beginPath(); ctx.ellipse(12, -6, 11, 4, 0, 0, Math.PI * 2); fillStroke(ctx, '#f4ead2', 1.4);
+      ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1.4;
+      for (const x of [4, 12, 20]) { ctx.beginPath(); ctx.moveTo(x, -3); ctx.lineTo(x + 3, 7); ctx.stroke(); }
+      stick(ctx, 16, 28, '#8a6436', 2.4);
+      break;
+    case 'falcon': // 손에 앉은 매
+      box(2, -3, 10, 6, '#8a6436');
+      ctx.beginPath(); ctx.ellipse(14, -10, 8, 6, -0.3, 0, Math.PI * 2); fillStroke(ctx, '#8a6a4a');
+      ctx.beginPath(); ctx.arc(20, -16, 4.5, 0, Math.PI * 2); fillStroke(ctx, '#f0e6d2', 1.4);
+      poly(ctx, [[24, -17], [28, -15], [24, -14]], '#ffc83d', 1);
+      ctx.beginPath(); ctx.ellipse(10, -12, 9, 4, -0.8, 0, Math.PI * 2); fillStroke(ctx, '#6a4a2a', 1.4);
+      break;
+    case 'potion': // 폭발 물약 병
+      ctx.beginPath(); ctx.arc(14, 2, 8, 0, Math.PI * 2); fillStroke(ctx, '#ff7a3a');
+      box(11, -10, 6, 6, '#9fd4ff');
+      box(10, -13, 8, 4, '#8a6436');
+      glint(ctx, 11, -1, 2);
+      break;
+    case 'flowerstaff': // 꽃 지팡이
+      stick(ctx, -6, 20, '#5f9a3a', 3);
+      for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; circle(ctx, 25 + Math.cos(a) * 5, Math.sin(a) * 5, 3.6, '#ff9ad0', 1); }
+      circle(ctx, 25, 0, 3, '#ffe066', 1);
+      break;
+    case 'bell': // 손종
+      stick(ctx, 2, 10, '#8a6436', 3);
+      ctx.beginPath(); ctx.moveTo(10, -8); ctx.quadraticCurveTo(22, -10, 22, 0); ctx.lineTo(26, 8); ctx.lineTo(6, 8); ctx.lineTo(10, 0); ctx.closePath();
+      fillStroke(ctx, '#e8b923', 1.6);
+      circle(ctx, 16, 9, 2.4, '#8a6410', 1);
+      break;
+    case 'crossbow': // 석궁
+      box(-2, -2.5, 26, 5, '#6b4a26');
+      ctx.strokeStyle = '#5a3a1e'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(22, 0, 12, -1.3, 1.3, true); ctx.stroke();
+      ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(22 + 12 * Math.cos(-1.3), 12 * Math.sin(-1.3)); ctx.lineTo(14, 0); ctx.lineTo(22 + 12 * Math.cos(1.3), 12 * Math.sin(1.3)); ctx.stroke();
+      break;
+    case 'cannon': // 손 대포
+      box(0, -6, 26, 12, '#3a3f45');
+      ctx.beginPath(); ctx.arc(27, 0, 7, 0, Math.PI * 2); fillStroke(ctx, '#2a2e33');
+      ctx.beginPath(); ctx.arc(27, 0, 3.4, 0, Math.PI * 2); ctx.fillStyle = '#111'; ctx.fill();
+      box(4, -9, 6, 3, '#c9a24a'); box(16, -9, 6, 3, '#c9a24a');
+      break;
+    case 'trident': // 삼지창
+      stick(ctx, -8, 24, '#3a8a9a', 3);
+      for (const y of [-7, 0, 7]) { ctx.beginPath(); ctx.moveTo(24, y); ctx.lineTo(34, y); ctx.lineTo(30, y - 2); ctx.stroke(); }
+      ctx.strokeStyle = '#d7f0f4'; ctx.lineWidth = 2.6;
+      for (const y of [-7, 0, 7]) { ctx.beginPath(); ctx.moveTo(24, y); ctx.lineTo(34, y); ctx.stroke(); }
+      box(22, -8, 4, 16, '#9fd4ff');
+      break;
+    case 'greatsword': // 커다란 양손검
+      box(-4, -2.5, 10, 5, '#3a2a3a'); box(5, -7, 3, 14, '#5a5f68');
+      blade(ctx, 8, 34, 7, '#a8b4c0');
+      break;
+    case 'towershield': // 거인 수호자의 큰 방패
+      rr(ctx, 2, -18, 20, 36, 5); fillStroke(ctx, '#b08a4a');
+      rr(ctx, 6, -14, 12, 28, 3); fillStroke(ctx, '#d8b870', 1.4);
+      star(ctx, 12, 0, 5, '#fff3c0');
+      break;
     default: break;
   }
 }

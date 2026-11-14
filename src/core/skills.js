@@ -12,6 +12,7 @@ function targetsFor(b, u, target) {
     case 'one': { const t = pickOne(b, u, foes); return t ? [t] : []; }
     case 'random': return foes.length ? [rand(b, foes)] : [];
     case 'lowest': return foes.length ? [foes.reduce((a, x) => (x.hp / x.maxHp < a.hp / a.maxHp ? x : a))] : [];
+    case 'highest': return foes.length ? [foes.reduce((a, x) => (x.hp > a.hp ? x : a))] : [];
     case 'lowestAlly': return mine.length ? [mine.reduce((a, x) => (x.hp / x.maxHp < a.hp / a.maxHp ? x : a))] : [];
     case 'lastHit': return b.lastHit?.alive ? [b.lastHit] : [];
     default: return [];
