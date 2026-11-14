@@ -252,13 +252,209 @@ function weapon(ctx, gun, medic = false) {
         ctx.beginPath(); ctx.arc(12, -1, 4.5, 0, Math.PI * 2); fillStroke(ctx, '#ffc83d', 1.5);
       }
       break;
+    default: fantasyWeapon(ctx, gun, box); break;
+  }
+}
+
+// ── 아스트라 판타지 무기 (손 기준 좌표: 오른쪽이 앞, y=0 이 손) ──
+function blade(ctx, x0, len, w, c = '#d7dde2') {
+  ctx.beginPath();
+  ctx.moveTo(x0, -w / 2); ctx.lineTo(x0 + len - w, -w / 2); ctx.lineTo(x0 + len, 0); ctx.lineTo(x0 + len - w, w / 2); ctx.lineTo(x0, w / 2);
+  ctx.closePath(); fillStroke(ctx, c, 1.6);
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x0 + 2, -w / 4); ctx.lineTo(x0 + len - w, -w / 4); ctx.stroke();
+}
+function stick(ctx, x0, x1, c = '#6b4a26', w = 4) {
+  ctx.strokeStyle = shade(c, -0.5); ctx.lineWidth = w + 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x1, 0); ctx.stroke();
+  ctx.strokeStyle = c; ctx.lineWidth = w;
+  ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x1, 0); ctx.stroke();
+  ctx.lineCap = 'butt';
+}
+function bowShape(ctx, c, string = '#e8e8e8', r = 16) {
+  ctx.strokeStyle = shade(c, -0.45); ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(4, 0, r, -1.2, 1.2); ctx.stroke();
+  ctx.strokeStyle = c; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(4, 0, r, -1.2, 1.2); ctx.stroke();
+  ctx.strokeStyle = string; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(4 + r * Math.cos(-1.2), r * Math.sin(-1.2)); ctx.lineTo(4 + r * Math.cos(1.2), r * Math.sin(1.2)); ctx.stroke();
+}
+function fantasyWeapon(ctx, gun, box) {
+  switch (gun) {
+    case 'buckler': // 작은 둥근 나무 방패
+      ctx.beginPath(); ctx.arc(10, 0, 11, 0, Math.PI * 2); fillStroke(ctx, '#9a6a3a');
+      ctx.beginPath(); ctx.arc(10, 0, 4, 0, Math.PI * 2); fillStroke(ctx, '#c9d3de', 1.4);
+      sheen(ctx, 10, 0, 11);
+      break;
+    case 'herb': // 약초 다발
+      stick(ctx, 2, 14, '#4a7a2a', 3);
+      for (const [x, y, a] of [[16, -5, -0.6], [18, 0, 0], [16, 5, 0.6]]) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+        ctx.beginPath(); ctx.ellipse(3, 0, 6, 3, 0, 0, Math.PI * 2); fillStroke(ctx, '#6acf4a', 1.4); ctx.restore();
+      }
+      break;
+    case 'woodaxe': // 나무꾼 도끼
+      stick(ctx, -4, 22);
+      ctx.beginPath(); ctx.moveTo(16, -3); ctx.lineTo(26, -11); ctx.quadraticCurveTo(30, -2, 26, 4); ctx.lineTo(16, 3); ctx.closePath();
+      fillStroke(ctx, '#9aa6b2', 1.6);
+      break;
+    case 'claw': // 손톱 장갑
+      box(2, -5, 9, 10, '#6a5a4a');
+      for (const y of [-5, 0, 5]) { ctx.beginPath(); ctx.moveTo(10, y - 1.5); ctx.lineTo(20, y); ctx.lineTo(10, y + 1.5); ctx.closePath(); fillStroke(ctx, '#e8e8e8', 1.2); }
+      break;
+    case 'lute': // 류트
+      stick(ctx, 4, 24, '#8a5a2a', 3);
+      ctx.beginPath(); ctx.ellipse(8, 0, 9, 7, 0, 0, Math.PI * 2); fillStroke(ctx, '#c9883a');
+      ctx.beginPath(); ctx.arc(9, 0, 2.4, 0, Math.PI * 2); fillStroke(ctx, '#3a2412', 1);
+      box(23, -3, 5, 6, '#5a3a1a');
+      break;
+    case 'net': // 올가미 밧줄
+      ctx.strokeStyle = '#c9a46a'; ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.arc(14, 0, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(2, 2); ctx.quadraticCurveTo(6, 8, 8, 5); ctx.stroke();
+      break;
+    case 'chain': // 쇠사슬
+      ctx.strokeStyle = '#9aa6b2'; ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.ellipse(5 + i * 6, (i % 2) * 2 - 1, 3.6, 2.4, 0, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(29, 0, 4.5, 0, Math.PI * 2); fillStroke(ctx, '#5a5f68');
+      break;
+    case 'frostbow': bowShape(ctx, '#8ad0f0', '#ffffff', 17);
+      ctx.fillStyle = '#e8f8ff'; for (const y of [-14, 14]) { ctx.beginPath(); ctx.arc(4 + 17 * Math.cos(1.2), y, 2.4, 0, Math.PI * 2); ctx.fill(); }
+      break;
+    case 'windbow': bowShape(ctx, '#3a8a5a', '#ffffff', 19);
+      ctx.strokeStyle = 'rgba(215,248,232,0.9)'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(26, -6, 5, 3.6, 5.6); ctx.stroke(); ctx.beginPath(); ctx.arc(28, 5, 4, 3.6, 5.6); ctx.stroke();
+      break;
+    case 'hammer': // 대장장이 망치
+      stick(ctx, -2, 18);
+      box(14, -8, 9, 16, '#5a5f68');
+      ctx.fillStyle = '#7fd4ff'; ctx.fillRect(17, -2, 3, 4);
+      break;
+    case 'warhammer': // 성기사 전쟁 망치
+      stick(ctx, -6, 22, '#c9a24a', 4);
+      box(18, -10, 12, 20, '#e8d070');
+      ctx.fillStyle = '#fff07a'; ctx.beginPath(); ctx.moveTo(24, -6); ctx.lineTo(21, 1); ctx.lineTo(25, 1); ctx.lineTo(22, 7); ctx.lineTo(28, -1); ctx.lineTo(24, -1); ctx.closePath(); ctx.fill();
+      break;
+    case 'dagger': box(2, -2, 5, 4, '#3a2a1a'); box(6, -4, 2, 8, '#9aa6b2'); blade(ctx, 8, 13, 4.6, '#c8e8c0'); break;
+    case 'katana': box(-2, -2, 9, 4, '#2a2a3a'); box(7, -3.5, 2, 7, '#c9a24a'); blade(ctx, 9, 26, 3.6, '#e8f4ff'); break;
+    case 'spear': stick(ctx, -10, 26, '#5a4a3a', 3); blade(ctx, 25, 10, 6, '#c9d3de'); ctx.fillStyle = '#3a5a9a'; ctx.fillRect(22, -4, 3, 8); break;
+    case 'greataxe': // 양날 큰 도끼
+      stick(ctx, -6, 22, '#4a2a1a');
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(16, s * 13); ctx.quadraticCurveTo(26, s * 12, 28, 0); ctx.closePath();
+        fillStroke(ctx, '#b8c0c8', 1.6);
+      }
+      break;
+    case 'astrolabe': { // 별자리 원반
+      ctx.beginPath(); ctx.arc(14, 0, 9, 0, Math.PI * 2); fillStroke(ctx, '#c9a24a');
+      ctx.strokeStyle = '#2a2a6a'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(14, 0, 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(20, 0); ctx.moveTo(14, -6); ctx.lineTo(14, 6); ctx.stroke();
+      star(ctx, 14, 0, 3, '#fff3c0');
+      break;
+    }
+    case 'moonstaff':
+      stick(ctx, -6, 22, '#e8e8f8', 3);
+      ctx.beginPath(); ctx.arc(26, 0, 7, 0, Math.PI * 2); fillStroke(ctx, '#d8e0ff');
+      ctx.fillStyle = '#e8e8f8'; ctx.beginPath(); ctx.arc(29, -1, 6, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'starstaff':
+      stick(ctx, -6, 22, '#3a2a5a', 3.4);
+      star(ctx, 27, 0, 8, '#ffe066');
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(25, -2, 1.6, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'treeshield': // 나무껍질 큰 방패
+      rr(ctx, 4, -15, 16, 30, 6); fillStroke(ctx, '#6a4a2a');
+      ctx.strokeStyle = '#4a321a'; ctx.lineWidth = 1.2;
+      for (const x of [9, 14]) { ctx.beginPath(); ctx.moveTo(x, -12); ctx.quadraticCurveTo(x + 2, 0, x, 12); ctx.stroke(); }
+      for (const [x, y] of [[8, -10], [17, 6]]) { ctx.beginPath(); ctx.ellipse(x, y, 4, 2.4, 0.5, 0, Math.PI * 2); fillStroke(ctx, '#6acf4a', 1); }
+      break;
     default: break;
+  }
+}
+
+// ── 아스트라 판타지 모자 ──
+function fantasyHat(ctx, style, c) {
+  switch (style) {
+    case 'helm': // 쇠 투구 + 코 가리개
+      ctx.beginPath(); ctx.arc(0, -50, 18, Math.PI, 0); ctx.closePath(); fillStroke(ctx, c);
+      sheen(ctx, 0, -50, 18);
+      rr(ctx, -19, -52, 38, 5, 2); fillStroke(ctx, shade(c, -0.18));
+      ctx.fillStyle = shade(c, -0.25); ctx.fillRect(-1.5, -66, 3, 14);
+      return true;
+    case 'wingedhelm':
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(s * 15, -56); ctx.quadraticCurveTo(s * 30, -70, s * 27, -50); ctx.quadraticCurveTo(s * 22, -56, s * 15, -50); ctx.closePath();
+        fillStroke(ctx, '#ffffff', 1.4);
+      }
+      ctx.beginPath(); ctx.arc(0, -50, 18, Math.PI, 0); ctx.closePath(); fillStroke(ctx, c);
+      sheen(ctx, 0, -50, 18);
+      rr(ctx, -19, -52, 38, 5, 2); fillStroke(ctx, shade(c, -0.2));
+      return true;
+    case 'hornhelm':
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(s * 13, -60); ctx.quadraticCurveTo(s * 28, -64, s * 26, -80); ctx.quadraticCurveTo(s * 20, -66, s * 8, -64); ctx.closePath();
+        fillStroke(ctx, '#f0e8d8', 1.4);
+      }
+      ctx.beginPath(); ctx.arc(0, -50, 17, Math.PI, 0); ctx.closePath(); fillStroke(ctx, c);
+      rr(ctx, -18, -52, 36, 5, 2); fillStroke(ctx, shade(c, -0.2));
+      return true;
+    case 'bandana':
+      ctx.beginPath(); ctx.arc(0, -50, 17, Math.PI, 0); ctx.closePath(); fillStroke(ctx, c);
+      sheen(ctx, 0, -50, 17);
+      ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(14, -54); ctx.lineTo(25, -46); ctx.lineTo(22, -58); ctx.closePath(); fillStroke(ctx, c, 1.4);
+      return true;
+    case 'hood': case 'wolfhood': case 'mask': {
+      // 머리를 덮는 두건(눈은 보이게 위쪽만)
+      ctx.beginPath(); ctx.moveTo(-21, -46); ctx.quadraticCurveTo(-20, -72, 0, -74); ctx.quadraticCurveTo(20, -72, 21, -46);
+      ctx.quadraticCurveTo(0, -54, -21, -46); ctx.closePath(); fillStroke(ctx, c);
+      sheen(ctx, 0, -58, 16);
+      if (style === 'wolfhood') for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(s * 6, -72); ctx.lineTo(s * 15, -84); ctx.lineTo(s * 17, -66); ctx.closePath(); fillStroke(ctx, c, 1.4);
+        ctx.fillStyle = '#f0c8c8'; ctx.beginPath(); ctx.moveTo(s * 8, -72); ctx.lineTo(s * 14, -80); ctx.lineTo(s * 15, -70); ctx.closePath(); ctx.fill();
+      }
+      return true;
+    }
+    case 'feather':
+      ctx.beginPath(); ctx.ellipse(0, -55, 22, 5, 0, 0, Math.PI * 2); fillStroke(ctx, shade(c, -0.15));
+      ctx.beginPath(); ctx.arc(0, -55, 14, Math.PI, 0); ctx.closePath(); fillStroke(ctx, c);
+      ctx.save(); ctx.translate(8, -62); ctx.rotate(-0.5);
+      ctx.beginPath(); ctx.ellipse(6, -8, 4, 13, 0.3, 0, Math.PI * 2); fillStroke(ctx, '#ff6a6a', 1.2);
+      ctx.restore();
+      return true;
+    case 'bald': return true; // 아무것도 안 씀(수도승)
+    case 'wizard':
+      ctx.beginPath(); ctx.ellipse(0, -53, 24, 5.5, 0, 0, Math.PI * 2); fillStroke(ctx, shade(c, -0.15));
+      ctx.beginPath(); ctx.moveTo(-14, -55); ctx.quadraticCurveTo(-4, -78, 6, -92); ctx.quadraticCurveTo(10, -76, 14, -55); ctx.closePath(); fillStroke(ctx, c);
+      star(ctx, 2, -66, 4, '#ffe066');
+      return true;
+    case 'circlet':
+      rr(ctx, -16, -58, 32, 4, 2); fillStroke(ctx, '#e8e8f8', 1.4);
+      ctx.beginPath(); ctx.arc(0, -59, 4, 0, Math.PI * 2); fillStroke(ctx, c, 1.4);
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-1, -60, 1.3, 0, Math.PI * 2); ctx.fill();
+      return true;
+    case 'ronin': // 삿갓
+      ctx.beginPath(); ctx.moveTo(-28, -50); ctx.lineTo(0, -68); ctx.lineTo(28, -50); ctx.quadraticCurveTo(0, -54, -28, -50); ctx.closePath(); fillStroke(ctx, '#c9a46a');
+      ctx.strokeStyle = 'rgba(90,60,30,0.5)'; ctx.lineWidth = 1;
+      for (const x of [-14, 0, 14]) { ctx.beginPath(); ctx.moveTo(0, -67); ctx.lineTo(x, -52); ctx.stroke(); }
+      return true;
+    case 'antler':
+      ctx.strokeStyle = '#8a6a4a'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(s * 8, -58); ctx.lineTo(s * 16, -76); ctx.moveTo(s * 13, -70); ctx.lineTo(s * 22, -72); ctx.moveTo(s * 15, -74); ctx.lineTo(s * 12, -84); ctx.stroke();
+      }
+      ctx.lineCap = 'butt';
+      rr(ctx, -16, -58, 32, 5, 2.5); fillStroke(ctx, c, 1.4);
+      for (const x of [-9, 0, 9]) { ctx.beginPath(); ctx.ellipse(x, -59, 4, 2.4, 0.4, 0, Math.PI * 2); fillStroke(ctx, '#6acf4a', 1); }
+      return true;
+    default: return false;
   }
 }
 
 function hat(ctx, style, color) {
   const c = color != null ? hex(color) : null;
   if (!c) return;
+  if (fantasyHat(ctx, style, c)) return;
   switch (style) {
     case 'chef':
       rr(ctx, -12, -64, 24, 8, 2); fillStroke(ctx, '#ffffff');
