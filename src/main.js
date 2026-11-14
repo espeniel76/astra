@@ -12,6 +12,8 @@ import * as missions from './ui/screens/missions.js';
 import * as settings from './ui/screens/settings.js';
 import * as summon from './ui/screens/summon.js';
 
+import { HEROES } from './data/heroes.js';
+
 const TEST = /[?&]test\b/.test(location.search);
 const save = loadSave();
 // 테스트판(?test): 다이아·골드 100만, 다음 소환에서 바로 천장
@@ -21,6 +23,8 @@ if (TEST && !save.tips.testInit) {
   save.pity = 299;
   save.tips.testInit = true;
 }
+// 테스트판: 모든 영웅을 한 명씩 불러 둔다(영웅의 집에서 전부 보기). 새 영웅이 생기면 그 영웅도 들어온다.
+if (TEST) for (const h of HEROES) save.heroes[h.id] ||= { level: 1, dupes: 0 };
 ensureToday(save);
 writeSave(save);
 sfx.setOn(save.settings.sound);
