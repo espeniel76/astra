@@ -225,6 +225,12 @@ export class SummonScene extends Phaser.Scene {
     quote.setText(line);
     await wait(this, 2000); // 대사를 다 읽을 수 있게 2초 기다림
 
+    // ★7 전용: 하늘이 갈라지며 수호신이 내려온다
+    if (seven) {
+      this.tweens.add({ targets: quote, alpha: 0, duration: 400 });
+      await this.eternalDescent(r);
+    }
+
     // 3) 쾅: 번쩍 + 화면 흔들림
     sfx.play(seven ? 'star7' : 'star6');
     this.cameras.main.shake(seven ? 900 : 650, this.flash ? 0.02 : 0.012);
@@ -255,6 +261,109 @@ export class SummonScene extends Phaser.Scene {
     card.setDepth(6);
     // 5) 찌릿찌릿
     this.crackle(card, slot, col);
+  }
+
+  // ★7 전용 애니메이션(약 6초, 탭하면 넘어감). 번쩍임 없이: 모든 빛은 천천히 밝아지고 천천히 사라진다.
+  // 1) 어둠 한가운데 금빛 선이 그어지고 2) 위아래로 벌어지며 금빛 하늘이 열린다
+  // 3) 후광 고리와 빛살이 돌고 금빛 깃털이 떨어진다 4) 수호신이 위에서 천천히 내려와 땅에 닿는다(쿵, 흔들림)
+  // 5) 황금 창 다섯 자루가 날아와 둘레에 원을 이룬다 6) 이름과 별 일곱 개, "ETERNAL"
+  async eternalDescent(r) {
+    const hero = HERO[r.id];
+    const GOLD = 0xffe066;
+    const layer = this.add.container(0, 0).setDepth(170);
+    const cy = H / 2 - 40;
+    let skipped = false;
+    const hit = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.001).setInteractive();
+    layer.add(hit);
+    this.time.delayedCall(400, () => hit.once('pointerdown', () => { skipped = true; }));
+    const pause = async ms => { for (let t = 0; t < ms && !skipped; t += 50) await wait(this, 50); };
+
+    // 1) 금빛 선
+    const seam = this.add.rectangle(W / 2, cy, 4, 4, GOLD, 1);
+    layer.add(seam);
+    await tween(this, { targets: seam, width: W, duration: 500, ease: 'Cubic.out' });
+    // 2) 하늘이 열린다(금빛 그라데이션이 위아래로 벌어짐)
+    const sky = this.add.graphics();
+    const drawSky = h => {
+      sky.clear();
+      sky.fillGradientStyle(0xfff6c8, 0xfff6c8, 0xc9961a, 0xc9961a, 1).fillRect(0, cy - h, W, h);
+      sky.fillGradientStyle(0xc9961a, 0xc9961a, 0xfff6c8, 0xfff6c8, 1).fillRect(0, cy, W, h);
+    };
+    layer.addAt(sky, 1);
+    const open = { h: 0 };
+    await tween(this, { targets: open, h: H / 2 + 60, duration: 1100, ease: 'Sine.inOut', onUpdate: () => drawSky(open.h) });
+    setBackdrop('#fff6c8', '#fff6c8');
+    this.tweens.add({ targets: seam, alpha: 0, duration: 400 });
+    if (!skipped) sfx.play('star7');
+
+    // 3) 후광 고리 + 빛살 + 깃털
+    const rays = this.add.container(W / 2, cy);
+    for (let i = 0; i < 16; i++) {
+      const g = this.add.graphics();
+      g.fillStyle(0xffffff, 0.22).fillTriangle(0, 0, -36, -760, 36, -760);
+      g.rotation = (i / 16) * Math.PI * 2;
+      rays.add(g);
+    }
+    rays.setAlpha(0);
+    layer.add(rays);
+    this.tweens.add({ targets: rays, alpha: 1, duration: 900 });
+    this.tweens.add({ targets: rays, angle: 360, duration: 24000, repeat: -1 });
+    for (let i = 0; i < 3; i++) {
+      const ring = this.add.circle(W / 2, cy, 120 + i * 70).setStrokeStyle(6 - i, 0xffffff, 0.75 - i * 0.18).setScale(0.4).setAlpha(0);
+      layer.add(ring);
+      this.tweens.add({ targets: ring, scale: 1, alpha: 1, duration: 1200, delay: i * 250, ease: 'Cubic.out' });
+    }
+    const feathers = this.add.particles(0, 0, 'dot', {
+      x: { min: 0, max: W }, y: -30, lifespan: 5000, speedY: { min: 70, max: 140 }, speedX: { min: -30, max: 30 },
+      scaleX: { min: 0.35, max: 0.6 }, scaleY: { min: 0.9, max: 1.4 }, rotate: { min: -40, max: 40 },
+      alpha: { start: 0.95, end: 0.2 }, tint: [0xffffff, 0xfff3c0, 0xffd84a], frequency: 70,
+    });
+    layer.add(feathers);
+
+    // 4) 수호신이 내려온다
+    const img = this.add.image(W / 2, -260, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.6);
+    layer.add(img);
+    await tween(this, { targets: img, y: cy + 200, duration: skipped ? 1 : 1700, ease: 'Sine.out' });
+    this.cameras.main.shake(500, this.flash ? 0.018 : 0.01);
+    const dust = this.add.ellipse(W / 2, cy + 205, 80, 20, 0xffffff, 0.8);
+    layer.addAt(dust, layer.getIndex(img));
+    this.tweens.add({ targets: dust, scaleX: 6, scaleY: 3, alpha: 0, duration: 900, ease: 'Cubic.out' });
+    this.tweens.add({ targets: img, y: cy + 188, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    // 5) 황금 창 다섯 자루가 날아와 원을 이룬다
+    const spears = this.add.container(W / 2, cy + 70);
+    layer.add(spears);
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i / 5) * Math.PI * 2;
+      const sp = this.add.container(Math.cos(a) * 700, Math.sin(a) * 700).setRotation(a + Math.PI / 2);
+      const g = this.add.graphics();
+      g.fillStyle(0x8a6410, 1).fillRect(-4, -10, 8, 90);
+      g.fillStyle(0xffd84a, 1).fillRect(-3, -8, 6, 86);
+      g.fillStyle(0xfff6c8, 1).fillTriangle(-13, -10, 13, -10, 0, -52);
+      g.lineStyle(3, 0x8a6410, 1).strokeTriangle(-13, -10, 13, -10, 0, -52);
+      sp.add(g);
+      spears.add(sp);
+      this.tweens.add({ targets: sp, x: Math.cos(a) * 310, y: Math.sin(a) * 310, duration: skipped ? 1 : 650, delay: skipped ? 0 : i * 140, ease: 'Back.out' });
+    }
+    this.tweens.add({ targets: spears, angle: 360, duration: 16000, repeat: -1 });
+    await pause(1000);
+
+    // 6) 이름 + 별 일곱 + ETERNAL
+    const name = text(this, W / 2, H - 250, '', 54, '#fff6c8', { stroke: '#6a4a00', strokeThickness: 8 });
+    const stars = text(this, W / 2, H - 180, '', 42, '#ffe066', { stroke: '#6a4a00', strokeThickness: 6 });
+    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#ffffff', { stroke: '#8a6410', strokeThickness: 6 }).setAlpha(0).setScale(1.6);
+    layer.add([name, stars, eternal]);
+    this.tweens.add({ targets: eternal, alpha: 1, scale: 1, duration: 700, ease: 'Back.out' });
+    for (let i = 1; i <= hero.name.length && !skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 80); }
+    name.setText(hero.name);
+    for (let i = 1; i <= 7 && !skipped; i++) { stars.setText('★'.repeat(i)); await wait(this, 110); }
+    stars.setText('★'.repeat(7));
+    await pause(2500);
+
+    // 끝: 천천히 사라지고 원래 연출(쾅 → 카드 뒤집기)로
+    feathers.stop();
+    await tween(this, { targets: layer, alpha: 0, duration: 600 });
+    layer.destroy();
   }
 
   // 카드 둘레의 번개. 번쩍임이 꺼져 있으면 밝기는 그대로 두고 모양만 천천히 바뀐다.

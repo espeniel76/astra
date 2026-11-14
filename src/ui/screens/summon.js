@@ -4,6 +4,7 @@ import { bump } from '../../core/daily.js';
 import { makeRng } from '../../core/rng.js';
 import { STAR_COLOR } from '../../data/heroes.js';
 
+const TEST = /[?&]test\b/.test(location.search);
 let busy = false; // 처음 소환할 때 연출 파일을 받는 동안 두 번 눌리지 않게
 
 export function render(root, app) {
@@ -40,7 +41,11 @@ export function render(root, app) {
       h('button.btn.gold', { onclick: () => go(11), disabled: s.diamonds < COST[11] }, '10+1 소환', h('small', `💎 ${fmt(COST[11])} · ★4 이상 1명 보장`)),
       h('button.btn', { onclick: () => go(1), disabled: s.diamonds < COST[1] }, '1회 소환', h('small', `💎 ${fmt(COST[1])}`)),
       s.diamonds < COST[11] ? h('div.center.dim', s.diamonds < COST[1] ? '다이아가 부족해요. 모험과 미션에서 모아요!' : `10+1 소환은 💎 ${fmt(COST[11])}가 필요해요. 모험과 미션에서 모아요!`) : null,
-      h('button.btn.ghost', { onclick: () => rates(app) }, '확률 보기')),
+      h('button.btn.ghost', { onclick: () => rates(app) }, '확률 보기'),
+      // 테스트판 전용: 저장은 그대로 두고 ★6·★7 연출만 미리 보기
+      TEST ? h('div.row', { style: 'gap:8px' },
+        h('button.btn.ghost.grow', { onclick: () => app.startSummon([{ id: 'executioner', star: 6, isNew: false, dupes: 1, overflowGold: 0 }]) }, '🧪 ★6 연출'),
+        h('button.btn.ghost.grow', { onclick: () => app.startSummon([{ id: 'guardian', star: 7, isNew: true, dupes: 0, overflowGold: 0 }]) }, '🧪 ★7 연출')) : null),
   );
 }
 
