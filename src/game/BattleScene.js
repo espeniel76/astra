@@ -5,8 +5,10 @@ import { STAGE, STAGES, CHAPTERS } from '../data/stages.js';
 import { HERO, STAR_COLOR } from '../data/heroes.js';
 import { bump } from '../core/daily.js';
 import { sfx } from '../core/sfx.js';
-import { closeStage } from './phaser.js';
+import { closeStage, setBackdrop } from './phaser.js';
 import { text, button, heroTex, monTex, wait, tween, colorNum, PX } from './ui.js';
+import { bgTexture, addAmbient } from './backgrounds.js';
+import { starsFor, recordStars } from '../core/stars.js';
 
 const W = 720;
 const FOE_Y = 470, ALLY_Y = 880;
@@ -21,11 +23,6 @@ const STATUS_NAME = {
   poison: '독', burn: '화상', bleed: '출혈', slow: '느림', vuln: '약점', atkUp: '공격↑', defDown: '방어↓',
   crit: '치명타 준비', evade: '회피', reflect: '반사', doom: '선고', dragon: '아기 용', echo: '메아리',
 };
-const BG = {
-  meadow: { sky: [0x7ec8f0, 0xcdeefc], ground: 0x6cbf5a, dark: 0x4a9a3e },
-  forest: { sky: [0x2a5a4a, 0x6a9a6a], ground: 0x3a6a32, dark: 0x264a22 },
-  cave: { sky: [0x1a1424, 0x3a2e4a], ground: 0x4a4250, dark: 0x2e2836 },
-};
 
 export class BattleScene extends Phaser.Scene {
   constructor() { super('battle'); }
@@ -38,6 +35,7 @@ export class BattleScene extends Phaser.Scene {
     this.ended = false;
     this.paused = false; // 같은 씬 객체를 다시 쓰므로 매번 풀어 준다
     this.exitUi = null;
+    this.skillTip = null;
   }
 
   create() {
@@ -63,20 +61,14 @@ export class BattleScene extends Phaser.Scene {
   }
 
   drawBackground() {
-    const bg = BG[CHAPTERS[this.stage.chapter - 1].bg];
+    const kind = CHAPTERS[this.stage.chapter - 1].bg;
+    setBackdrop({ meadow: '#6cc4f5', forest: '#1d3b2c', cave: '#120e1c' }[kind], '#0d1020');
+    this.add.rectangle(W / 2, 640, W, 1280, 0x0d1020);
+    this.add.image(0, 0, bgTexture(this, kind)).setOrigin(0, 0);
+    addAmbient(this, kind);
+    // 위쪽 막대 뒤 살짝 어둡게(글자가 잘 보이게)
     const g = this.add.graphics();
-    g.fillGradientStyle(bg.sky[0], bg.sky[0], bg.sky[1], bg.sky[1], 1).fillRect(0, 0, W, 700);
-    g.fillStyle(bg.ground, 1).fillRect(0, 620, W, 660);
-    g.fillStyle(bg.dark, 1).fillEllipse(W / 2, 1000, 900, 200);
-    g.fillStyle(bg.dark, 0.6).fillEllipse(W / 2, 560, 800, 120);
-    // 장식: 초원 꽃, 숲 나무, 동굴 수정(가만히 있음)
-    const rnd = new Phaser.Math.RandomDataGenerator([this.stageId]);
-    for (let i = 0; i < 16; i++) {
-      const x = rnd.between(10, W - 10), y = rnd.between(640, 1040);
-      if (bg === BG.meadow) g.fillStyle([0xffffff, 0xffe066, 0xff9ad0][i % 3], 1).fillCircle(x, y, 5);
-      else if (bg === BG.forest) g.fillStyle(0x1e3a1a, 0.7).fillTriangle(x, y - 60, x - 26, y, x + 26, y);
-      else g.fillStyle(0x9a7aff, 0.5).fillTriangle(x, y - 26, x - 8, y, x + 8, y);
-    }
+    g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.45, 0.45, 0, 0).fillRect(0, 0, W, 110);
   }
 
   pos(u) {
@@ -116,7 +108,11 @@ export class BattleScene extends Phaser.Scene {
     for (const u of this.b.units.filter(x => x.side === 'ally')) {
       const x = SLOT_X[u.slot];
       const btn = button(this, x, 1165, 210, 180, '', () => {
-        if (queueSkill(this.b, u.uid)) { sfx.play('click'); this.refresh(); }
+        if (queueSkill(this.b, u.uid)) {
+          sfx.play('click');
+          if (this.skillTip) { this.skillTip.destroy(); this.skillTip = null; this.app.save.tips.skill = true; this.app.persist(); }
+          this.refresh();
+        }
       }, { fill: colorNum(STAR_COLOR[u.star]) & 0x7f7f7f });
       const icon = this.add.image(0, -18, heroTex(this, u.id)).setScale(0.45).setOrigin(0.5, 0.86);
       icon.y = 20;
@@ -149,6 +145,17 @@ export class BattleScene extends Phaser.Scene {
       ring.clear();
       if (u.queued) ring.lineStyle(8, 0xffe066, 1).strokeRoundedRect(-105, -90, 210, 180, 18);
       else if (ready && !blocked) ring.lineStyle(4, 0xffffff, 0.8).strokeRoundedRect(-105, -90, 210, 180, 18);
+    }
+    // 처음 전투: 스킬이 준비되면 "눌러 보세요!" 화살표
+    const tips = this.app.save.tips;
+    const readyBtn = this.skillBtns.find(sb => sb.u.alive && sb.u.cd === 0 && !sb.u.queued);
+    if (!tips.skill && readyBtn && !this.skillTip && !this.ended) {
+      const x = SLOT_X[readyBtn.u.slot];
+      this.skillTip = this.add.container(x, 1000).setDepth(50);
+      const bubble = this.add.graphics().fillStyle(0xffffff, 1).fillRoundedRect(-110, -34, 220, 56, 16)
+        .fillTriangle(-14, 22, 14, 22, 0, 42);
+      this.skillTip.add([bubble, text(this, 0, -6, '눌러 보세요!', 28, '#222222', { strokeThickness: 0 })]);
+      this.tweens.add({ targets: this.skillTip, y: 985, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
   }
 
@@ -309,6 +316,7 @@ export class BattleScene extends Phaser.Scene {
 
   finish(result) {
     this.ended = true;
+    this.skillTip?.destroy(); this.skillTip = null;
     const s = this.app.save, st = this.stage;
     bump(s, 'battle');
     const c = this.overlay();
@@ -316,15 +324,26 @@ export class BattleScene extends Phaser.Scene {
     if (result === 'win') {
       sfx.play('win');
       const gold = Math.round(st.gold * this.b.goldMul);
-      const first = !s.cleared.includes(st.id);
+      const got = starsFor(this.b, st);
+      const { first } = recordStars(s, st.id, got);
       s.gold += gold;
-      if (first) { s.diamonds += st.firstDia; s.cleared.push(st.id); }
+      if (first) s.diamonds += st.firstDia;
       this.app.persist();
-      const title = add(text(this, W / 2, 420, '승리!', 96, '#ffe066'));
+      const title = add(text(this, W / 2, 300, '승리!', 96, '#ffe066'));
       title.setScale(0.4);
       this.tweens.add({ targets: title, scale: 1, duration: 450, ease: 'Back.out' });
-      add(text(this, W / 2, 560, `🪙 ${gold.toLocaleString('ko-KR')}${this.b.goldMul > 1 ? ' (×2)' : ''}`, 44, '#ffd36a'));
-      if (first) add(text(this, W / 2, 630, `💎 ${st.firstDia.toLocaleString('ko-KR')} (첫 클리어)`, 40, '#7fd8ff'));
+      // 별 3개: 하나씩 커지며 등장(번쩍임 없음)
+      const conds = ['깨기', '아무도 안 쓰러지기', `${st.limit}번 행동 안에 깨기`];
+      for (let i = 0; i < 3; i++) {
+        const on = i < got;
+        const star = add(this.add.star(W / 2 + (i - 1) * 120, 430 + (i === 1 ? -16 : 0), 5, 22, 50, on ? 0xffd84a : 0x3a3f55)
+          .setStrokeStyle(4, on ? 0xb07a10 : 0x22263a));
+        star.setScale(0);
+        this.tweens.add({ targets: star, scale: 1, duration: 320, delay: 350 + i * 260, ease: 'Back.out', onStart: () => { if (on) sfx.play('reveal'); } });
+        add(text(this, W / 2 + (i - 1) * 120, 500, conds[i], 17, on ? '#ffe9a0' : '#8a90aa', { wordWrap: { width: 116 } }));
+      }
+      add(text(this, W / 2, 575, `🪙 ${gold.toLocaleString('ko-KR')}${this.b.goldMul > 1 ? ' (×2)' : ''}`, 44, '#ffd36a'));
+      if (first) add(text(this, W / 2, 640, `💎 ${st.firstDia.toLocaleString('ko-KR')} (첫 클리어)`, 40, '#7fd8ff'));
       const idx = STAGES.indexOf(st);
       const next = STAGES[idx + 1];
       if (next) add(button(this, W / 2, 780, 420, 100, `다음: ${next.id}${next.boss ? ' 보스' : ''}`, () => this.scene.restart({ app: this.app, stageId: next.id }), { fill: 0x3cb94e }));

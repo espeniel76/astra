@@ -6,7 +6,7 @@ import { summon, COST } from '../core/gacha.js';
 import { bump } from '../core/daily.js';
 import { makeRng } from '../core/rng.js';
 import { sfx } from '../core/sfx.js';
-import { closeStage } from './phaser.js';
+import { closeStage, setBackdrop } from './phaser.js';
 import { text, button, heroTex, wait, tween, colorNum } from './ui.js';
 
 const W = 720, H = 1280;

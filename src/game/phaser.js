@@ -6,6 +6,11 @@ import { SummonScene } from './SummonScene.js';
 let game = null;
 const stage = () => document.getElementById('stage');
 
+// 휴대폰이 게임 비율보다 길면 위아래가 남는다. 그 자리를 장면 색으로 채워 검은 띠가 안 보이게.
+export function setBackdrop(top, bottom = top) {
+  stage().style.background = `linear-gradient(${top} 0 50%, ${bottom} 50% 100%)`;
+}
+
 function ensureGame() {
   if (game) return Promise.resolve(game);
   return new Promise(resolve => {
