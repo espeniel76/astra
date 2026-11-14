@@ -1,6 +1,6 @@
-// 소환 연출 + ★6 이상 컷신.
+// 소환 연출 + ★5 이상 컷신(아들 요청으로 ★6 → ★5).
 // 정직한 연출: 마법진·빛기둥·빛 알갱이의 색 = 이번 소환의 최고 별. 처음부터 끝까지 색이 바뀌지 않는다.
-// 순서: 마법진 → 빛기둥 + 빨려 드는 빛 → 카드가 날아와 꽂힘 → 낮은 별부터 뒤집기(★6 이상은 컷신) → 결과.
+// 순서: 마법진 → 빛기둥 + 빨려 드는 빛 → 카드가 날아와 꽂힘 → 낮은 별부터 뒤집기(★5 이상은 컷신) → 결과.
 import Phaser from 'phaser';
 import { HERO, STAR_COLOR } from '../data/heroes.js';
 import { summon, COST } from '../core/gacha.js';
@@ -58,7 +58,7 @@ export class SummonScene extends Phaser.Scene {
     const res = this.results;
     const top = Math.max(...res.map(r => r.star));
     const color = colorNum(STAR_COLOR[top]);
-    const big = top >= 6;
+    const big = top >= 5;
     sfx.play('summon');
 
     // 1) 바닥에 마법진이 그려지며 천천히 돈다 — 색은 처음부터 결과의 최고 별 색
@@ -118,7 +118,7 @@ export class SummonScene extends Phaser.Scene {
     this.skipBtn = button(this, W / 2, 1200, 300, 80, '전부 보기', () => { this.skipAll = true; this.skipBtn.setEnabled(false); }, { size: 26, fill: 0x3a3f55 });
     for (let k = 0; k < order.length; k++) {
       const r = order[k];
-      if (r.star >= 6) await this.cutscene(r);
+      if (r.star >= 5) await this.cutscene(r);
       await this.flipCard(cards[k], r);
       if (!this.skipAll) await wait(this, r.star >= 4 ? 260 : 120);
     }
@@ -187,7 +187,7 @@ export class SummonScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(0x151a38, 1).fillRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
     g.fillGradientStyle(col, col, 0x151a38, 0x151a38, 0.45, 0.45, 0, 0).fillRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h * 0.75, 16);
-    g.lineStyle(r.star >= 6 ? 6 : 4, col, 1).strokeRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
+    g.lineStyle(r.star >= 5 ? 6 : 4, col, 1).strokeRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
     const img = this.add.image(0, slot.h * 0.12, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(big ? 1.4 : 0.72);
     const name = text(this, 0, slot.h * 0.3, HERO[r.id].name, big ? 34 : 18, '#ffffff', { wordWrap: { width: slot.w - 10 } });
     const st = text(this, 0, slot.h * 0.42, '★'.repeat(r.star), big ? 28 : 16, STAR_COLOR[r.star], { strokeThickness: 3 });
