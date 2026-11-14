@@ -60,3 +60,12 @@ describe('저장 코드', () => {
     expect(importCode('ASTRA1-' + btoa('[1,2]'))).toBe(null);
   });
 });
+
+describe('테스트판 코드', () => {
+  it('테스트판에서 만든 코드는 진짜 게임에서 불러올 수 없다', () => {
+    const code = exportCode(defaultSave(), true);
+    expect(code.startsWith('ASTRATEST1-')).toBe(true);
+    expect(importCode(code)).toBe(null);
+    expect(importCode(code, true)).not.toBe(null);
+  });
+});

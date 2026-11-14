@@ -227,13 +227,14 @@ function startOfTurn(b, u, ev) {
 }
 
 // 행동 끝: 아기 용, 상태 시간 줄이기, 쿨타임
-function endOfTurn(b, u, ev, usedSkill) {
+// fresh: 이번 행동 전부터 있던 상태들. 이번 행동에서 새로 건 상태는 이번엔 줄지 않는다(2턴 도발이 2턴 가게).
+function endOfTurn(b, u, ev, usedSkill, before) {
   const dr = statusOf(u, 'dragon');
   if (dr && u.alive) {
     const pool = enemiesOf(b, u);
     if (pool.length) { ev.push({ type: 'pet', from: u.uid, k: 'dragon' }); attack(b, u, pool[Math.floor(b.rng() * pool.length)], dr.v, ev); }
   }
-  for (const s of u.statuses) if (s.k !== 'doom') s.turns -= 1;
+  for (const s of u.statuses) if (s.k !== 'doom' && before.has(s)) s.turns -= 1;
   u.statuses = u.statuses.filter(s => s.k === 'doom' || s.turns > 0);
   if (!usedSkill && u.cd > 0) u.cd -= 1;
 }
@@ -285,6 +286,7 @@ export function act(b, u, { auto = false } = {}) {
   ev.push({ type: 'turn', from: u.uid });
   startOfTurn(b, u, ev);
   if (!u.alive) { checkEnd(b); return ev; }
+  const before = new Set(u.statuses);
   let usedSkill = false;
   if (hasDisable(u)) {
     ev.push({ type: 'skip', from: u.uid, k: u.statuses.find(s => DISABLE.has(s.k)).k });
@@ -301,7 +303,7 @@ export function act(b, u, { auto = false } = {}) {
   } else {
     basicAttack(b, u, ev);
   }
-  if (u.alive) endOfTurn(b, u, ev, usedSkill);
+  if (u.alive) endOfTurn(b, u, ev, usedSkill, before);
   checkEnd(b);
   if (b.result) ev.push({ type: 'end', result: b.result });
   return ev;

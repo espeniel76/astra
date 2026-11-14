@@ -36,6 +36,8 @@ export class BattleScene extends Phaser.Scene {
     this.stage = STAGE[stageId];
     this.settings = app.save.settings;
     this.ended = false;
+    this.paused = false; // 같은 씬 객체를 다시 쓰므로 매번 풀어 준다
+    this.exitUi = null;
   }
 
   create() {
@@ -175,6 +177,8 @@ export class BattleScene extends Phaser.Scene {
       this.refresh();
       await wait(this, 120);
     }
+    // 나가기 창이 떠 있으면 고를 때까지 결과를 미룬다(나가면 보상 없음)
+    while (this.paused && !this.ended) await wait(this, 100);
     if (!this.ended) this.finish(this.b.result);
   }
 
@@ -297,9 +301,10 @@ export class BattleScene extends Phaser.Scene {
     this.paused = true;
     const c = this.overlay();
     c.add(text(this, W / 2, 520, '나가면 이번 전투 보상은 없어요.\n나갈까요?', 34, '#ffffff'));
-    const yes = button(this, W / 2 - 130, 680, 220, 90, '나가기', () => { this.ended = true; closeStage(this.app, 'adventure'); }, { fill: 0x6a2a3a });
-    const no = button(this, W / 2 + 130, 680, 220, 90, '계속 싸우기', () => { c.destroy(); yes.destroy(); no.destroy(); this.paused = false; });
+    const yes = button(this, W / 2 - 130, 680, 220, 90, '나가기', () => { this.ended = true; this.paused = false; closeStage(this.app, 'adventure'); }, { fill: 0x6a2a3a });
+    const no = button(this, W / 2 + 130, 680, 220, 90, '계속 싸우기', () => { c.destroy(); yes.destroy(); no.destroy(); this.exitUi = null; this.paused = false; });
     yes.box.setDepth(101); no.box.setDepth(101);
+    this.exitUi = [c, yes, no];
   }
 
   finish(result) {

@@ -7,7 +7,8 @@ import { MAX_LEVEL, DUPE_MAX } from './progress.js';
 export const VERSION = 1;
 const TEST = typeof location !== 'undefined' && /[?&]test\b/.test(location.search);
 export const SAVE_KEY = TEST ? 'astra.save.test' : 'astra.save';
-const CODE_PREFIX = 'ASTRA1-';
+// 테스트판(?test) 코드는 진짜 게임에 못 들어오게 머리말을 다르게 한다
+const codePrefix = test => (test ? 'ASTRATEST1-' : 'ASTRA1-');
 
 export function defaultSave() {
   return {
@@ -77,18 +78,19 @@ export function writeSave(save, storage = globalThis.localStorage) {
   try { storage?.setItem(SAVE_KEY, JSON.stringify(save)); } catch { /* 저장소를 못 쓰는 브라우저: 이번 판만 유지 */ }
 }
 
-export function exportCode(save) {
+export function exportCode(save, test = TEST) {
   const bytes = new TextEncoder().encode(JSON.stringify(save));
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
-  return CODE_PREFIX + btoa(bin);
+  return codePrefix(test) + btoa(bin);
 }
 
-export function importCode(code) {
+export function importCode(code, test = TEST) {
   const c = String(code || '').replace(/\s+/g, '');
-  if (!c.startsWith(CODE_PREFIX)) return null;
+  const prefix = codePrefix(test);
+  if (!c.startsWith(prefix)) return null;
   try {
-    const bin = atob(c.slice(CODE_PREFIX.length));
+    const bin = atob(c.slice(prefix.length));
     const raw = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))));
     if (!isObj(raw) || raw.version !== VERSION) return null;
     return normalize(raw);

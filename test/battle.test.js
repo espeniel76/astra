@@ -147,3 +147,15 @@ describe('모든 스테이지', () => {
     }
   });
 });
+
+describe('자기에게 건 상태', () => {
+  it('2턴 도발은 시전 직후에도 2턴이 남아 있다', () => {
+    const b = createBattle({ team: team('shieldboy'), foes: [{ mon: 'golem', lv: 1 }], seed: 21 });
+    const me = allies(b)[0];
+    me.cd = 0; queueSkill(b, me.uid);
+    act(b, me, { auto: false });
+    expect(me.statuses.find(s => s.k === 'taunt')?.turns).toBe(2);
+    act(b, me, { auto: false });
+    expect(me.statuses.find(s => s.k === 'taunt')?.turns).toBe(1);
+  });
+});
