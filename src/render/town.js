@@ -2,6 +2,7 @@
 // startTown(canvas, opts) → stop(). 깜빡임 없음: 밝기 변화는 3초 주기로만.
 import { heroCanvas } from './portrait.js';
 import { makeRng } from '../core/rng.js';
+import { drawBuilding } from './buildings.js';
 
 export const TW = 720, TH = 840;
 
@@ -52,83 +53,15 @@ function drawStatic(ctx) {
   }
 }
 
-// ── 건물들 ──
+// ── 건물들(그림은 buildings.js) ──
+const draw = (ctx, b, t) => drawBuilding(ctx, b.key, b.x, b.y, t, b.s);
 const BUILDINGS = [
-  { key: 'summon', name: '별의 탑', x: 360, y: 455, w: 150, h: 330, draw: tower },
-  { key: 'heroes', name: '영웅의 집', x: 150, y: 540, w: 210, h: 200, draw: house },
-  { key: 'adventure', name: '모험의 문', x: 590, y: 520, w: 190, h: 210, draw: gate },
-  { key: 'team', name: '훈련장', x: 165, y: 770, w: 200, h: 130, draw: training },
-  { key: 'missions', name: '게시판', x: 560, y: 770, w: 140, h: 140, draw: board },
+  { key: 'summon', name: '별의 탑', x: 360, y: 455, s: 0.9, w: 150, h: 390, draw },
+  { key: 'heroes', name: '영웅의 집', x: 140, y: 548, s: 1, w: 230, h: 240, draw },
+  { key: 'adventure', name: '모험의 문', x: 595, y: 525, s: 0.85, w: 190, h: 215, draw },
+  { key: 'team', name: '훈련장', x: 165, y: 775, s: 0.85, w: 200, h: 140, draw },
+  { key: 'missions', name: '게시판', x: 565, y: 775, s: 0.85, w: 140, h: 165, draw },
 ];
-
-function tower(ctx, b, t) {
-  const { x, y } = b;
-  ellipse(ctx, x, y + 4, 80, 18, 'rgba(0,0,0,0.18)');
-  poly(ctx, [[x - 58, y], [x - 44, y - 230], [x + 44, y - 230], [x + 58, y]], '#e8e2f6', '#8a7ab0');
-  for (let i = 0; i < 5; i++) { ctx.fillStyle = 'rgba(138,122,176,0.35)'; ctx.fillRect(x - 54 + i * 3, y - 40 - i * 46, 108 - i * 6, 4); }
-  rr(ctx, x - 20, y - 70, 40, 70, [20, 20, 0, 0], '#5a3e8a', '#3a2a5a');
-  for (const wy of [y - 130, y - 190]) rr(ctx, x - 12, wy, 24, 30, [12, 12, 2, 2], '#ffe9a0', '#8a7ab0');
-  poly(ctx, [[x - 62, y - 228], [x, y - 310], [x + 62, y - 228]], '#6a4ab0', '#3a2a5a');
-  // 꼭대기 별: 3초 주기로 천천히 밝아졌다 어두워짐
-  const glow = 0.45 + 0.25 * Math.sin(t / 3000 * Math.PI * 2);
-  const g = ctx.createRadialGradient(x, y - 330, 0, x, y - 330, 70);
-  g.addColorStop(0, `rgba(255,224,102,${glow})`); g.addColorStop(1, 'rgba(255,224,102,0)');
-  ctx.fillStyle = g; ctx.fillRect(x - 70, y - 400, 140, 140);
-  const pts = [];
-  for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + (k * Math.PI) / 5 + t / 6000, r = k % 2 ? 9 : 22; pts.push([x + Math.cos(a) * r, y - 330 + Math.sin(a) * r]); }
-  poly(ctx, pts, '#ffe066', '#c9a24a');
-}
-function house(ctx, b) {
-  const { x, y } = b;
-  ellipse(ctx, x, y + 4, 100, 16, 'rgba(0,0,0,0.18)');
-  rr(ctx, x - 80, y - 110, 160, 110, 6, '#f6e6c8', '#a08060');
-  poly(ctx, [[x - 100, y - 104], [x, y - 190], [x + 100, y - 104]], '#d8504a', '#8a2a2a');
-  rr(ctx, x - 20, y - 60, 40, 60, [20, 20, 0, 0], '#8a5a32', '#5a3a1e');
-  for (const wx of [x - 58, x + 34]) { rr(ctx, wx, y - 90, 26, 26, 4, '#bfe6fb', '#a08060'); ctx.fillStyle = '#a08060'; ctx.fillRect(wx + 12, y - 90, 2, 26); }
-  rr(ctx, x + 40, y - 190, 20, 44, 2, '#a07a5a', '#5a3a1e');
-  // 깃발(영웅 문장)
-  ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.arc(x, y - 135, 12, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#d8504a'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★', x, y - 129);
-}
-function gate(ctx, b, t) {
-  const { x, y } = b;
-  ellipse(ctx, x, y + 4, 95, 16, 'rgba(0,0,0,0.18)');
-  rr(ctx, x - 85, y - 170, 44, 170, 6, '#b8b0a4', '#6a6258');
-  rr(ctx, x + 41, y - 170, 44, 170, 6, '#b8b0a4', '#6a6258');
-  ctx.beginPath(); ctx.moveTo(x - 85, y - 150); ctx.quadraticCurveTo(x, y - 250, x + 85, y - 150); ctx.lineTo(x + 85, y - 120); ctx.quadraticCurveTo(x, y - 210, x - 85, y - 120); ctx.closePath();
-  ctx.fillStyle = '#b8b0a4'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#6a6258'; ctx.stroke();
-  // 문 안: 저 멀리 모험의 세계(살짝 빛남)
-  ctx.save(); ctx.beginPath(); ctx.moveTo(x - 41, y); ctx.lineTo(x - 41, y - 120); ctx.quadraticCurveTo(x, y - 190, x + 41, y - 120); ctx.lineTo(x + 41, y); ctx.closePath(); ctx.clip();
-  ctx.fillStyle = grad(ctx, y - 180, y, [[0, '#6cc4f5'], [0.6, '#bfe6fb'], [0.61, '#7fcf5f'], [1, '#4f9e3a']]); ctx.fillRect(x - 41, y - 190, 82, 190);
-  ctx.restore();
-  // 깃발이 바람에 천천히
-  const sway = Math.sin(t / 1600) * 4;
-  for (const fx of [x - 63, x + 63]) {
-    ctx.fillStyle = '#5a3a1e'; ctx.fillRect(fx - 2, y - 230, 4, 62);
-    poly(ctx, [[fx + 2, y - 228], [fx + 34 + sway, y - 218], [fx + 2, y - 206]], '#4a7cff', '#2a4aa0');
-  }
-}
-function training(ctx, b) {
-  const { x, y } = b;
-  ellipse(ctx, x, y - 40, 100, 40, '#c9a46a');
-  ctx.fillStyle = '#8a6436';
-  for (let i = 0; i < 6; i++) ctx.fillRect(x - 100 + i * 40, y - 30, 6, 34);
-  ctx.fillRect(x - 102, y - 22, 208, 6);
-  // 허수아비 과녁
-  ctx.fillStyle = '#6b4a2e'; ctx.fillRect(x - 4, y - 110, 8, 70); ctx.fillRect(x - 30, y - 92, 60, 7);
-  ellipse(ctx, x, y - 120, 22, 22, '#e8d8a8');
-  for (const [r, c] of [[16, '#d84a4a'], [10, '#ffffff'], [5, '#d84a4a']]) ellipse(ctx, x, y - 120, r, r, c);
-  // 무기 걸이
-  ctx.fillStyle = '#c9d3de'; ctx.fillRect(x + 50, y - 100, 4, 50); ctx.fillRect(x + 62, y - 104, 4, 54);
-}
-function board(ctx, b) {
-  const { x, y } = b;
-  ctx.fillStyle = '#6b4a2e'; ctx.fillRect(x - 50, y - 100, 8, 100); ctx.fillRect(x + 42, y - 100, 8, 100);
-  rr(ctx, x - 62, y - 130, 124, 80, 6, '#c9946a', '#6b4a2e');
-  for (const [px, py, c] of [[x - 44, y - 118, '#fff6d8'], [x - 6, y - 122, '#e8f4ff'], [x + 18, y - 104, '#ffe0e8']]) {
-    rr(ctx, px, py, 30, 36, 2, c, null); ctx.fillStyle = '#d84a4a'; ctx.beginPath(); ctx.arc(px + 15, py + 3, 3, 0, Math.PI * 2); ctx.fill();
-  }
-}
 
 function label(ctx, b, badge) {
   ctx.font = 'bold 22px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
