@@ -206,8 +206,9 @@ export class SummonScene extends Phaser.Scene {
   async mythicReveal(slot, r) {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
-    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff }[r.id] ?? 0xffe066) : 0xff3a3a;
-    const outer = r.id === 'judge' ? 0x8a8f99 : col; // 심판자는 흰 번개 + 회색 테두리 빛
+    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a }[r.id] ?? 0xffe066) : 0xff3a3a;
+    // 번개 바깥 빛: 심판자 회색, 심해의 군주 깊은 청록, 세계수의 여왕 금색
+    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a }[r.id] ?? col;
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
     this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
@@ -231,6 +232,8 @@ export class SummonScene extends Phaser.Scene {
       this.tweens.add({ targets: quote, alpha: 0, duration: 400 });
       if (r.id === 'stareater') await this.voidAwakening(r);
       else if (r.id === 'judge') await this.finalJudgment(r);
+      else if (r.id === 'abysslord') await this.abyssRise(r);
+      else if (r.id === 'worldtree') await this.worldTreeBloom(r);
       else await this.eternalDescent(r);
     }
 
@@ -550,6 +553,202 @@ export class SummonScene extends Phaser.Scene {
 
     await tween(this, { targets: layer, alpha: 0, duration: 1000 });
     layer.destroy();
+    setBackdrop('#000000', '#000000');
+  }
+
+  // ★7 전용 애니메이션 공통 마무리: ETERNAL + 이름 + 별 일곱, 잠시 보여 주고 사라짐
+  async eternalTitle(layer, hero, fill, stroke, starFill, pause, isSkipped) {
+    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, fill, { stroke, strokeThickness: 7 }).setAlpha(0).setScale(1.6);
+    const name = text(this, W / 2, H - 250, '', 54, fill, { stroke, strokeThickness: 9 });
+    const stars = text(this, W / 2, H - 180, '', 42, starFill, { stroke, strokeThickness: 6 });
+    layer.add([eternal, name, stars]);
+    this.tweens.add({ targets: eternal, alpha: 1, scale: 1, duration: 1000, ease: 'Back.out' });
+    for (let i = 1; i <= hero.name.length && !isSkipped(); i++) { name.setText(hero.name.slice(0, i)); await wait(this, 130); }
+    name.setText(hero.name);
+    for (let i = 1; i <= 7 && !isSkipped(); i++) { stars.setText('★'.repeat(i)); await wait(this, 170); }
+    stars.setText('★'.repeat(7));
+    await pause(3500);
+    await tween(this, { targets: layer, alpha: 0, duration: 1000 });
+    layer.destroy();
+  }
+
+  // ★7 전용 애니메이션 시작 준비: 맨 위 층 + 탭하면 건너뛰기
+  eternalLayer(bgColor = 0x000000) {
+    const layer = this.add.container(0, 0).setDepth(170);
+    const state = { skipped: false };
+    const bg = this.add.rectangle(W / 2, H / 2, W, H, bgColor, 1).setInteractive();
+    layer.add(bg);
+    this.time.delayedCall(400, () => bg.once('pointerdown', () => { state.skipped = true; }));
+    const pause = async ms => { for (let t = 0; t < ms && !state.skipped; t += 50) await wait(this, 50); };
+    const fast = ms => (state.skipped ? 1 : ms);
+    return { layer, state, pause, fast };
+  }
+
+  // 심해의 군주 전용(약 11초): 1) 아래부터 물이 차오르고 물방울이 올라간다 2) 깊은 바다 속에서 거대한 눈이 천천히 떠진다
+  // 3) 눈이 감기고 소용돌이가 돈다 4) 소용돌이를 타고 군주가 올라온다 5) ETERNAL + 이름. 번쩍임 없음.
+  async abyssRise(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x02080a);
+    const cx = W / 2, cy = H / 2 - 40;
+    setBackdrop('#02080a', '#02080a');
+
+    // 1) 물이 차오른다(물결 윗면)
+    const water = this.add.graphics();
+    layer.add(water);
+    const lvl = { y: H + 40, t: 0 };
+    const drawWater = () => {
+      water.clear();
+      // 물 몸통(그라데이션은 사각형으로만) + 물결 윗면(단색 경로)
+      water.fillGradientStyle(0x1a8a90, 0x1a8a90, 0x031418, 0x031418, 1).fillRect(0, lvl.y + 10, W, Math.max(0, H - lvl.y));
+      water.fillStyle(0x1a8a90, 1).beginPath(); water.moveTo(0, lvl.y + 12);
+      for (let x = 0; x <= W; x += 24) water.lineTo(x, lvl.y + Math.sin(x / 60 + lvl.t) * 12);
+      water.lineTo(W, lvl.y + 12); water.closePath(); water.fillPath();
+      water.lineStyle(3, 0x7ff0e8, 0.7).beginPath();
+      for (let x = 0; x <= W; x += 24) (x ? water.lineTo(x, lvl.y + Math.sin(x / 60 + lvl.t) * 12) : water.moveTo(x, lvl.y + Math.sin(x / 60 + lvl.t) * 12));
+      water.strokePath();
+    };
+    const waveTick = this.time.addEvent({ delay: 40, loop: true, callback: () => { lvl.t += 0.12; drawWater(); } });
+    const bubbles = this.add.particles(0, 0, 'dot', {
+      x: { min: 20, max: W - 20 }, y: H + 10, lifespan: 4200, speedY: { min: -150, max: -70 }, speedX: { min: -12, max: 12 },
+      scale: { min: 0.3, max: 0.9 }, alpha: { start: 0.7, end: 0 }, tint: [0xbff8f4, 0x7ff0e8], frequency: 60,
+    });
+    layer.add(bubbles);
+    sfx.play('summon');
+    await tween(this, { targets: lvl, y: -40, duration: fast(2600), ease: 'Sine.inOut' });
+    setBackdrop('#1a8a90', '#031418');
+
+    // 2) 거대한 눈이 떠진다(흰 눈, 동공 없음 — 게임 그림체 그대로)
+    const eyeLid = { open: 0 };
+    const eye = this.add.graphics();
+    layer.add(eye);
+    const drawEye = () => {
+      eye.clear();
+      const h = 90 * eyeLid.open;
+      eye.fillStyle(0x7ff0e8, 0.18).fillEllipse(cx, cy, 420, 220);
+      if (h > 1) {
+        eye.fillStyle(0xf4fffe, 1).fillEllipse(cx, cy, 300, h * 2);
+        eye.lineStyle(6, 0x0e4a50, 1).strokeEllipse(cx, cy, 300, h * 2);
+      } else eye.lineStyle(6, 0x0e4a50, 1).lineBetween(cx - 150, cy, cx + 150, cy);
+    };
+    drawEye();
+    sfx.play('star7');
+    await tween(this, { targets: eyeLid, open: 1, duration: fast(1600), ease: 'Sine.inOut', onUpdate: drawEye });
+    await pause(1200);
+    await tween(this, { targets: eyeLid, open: 0, duration: fast(700), ease: 'Sine.in', onUpdate: drawEye });
+    this.tweens.add({ targets: eye, alpha: 0, duration: 500 });
+
+    // 3) 소용돌이
+    const swirl = this.add.container(cx, cy + 160).setScale(1, 0.45);
+    for (let i = 0; i < 5; i++) {
+      const g = this.add.graphics();
+      g.lineStyle(8 - i, i % 2 ? 0x7ff0e8 : 0x3fd8d0, 0.8).beginPath().arc(0, 0, 70 + i * 45, i, i + Math.PI * 1.3).strokePath();
+      swirl.add(g);
+    }
+    swirl.setAlpha(0);
+    layer.add(swirl);
+    this.tweens.add({ targets: swirl, alpha: 1, duration: 800 });
+    this.tweens.add({ targets: swirl, angle: -360, duration: 5000, repeat: -1 });
+
+    // 4) 군주가 올라온다
+    const img = this.add.image(cx, cy + 360, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.2).setAlpha(0);
+    layer.add(img);
+    await tween(this, { targets: img, alpha: 1, y: cy + 200, scale: 2.6, duration: fast(2200), ease: 'Sine.out' });
+    this.cameras.main.shake(500, this.flash ? 0.014 : 0.007);
+    this.tweens.add({ targets: img, y: cy + 186, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    await this.eternalTitle(layer, hero, '#e8fffd', '#06343a', '#7ff0e8', pause, () => state.skipped);
+    waveTick.remove();
+    setBackdrop('#000000', '#000000');
+  }
+
+  // 세계수의 여왕 전용(약 11초): 1) 땅이 갈라지고 2) 거대한 나무가 하늘까지 자라며 가지를 뻗는다
+  // 3) 가지마다 빛나는 꽃이 피고 꽃잎이 흩날린다 4) 나무 밑동의 빛 속에서 여왕이 나타난다 5) ETERNAL + 이름. 번쩍임 없음.
+  async worldTreeBloom(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x06120a);
+    const cx = W / 2, ground = H / 2 + 260;
+    setBackdrop('#06120a', '#0a1a0c');
+
+    // 하늘과 땅
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x0a1a2a, 0x0a1a2a, 0x2a5a2a, 0x2a5a2a, 1).fillRect(0, 0, W, ground);
+    sky.fillStyle(0x1e3a14, 1).fillRect(0, ground, W, H - ground);
+    sky.setAlpha(0);
+    layer.add(sky);
+    this.tweens.add({ targets: sky, alpha: 1, duration: fast(1000) });
+    // 1) 땅이 갈라지는 금빛 틈
+    const crack = this.add.graphics();
+    layer.add(crack);
+    crack.lineStyle(5, 0xffd84a, 1).beginPath().moveTo(cx - 160, ground + 6).lineTo(cx - 60, ground - 2).lineTo(cx, ground + 8).lineTo(cx + 70, ground).lineTo(cx + 170, ground + 6).strokePath();
+    crack.setScale(0, 1).setPosition(cx * (1 - 0), 0);
+    crack.x = 0;
+    await tween(this, { targets: crack, scaleX: 1, duration: fast(800), ease: 'Cubic.out' });
+    sfx.play('summon');
+
+    // 2) 나무가 자란다(줄기 → 가지)
+    const tree = this.add.graphics();
+    layer.add(tree);
+    const grow = { p: 0 };
+    const branches = [[-1, 0.45, 150, -0.9], [1, 0.5, 160, -0.8], [-1, 0.68, 130, -0.6], [1, 0.72, 120, -0.55], [-1, 0.86, 90, -0.4], [1, 0.88, 95, -0.35]];
+    const topY = 150;
+    const drawTree = () => {
+      tree.clear();
+      const trunkTop = ground - (ground - topY) * Math.min(1, grow.p / 0.6);
+      tree.fillStyle(0x5a3a1e, 1).fillTriangle(cx - 46, ground, cx + 46, ground, cx, trunkTop);
+      tree.fillStyle(0x7a5232, 1).fillTriangle(cx - 30, ground, cx + 10, ground, cx - 6, trunkTop + 40);
+      for (const [sx, at, len, ang] of branches) {
+        const bp = Math.max(0, Math.min(1, (grow.p - 0.4 - at * 0.3) / 0.35));
+        if (!bp) continue;
+        const by = ground - (ground - topY) * at;
+        const ex = cx + sx * Math.cos(ang) * len * bp * 2.2, ey = by + Math.sin(ang) * len * bp;
+        tree.lineStyle(14 - at * 8, 0x5a3a1e, 1).lineBetween(cx, by, ex, ey);
+        tree.fillStyle(0x3f8a3a, 1).fillCircle(ex, ey, 46 * bp);
+        tree.fillStyle(0x6acf4a, 1).fillCircle(ex - 10 * sx, ey - 12, 30 * bp);
+      }
+      if (grow.p > 0.6) {
+        const cp = Math.min(1, (grow.p - 0.6) / 0.4);
+        tree.fillStyle(0x3f8a3a, 1).fillCircle(cx, topY + 10, 90 * cp);
+        tree.fillStyle(0x6acf4a, 1).fillCircle(cx - 20, topY - 6, 60 * cp);
+      }
+    };
+    sfx.play('star7');
+    await tween(this, { targets: grow, p: 1, duration: fast(3200), ease: 'Sine.inOut', onUpdate: drawTree });
+    drawTree();
+
+    // 3) 빛나는 꽃 + 꽃잎
+    const blossoms = [];
+    const spots = [[cx, topY + 10], [cx - 40, topY - 10], [cx + 50, topY + 30], ...branches.map(([sx, at, len, ang]) => {
+      const by = ground - (ground - topY) * at;
+      return [cx + sx * Math.cos(ang) * len * 2.2, by + Math.sin(ang) * len];
+    })];
+    for (const [x, y] of spots) {
+      for (let k = 0; k < 3; k++) {
+        const b = this.add.circle(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 40, 7, k % 2 ? 0xffb8e0 : 0xffe066).setScale(0);
+        layer.add(b);
+        blossoms.push(b);
+      }
+    }
+    blossoms.forEach((b, i) => this.tweens.add({ targets: b, scale: 1, duration: fast(400), delay: state.skipped ? 0 : i * 40, ease: 'Back.out' }));
+    const petals = this.add.particles(0, 0, 'dot', {
+      x: { min: 40, max: W - 40 }, y: { min: 60, max: 400 }, lifespan: 5000, speedY: { min: 40, max: 90 }, speedX: { min: -40, max: 20 },
+      scaleX: { min: 0.3, max: 0.5 }, scaleY: { min: 0.2, max: 0.35 }, rotate: { min: 0, max: 360 },
+      alpha: { start: 0.9, end: 0 }, tint: [0xffb8e0, 0xffe9a0, 0xffffff], frequency: 60,
+    });
+    layer.add(petals);
+    await pause(1200);
+
+    // 4) 밑동의 빛 속에서 여왕이 나타난다
+    const light = this.add.circle(cx, ground - 60, 40, 0xfff3c0, 0.9).setScale(0.2);
+    layer.add(light);
+    await tween(this, { targets: light, scale: 3, alpha: 0.35, duration: fast(1200), ease: 'Sine.out' });
+    const img = this.add.image(cx, ground + 10, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.6).setAlpha(0);
+    layer.add(img);
+    await tween(this, { targets: img, alpha: 1, scale: 2.5, y: ground - 10, duration: fast(1800), ease: 'Back.out' });
+    this.tweens.add({ targets: img, y: ground - 24, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: light, alpha: 0.15, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    await this.eternalTitle(layer, hero, '#fff6c8', '#2a5a24', '#ffe066', pause, () => state.skipped);
+    petals.stop();
     setBackdrop('#000000', '#000000');
   }
 

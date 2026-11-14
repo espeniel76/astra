@@ -635,6 +635,8 @@ const OUTFIT = {
   tornado: { coat: '#6a4a30', inner: '#d7eef8', v: 8, zipper: '#d7dde2', fur: '#f0e8d8' },
   emperor: { coat: '#1a1020', inner: '#9a3aff', v: 11, trim: '#d8b84a', lapel: '#2a1830', cape: ['#120a18', '#6a1a8a'] },
   goldlord: { coat: '#c8961a', inner: '#fff3c0', v: 10, trim: '#fff3c0', belt: ['#8a6410', '#fff3c0'], cape: ['#8a6410', '#ffd84a'] },
+  abysslord: { coat: '#0e2a30', inner: '#3fd8d0', v: 10, ridge: true, trim: '#7ff0e8', collar: '#0e2a30', pauldron: ['#1a4a50', '#7ff0e8'], cape: ['#06161a', '#1a6a70'] },
+  worldtree: { coat: '#2a5a2a', inner: '#ffd84a', v: 9, trim: '#ffe9a0', collar: '#2a5a2a', belt: ['#5a3a1e', '#ffd84a'], cape: ['#3a7a32', '#c9a24a'] },
   judge: { coat: '#141418', inner: '#f4f4f4', v: 10, ridge: true, trim: '#f4f4f4', collar: '#141418', pauldron: ['#2a2a30', '#ffffff'], belt: ['#08080a', '#d7dde2'], cape: ['#f2f2f2', '#141418'] },
   stareater: { coat: '#140c2a', inner: '#b06aff', v: 10, trim: '#e0c8ff', stars: '#e0c8ff', collar: '#140c2a', cape: ['#0a0618', '#4a1a8a'] },
   guardian: { coat: '#e8c040', inner: '#ffffff', v: 9, ridge: true, trim: '#fff6c8', pauldron: ['#ffe680', '#fff6c8'], cape: ['#fff3c0', '#e8b923'] },
@@ -1300,6 +1302,58 @@ function heroDeco(ctx, id, phase) {
           fillStroke(ctx, '#fff6c8', 1.6, '#c8961a');
         }
         circle(ctx, 0, top + 4, 2.6, '#ffffff', 1);
+      }
+      break;
+    case 'abysslord': // 심해의 군주: 등 뒤 물의 고리와 물방울 + 머리 위 산호 왕관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 4, 6, 0, BY - 4, R + 22);
+        g.addColorStop(0, 'rgba(14,74,80,0.0)'); g.addColorStop(0.6, 'rgba(63,216,208,0.35)'); g.addColorStop(1, 'rgba(63,216,208,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 4, R + 22, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(127,240,232,0.85)'; ctx.lineWidth = 2.6;
+        ctx.beginPath(); ctx.arc(0, BY - 4, R + 14, Math.PI * 0.75, Math.PI * 2.25); ctx.stroke();
+        for (const [x, y, r] of [[-30, BY - 20, 3], [31, BY - 26, 2.4], [-26, BY + 14, 2], [29, BY + 10, 3]]) {
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); fillStroke(ctx, 'rgba(191,250,246,0.75)', 1, '#3fd8d0');
+          ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.3, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      if (phase === 'front') { // 산호 왕관(청록 가지)
+        ctx.lineCap = 'round';
+        for (const [x, h, c] of [[-12, 14, '#3fd8d0'], [-5, 20, '#7ff0e8'], [3, 24, '#3fd8d0'], [10, 18, '#7ff0e8'], [16, 12, '#3fd8d0']]) {
+          ctx.strokeStyle = '#06343a'; ctx.lineWidth = 5.5;
+          ctx.beginPath(); ctx.moveTo(x, top + 4); ctx.lineTo(x + 1, top + 4 - h); ctx.stroke();
+          ctx.strokeStyle = c; ctx.lineWidth = 3.4;
+          ctx.beginPath(); ctx.moveTo(x, top + 4); ctx.lineTo(x + 1, top + 4 - h); ctx.moveTo(x + 0.5, top - h * 0.4); ctx.lineTo(x + 5, top - h * 0.6); ctx.stroke();
+        }
+        ctx.lineCap = 'butt';
+        rr(ctx, -16, top + 1, 34, 6, 3); fillStroke(ctx, '#0e4a50', 1.6, '#06343a');
+        circle(ctx, 1, top + 4, 2.6, '#bff8f4', 1);
+      }
+      break;
+    case 'worldtree': // 세계수의 여왕: 등 뒤 잎사귀 후광 + 가지와 꽃으로 엮은 왕관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 6, 4, 0, BY - 6, R + 24);
+        g.addColorStop(0, 'rgba(255,216,74,0.35)'); g.addColorStop(1, 'rgba(255,216,74,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 6, R + 24, 0, Math.PI * 2); ctx.fill();
+        for (let k = 0; k < 12; k++) {
+          const a = (k / 12) * Math.PI * 2;
+          ctx.save(); ctx.translate(Math.cos(a) * (R + 13), BY - 6 + Math.sin(a) * (R + 13)); ctx.rotate(a + Math.PI / 2);
+          ctx.beginPath(); ctx.ellipse(0, 0, 4, 8, 0, 0, Math.PI * 2); fillStroke(ctx, k % 2 ? '#5fae4a' : '#8fd86a', 1.2, '#2a5a24');
+          ctx.restore();
+        }
+      }
+      if (phase === 'front') {
+        ctx.strokeStyle = '#5a3a1e'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-18, top + 6); ctx.quadraticCurveTo(-14, top - 10, -6, top - 16);
+        ctx.moveTo(18, top + 6); ctx.quadraticCurveTo(14, top - 10, 6, top - 16);
+        ctx.moveTo(0, top + 2); ctx.lineTo(0, top - 20); ctx.stroke();
+        ctx.lineCap = 'butt';
+        for (const [x, y] of [[-14, top - 6], [14, top - 6], [-6, top - 16], [6, top - 16], [0, top - 21]]) {
+          ctx.beginPath(); ctx.ellipse(x, y, 4, 2.6, x * 0.05, 0, Math.PI * 2); fillStroke(ctx, '#6acf4a', 1, '#2a5a24');
+        }
+        for (const [x, y, c] of [[-10, top - 12, '#ffb8e0'], [10, top - 12, '#ffb8e0'], [0, top - 25, '#ffd84a']]) {
+          for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; circle(ctx, x + Math.cos(a) * 2.6, y + Math.sin(a) * 2.6, 2, c, 0.6); }
+          circle(ctx, x, y, 1.4, '#fff3c0', 0.6);
+        }
       }
       break;
     case 'judge': // 최후의 심판자: 등 뒤에 엇갈린 은빛 검 두 자루 + 검은 투구에 흰 깃털 장식과 흰 이마 띠

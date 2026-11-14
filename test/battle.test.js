@@ -220,3 +220,34 @@ describe('최후의 심판자', () => {
     expect(dz / da).toBeGreaterThan(1.7);
   });
 });
+
+describe('심해의 군주', () => {
+  it('아군이 맞으면 받은 피해의 25%를 때린 적에게 되돌린다', () => {
+    const b = createBattle({ team: team('slinger', 'abysslord'), foes: [{ mon: 'golem', lv: 1 }], seed: 60 });
+    const g = foes(b)[0], before = g.hp, ev = [];
+    const dealt = b.attack(g, allies(b)[0], 1, ev, { noCrit: true });
+    expect(before - g.hp).toBe(Math.max(1, Math.round(dealt * 0.25)));
+  });
+});
+
+describe('세계수의 여왕', () => {
+  it('재생: 자기 차례가 시작될 때마다 회복한다', () => {
+    const b = createBattle({ team: team('slinger', 'worldtree'), foes: [{ mon: 'golem', lv: 1 }], seed: 61 });
+    const s = allies(b)[0];
+    s.hp = 10;
+    s.statuses.push({ k: 'regen', turns: 3, v: 0.6, amt: 50 });
+    act(b, s, { auto: false });
+    expect(s.hp).toBeGreaterThanOrEqual(60);
+  });
+  it('전투마다 한 번, 아군이 쓰러지면 쓰러진 아군 전부를 되살린다', () => {
+    const b = createBattle({ team: team('slinger', 'herbalist', 'worldtree'), foes: [{ mon: 'golem', lv: 30 }], seed: 62 });
+    const [a, h] = allies(b), g = foes(b)[0], ev = [];
+    h.alive = false; h.hp = 0; // 먼저 쓰러져 있던 아군
+    b.hurt(g, a, 1e9, ev);
+    expect(a.alive).toBe(true);
+    expect(h.alive).toBe(true);
+    expect(h.hp).toBe(Math.round(h.maxHp * 0.4));
+    b.hurt(g, a, 1e9, ev);
+    expect(a.alive).toBe(false);
+  });
+});

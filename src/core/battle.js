@@ -119,6 +119,9 @@ export function attack(b, src, tgt, mult, ev, opts = {}) {
   if (refl && !opts.noCounter && src.alive && src.side !== tgt.side && dealt > 0) {
     hurt(b, tgt, src, Math.max(1, Math.round(dealt * refl.v)), ev, { reflect: true });
   }
+  // 심해의 군주: 아군이 맞으면 받은 피해 일부를 물로 되돌린다
+  const tide = tgt.side === 'ally' && src.side === 'foe' && !opts.noCounter && src.alive && dealt > 0 && alive(b, 'ally').find(x => x.passive?.k === 'tide');
+  if (tide) hurt(b, tide, src, Math.max(1, Math.round(dealt * tide.passive.v)), ev, { reflect: true });
   return dealt;
 }
 
@@ -166,6 +169,19 @@ function die(b, u, ev) {
       u.hp = Math.round(u.maxHp * ph.passive.hp);
       u.statuses = u.statuses.filter(s => !BAD.has(s.k));
       ev.push({ type: 'revive', from: ph.uid, to: u.uid, amount: u.hp });
+      return;
+    }
+    // 세계수의 여왕: 전투마다 한 번, 쓰러지는 아군과 이미 쓰러진 아군을 전부 되살린다
+    const tree = b.units.find(x => x.side === 'ally' && x.passive?.k === 'rebirth' && !x.passiveUsed && (x.alive || x === u));
+    if (tree) {
+      tree.passiveUsed = true;
+      ev.push({ type: 'passive', from: tree.uid, name: '세계수의 부활' });
+      for (const x of b.units.filter(y => y.side === 'ally' && (y === u || !y.alive))) {
+        x.alive = true;
+        x.hp = Math.round(x.maxHp * tree.passive.hp);
+        x.statuses = x.statuses.filter(st => !BAD.has(st.k));
+        ev.push({ type: 'revive', from: tree.uid, to: x.uid, amount: x.hp });
+      }
       return;
     }
   }
@@ -227,6 +243,7 @@ function startOfTurn(b, u, ev) {
   for (const s of [...u.statuses]) {
     if (!u.alive) break;
     if (DOT.has(s.k)) hurt(b, null, u, Math.max(1, s.amt || 1), ev, { dot: s.k });
+    if (s.k === 'regen') heal(b, null, u, Math.max(1, s.amt || 1), ev);
     if (s.k === 'doom') {
       s.turns -= 1;
       if (s.turns <= 0) {

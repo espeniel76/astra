@@ -293,6 +293,15 @@ export const HEROES = [
     S('최후의 판결', '하늘에서 은빛 검들을 떨어뜨려 적 전체를 베어요. 체력이 절반 이하인 적은 2배로 아파요. (전투가 시작되면 적 전체의 방어 -30%)', 3,
       { t: 'verdict', mult: 1.8, below: 0.5, bonus: 2 }),
     { shirt: 0x141418, gun: 'greatsword', glow: 0xffffff }, '저울은 이미 기울었다. 판결을 내린다.', { passive: { k: 'sentence', v: 0.3 } }),
+  // 네 번째·다섯 번째 ★7(아들이 고름, 2026-11-14)
+  H('abysslord', '심해의 군주', 7, 'tank',
+    S('대해일', '거대한 해일로 적 전체를 때리고 뒤로 밀어내며, 아군 전체에 물의 방패를 둘러요. (아군이 맞을 때마다 받은 피해의 25%를 되돌려줘요)', 3,
+      dmg('all', 1.3), { t: 'gauge', target: 'all', v: -500 }, { t: 'shield', target: 'allies', mult: 2.0 }),
+    { shirt: 0x0e2a30, gun: 'trident', glow: 0x3fd8d0 }, '바다는 모든 것을 기억하고, 모든 것을 돌려준다.', { passive: { k: 'tide', v: 0.25 } }),
+  H('worldtree', '세계수의 여왕', 7, 'support',
+    S('세계수의 축복', '아군 전체를 크게 치료하고, 3턴 동안 매 턴 조금씩 더 치료해요. (전투마다 한 번, 쓰러진 아군을 전부 되살려요)', 3,
+      { t: 'heal', target: 'allies', mult: 2.0 }, st('allies', 'regen', 3, 0.7)),
+    { shirt: 0x2a5a2a, gun: 'flowerstaff', glow: 0x9fe07a }, '뿌리가 살아 있는 한, 숲은 다시 자란다.', { passive: { k: 'rebirth', hp: 0.4 } }),
 ];
 
 export const HERO = Object.fromEntries(HEROES.map(h => [h.id, h]));
