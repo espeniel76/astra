@@ -1,0 +1,71 @@
+// 개발자 전용 미리보기(dev.html). 게임 기록은 건드리지 않고, 뽑기 연출만 마음대로 틀어 본다.
+import './ui/style.css';
+import { h, heroCard, stars } from './ui/app.js';
+import { HEROES, STAR_COLOR } from './data/heroes.js';
+import { defaultSave } from './core/save.js';
+import { startSummon } from './game/phaser.js';
+
+// 가짜 저장(브라우저에 저장하지 않음): 모든 영웅을 가진 상태, 다이아 넉넉히
+const save = defaultSave();
+save.diamonds = 9_999_999;
+for (const x of HEROES) save.heroes[x.id] = { level: 1, dupes: 0 };
+const opt = { isNew: true, flash: false };
+
+const root = document.getElementById('app');
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const ofStar = s => HEROES.filter(x => x.star === s);
+const result = (x, extra = {}) => ({ id: x.id, star: x.star, isNew: opt.isNew, dupes: opt.isNew ? 0 : 2, overflowGold: 0, ...extra });
+
+// 진짜 소환처럼 보이는 10+1: 낮은 별 10명 + 고른 별 1명
+function bundle(top) {
+  const low = [];
+  for (let i = 0; i < 10; i++) {
+    const s = Math.min(top, pick([1, 1, 1, 2, 2, 2, 3, 3, 4]));
+    low.push(result(pick(ofStar(s))));
+  }
+  return [...low, result(pick(ofStar(top)))];
+}
+
+const app = {
+  save,
+  persist() {},
+  toast() {},
+  show() { render(); },
+};
+
+function play(results) {
+  save.settings.flash = opt.flash;
+  startSummon(app, results);
+}
+
+function render() {
+  const btn = (label, fn, cls = '') => h('button.btn' + cls, { onclick: fn }, label);
+  const toggle = (key, label, desc) => {
+    const box = h('input', { type: 'checkbox' });
+    box.checked = opt[key];
+    box.addEventListener('change', () => { opt[key] = box.checked; });
+    return h('label.switch.card', h('div', h('b', label), h('div.dim', { style: 'font-size:13px' }, desc)), box);
+  };
+  root.replaceChildren(
+    h('div.top', h('h1', '🧪 개발자 미리보기')),
+    h('div.dim', { style: 'font-size:13px;margin-bottom:10px' }, '뽑기 연출만 틀어 봐요. 진짜 게임 기록은 안 바뀌어요.'),
+    h('div.col',
+      toggle('isNew', '처음 뽑은 영웅처럼(NEW)', '끄면 이미 가진 영웅이 겹친 것처럼(+2) 보여요.'),
+      toggle('flash', '번쩍임 효과 켜고 보기', '진짜 점멸·빠른 번개가 나와요. 기본 게임에서는 꺼져 있어요.'),
+      h('h2', { style: 'margin:8px 0 0' }, '한 장 공개'),
+      h('div.dev-row', ...[1, 2, 3, 4, 5, 6, 7].map(s =>
+        btn(h('span', { style: `color:${STAR_COLOR[s]}` }, `★${s}`), () => play([result(pick(ofStar(s)))]), '.ghost'))),
+      h('div.dim', { style: 'font-size:12px' }, '★1~★4: 카드 뒤집기 · ★5: 컷신 · ★6: 암전 + 대사 + 번개 · ★7: 전용 애니메이션'),
+      h('h2', { style: 'margin:8px 0 0' }, '10+1 묶음 (최고 별 고르기)'),
+      h('div.dev-row', ...[1, 2, 3, 4, 5, 6, 7].map(s =>
+        btn(h('span', { style: `color:${STAR_COLOR[s]}` }, `★${s}`), () => play(bundle(s)), '.ghost'))),
+      h('h2', { style: 'margin:8px 0 0' }, '영웅 골라서 보기'),
+      ...[7, 6, 5, 4, 3, 2, 1].flatMap(s => [
+        h('div', { style: 'margin-top:6px' }, stars(s), h('span.dim', ` ${ofStar(s).length}명`)),
+        h('div.grid', ...ofStar(s).map(x => heroCard({ save }, x.id, { showLevel: false, onclick: () => play([result(x)]) }))),
+      ]),
+    ),
+  );
+}
+
+render();

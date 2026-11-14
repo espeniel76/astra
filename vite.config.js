@@ -6,7 +6,8 @@ export default defineConfig({
   build: {
     target: 'es2022',
     // Phaser는 따로 떼어 둔다: 게임만 고쳐 올려도 Phaser는 다시 받지 않는다
-    rollupOptions: { output: { manualChunks: { phaser: ['phaser'] } } },
+    // dev.html = 개발자 미리보기(게임과 같은 곳에 올라가지만 링크는 따로)
+    rollupOptions: { input: { main: 'index.html', dev: 'dev.html' }, output: { manualChunks: { phaser: ['phaser'] } } },
     chunkSizeWarningLimit: 1300,
   },
 });
