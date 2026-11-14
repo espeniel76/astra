@@ -23,7 +23,7 @@ describe('능력치', () => {
 describe('레벨업', () => {
   it('비용 곡선', () => {
     expect(levelCost(1)).toBe(100);
-    expect(levelCost(2)).toBe(118);
+    expect(levelCost(2)).toBe(115);
   });
   it('골드가 모자라면 안 되고 골드도 그대로', () => {
     const s = mkSave(99, { slinger: { level: 1, dupes: 0 } });

@@ -10,7 +10,7 @@ export function heroStats(id, level = 1, dupes = 0) {
   return { hp: Math.round(b.hp * m), atk: Math.round(b.atk * m), def: Math.round(b.def * m), spd: b.spd };
 }
 
-export const levelCost = level => Math.round(100 * 1.18 ** (level - 1));
+export const levelCost = level => Math.round(100 * 1.15 ** (level - 1));
 
 export function levelUp(save, id) {
   const h = save.heroes[id];

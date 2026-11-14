@@ -20,7 +20,7 @@ for (const c of CHAPTERS) {
     const foes = boss
       ? [{ mon: c.foes[0], lv }, { mon: c.boss, lv }, { mon: c.foes[1], lv }]
       : WAVES[n - 1].map(k => ({ mon: pick[k], lv }));
-    STAGES.push({ id: `${c.n}-${n}`, chapter: c.n, n, lv, boss, foes, gold: 40 + 12 * (lv - 1), firstDia: boss ? 1000 : 150 });
+    STAGES.push({ id: `${c.n}-${n}`, chapter: c.n, n, lv, boss, foes, gold: 60 + 25 * (lv - 1), firstDia: boss ? 1000 : 150 });
   }
 }
 export const STAGE = Object.fromEntries(STAGES.map(s => [s.id, s]));
