@@ -171,6 +171,14 @@ function die(b, u, ev) {
   ev.push({ type: 'death', to: u.uid });
   if (u.side === 'foe') {
     b.kills += 1;
+    // 별을 삼킨 자: 적이 쓰러질 때마다 공격력이 오른다(최대 max번)
+    for (const d of alive(b, 'ally').filter(x => x.passive?.k === 'devour')) {
+      d.devour = d.devour || 0;
+      if (d.devour >= d.passive.max) continue;
+      d.devour += 1;
+      d.atk = Math.round(d.atk * (1 + d.passive.v));
+      ev.push({ type: 'passive', from: d.uid, name: `별 삼키기 ${d.devour}` });
+    }
     const pl = u.statuses.find(s => s.k === 'poison' && s.spread);
     if (pl) {
       const others = alive(b, 'foe');

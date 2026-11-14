@@ -188,3 +188,19 @@ describe('혈월 사냥꾼', () => {
     expect(ev.filter(e => e.type === 'damage' && e.from === me.uid).length).toBe(1);
   });
 });
+
+describe('별을 삼킨 자', () => {
+  it('적이 쓰러질 때마다 공격력이 15%씩, 최대 5번까지 오른다', () => {
+    const b = createBattle({ team: team('stareater'), foes: Array.from({ length: 3 }, () => ({ mon: 'slime', lv: 1 })), seed: 40 });
+    const me = allies(b)[0];
+    const base = me.atk;
+    const ev = [];
+    b.hurt(me, foes(b)[0], 1e9, ev);
+    expect(me.atk).toBe(Math.round(base * 1.15));
+    expect(ev.some(e => e.type === 'passive')).toBe(true);
+    me.devour = 5;
+    const before = me.atk;
+    b.hurt(me, foes(b)[1], 1e9, ev);
+    expect(me.atk).toBe(before);
+  });
+});

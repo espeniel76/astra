@@ -283,6 +283,11 @@ export const HEROES = [
     S('황금 결계', '황금 창 5개를 무작위 적에게 꽂고, 아군 전체에 보호막을 둘러요. (아군이 받는 피해 -20%, 전투마다 한 번 모두를 되살리듯 회복)', 3,
       dmg('random', 0.9, { hits: 5 }), { t: 'shield', target: 'allies', mult: 1.5 }),
     { shirt: 0xfff0b0, gun: 'staff', glow: 0xffe066 }, '영원히. 이 결계가 서 있는 한.', { passive: { k: 'guardian', guard: 0.2, at: 0.2, heal: 0.3 } }),
+  // 두 번째 ★7(아들 요청, 2026-11-14): 우주의 어둠. 적이 쓰러질 때마다 더 강해진다.
+  H('stareater', '별을 삼킨 자', 7, 'dps',
+    S('블랙홀', '블랙홀로 적 전체를 빨아들여 크게 때리고, 행동 게이지를 날려 버려요. (적이 쓰러질 때마다 공격력 +15%, 최대 5번)', 3,
+      dmg('all', 2.2), { t: 'gauge', target: 'all', v: -1000 }),
+    { shirt: 0x140c2a, gun: 'orb', glow: 0xb06aff }, '별 하나가 꺼질 때마다, 나는 조금 더 밝아진다.', { passive: { k: 'devour', v: 0.15, max: 5 } }),
 ];
 
 export const HERO = Object.fromEntries(HEROES.map(h => [h.id, h]));

@@ -260,6 +260,7 @@ export class BattleScene extends Phaser.Scene {
       case 'pet': this.float(e.from, '🐉', '#ff8a3a', 40); await wait(this, 150); return;
       case 'passive': {
         const a = this.view(e.from);
+        if (e.name.startsWith('별 삼키기')) { this.float(e.from, '🌌 공격력↑', '#c9a8ff', 28); return; }
         sfx.play('star6');
         const t = text(this, W / 2, 660, `${a?.u.name || ''} · ${e.name}!`, 40, '#ffe066');
         await wait(this, 700); t.destroy();

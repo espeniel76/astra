@@ -206,7 +206,7 @@ export class SummonScene extends Phaser.Scene {
   async mythicReveal(slot, r) {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
-    const col = seven ? 0xffe066 : 0xff3a3a;
+    const col = seven ? (r.id === 'stareater' ? 0xb06aff : 0xffe066) : 0xff3a3a;
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
     this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
@@ -225,10 +225,11 @@ export class SummonScene extends Phaser.Scene {
     quote.setText(line);
     await wait(this, 2000); // 대사를 다 읽을 수 있게 2초 기다림
 
-    // ★7 전용: 하늘이 갈라지며 수호신이 내려온다
+    // ★7 전용 애니메이션: 수호신 = 하늘이 갈라지며 강림, 별을 삼킨 자 = 별들을 빨아들이는 블랙홀
     if (seven) {
       this.tweens.add({ targets: quote, alpha: 0, duration: 400 });
-      await this.eternalDescent(r);
+      if (r.id === 'stareater') await this.voidAwakening(r);
+      else await this.eternalDescent(r);
     }
 
     // 3) 쾅: 번쩍 + 화면 흔들림
@@ -362,6 +363,94 @@ export class SummonScene extends Phaser.Scene {
 
     // 끝: 천천히 사라지고 원래 연출(쾅 → 카드 뒤집기)로
     feathers.stop();
+    await tween(this, { targets: layer, alpha: 0, duration: 1000 });
+    layer.destroy();
+  }
+
+  // 별을 삼킨 자 전용(약 10초, 탭하면 넘어감). 번쩍임 없음: 모두 천천히 움직이고 천천히 밝아진다.
+  // 1) 어둠 속에 별들이 하나둘 떠오르고 2) 한가운데 작은 블랙홀이 열려 별들을 소용돌이치며 삼킨다
+  // 3) 보랏빛 고리가 커지며 돌고 4) 블랙홀 속에서 별을 삼킨 자가 떠오른다(별 조각 왕관이 둘레를 돈다)
+  // 5) ETERNAL + 이름 + 별 일곱
+  async voidAwakening(r) {
+    const hero = HERO[r.id];
+    const VIOLET = 0xb06aff;
+    const layer = this.add.container(0, 0).setDepth(170);
+    const cx = W / 2, cy = H / 2 - 60;
+    let skipped = false;
+    const hit = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1);
+    layer.add(hit);
+    hit.setInteractive();
+    this.time.delayedCall(400, () => hit.once('pointerdown', () => { skipped = true; }));
+    const pause = async ms => { for (let t = 0; t < ms && !skipped; t += 50) await wait(this, 50); };
+    setBackdrop('#000000', '#000000');
+
+    // 1) 별들이 떠오른다
+    const starDots = [];
+    for (let i = 0; i < 70; i++) {
+      const a = Math.random() * Math.PI * 2, d = 120 + Math.random() * 520;
+      const s = this.add.circle(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 1.3, 1.5 + Math.random() * 2.5, i % 5 ? 0xffffff : 0xd8c0ff).setAlpha(0);
+      layer.add(s);
+      starDots.push({ s, a, d });
+      this.tweens.add({ targets: s, alpha: 0.9, duration: 1200, delay: Math.random() * 900 });
+    }
+    await pause(1800);
+
+    // 2) 블랙홀이 열리고 별들을 삼킨다
+    const glow = this.add.circle(cx, cy, 200, VIOLET, 0.25).setScale(0.05);
+    const hole = this.add.circle(cx, cy, 70, 0x000000, 1).setScale(0.05).setStrokeStyle(5, 0xd8b0ff, 1);
+    const ring = this.add.ellipse(cx, cy, 380, 90).setStrokeStyle(10, VIOLET, 0.9).setScale(0.05).setAngle(-18);
+    const ring2 = this.add.ellipse(cx, cy, 300, 66).setStrokeStyle(4, 0xffffff, 0.7).setScale(0.05).setAngle(-18);
+    layer.add([glow, ring, ring2, hole]);
+    sfx.play('star7');
+    this.tweens.add({ targets: [glow, hole, ring, ring2], scale: 1, duration: skipped ? 1 : 2200, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: glow, alpha: 0.5, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    for (const { s, a, d } of starDots) {
+      const o = { t: 0 };
+      this.tweens.add({
+        targets: o, t: 1, duration: skipped ? 1 : 2400 + Math.random() * 1400, delay: Math.random() * 600, ease: 'Cubic.in',
+        onUpdate: () => {
+          const ang = a + o.t * 4, rr = d * (1 - o.t);
+          s.setPosition(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr * 0.6);
+          s.setScale(1 - o.t * 0.8);
+        },
+        onComplete: () => s.setAlpha(0),
+      });
+    }
+    await pause(3200);
+
+    // 3) 고리가 돈다(타원 고리를 납작하게 돌리는 느낌으로 기울기를 천천히 바꿈)
+    this.tweens.add({ targets: [ring, ring2], angle: 18, duration: 3000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    // 4) 블랙홀 속에서 떠오른다
+    const img = this.add.image(cx, cy + 170, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(0.1).setAlpha(0);
+    layer.add(img);
+    this.tweens.add({ targets: img, alpha: 1, scale: 2.6, y: cy + 190, duration: skipped ? 1 : 2200, ease: 'Back.out' });
+    await pause(2200);
+    this.cameras.main.shake(500, this.flash ? 0.016 : 0.008);
+    this.tweens.add({ targets: img, y: cy + 176, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    // 별 조각 왕관이 둘레를 돈다
+    const crown = this.add.container(cx, cy + 40);
+    layer.add(crown);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      crown.add(this.add.star(Math.cos(a) * 250, Math.sin(a) * 250 * 0.5, 5, 9, 22, 0xe8d8ff).setStrokeStyle(2, VIOLET));
+    }
+    crown.setAlpha(0);
+    this.tweens.add({ targets: crown, alpha: 1, duration: 900 });
+    this.tweens.add({ targets: crown, angle: 360, duration: 14000, repeat: -1 });
+
+    // 5) 이름
+    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#f0e0ff', { stroke: '#3a0a6a', strokeThickness: 6 }).setAlpha(0).setScale(1.6);
+    const name = text(this, W / 2, H - 250, '', 54, '#f0e0ff', { stroke: '#3a0a6a', strokeThickness: 8 });
+    const stars = text(this, W / 2, H - 180, '', 42, '#d8b0ff', { stroke: '#3a0a6a', strokeThickness: 6 });
+    layer.add([eternal, name, stars]);
+    this.tweens.add({ targets: eternal, alpha: 1, scale: 1, duration: 1000, ease: 'Back.out' });
+    for (let i = 1; i <= hero.name.length && !skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 130); }
+    name.setText(hero.name);
+    for (let i = 1; i <= 7 && !skipped; i++) { stars.setText('★'.repeat(i)); await wait(this, 170); }
+    stars.setText('★'.repeat(7));
+    await pause(3500);
+
     await tween(this, { targets: layer, alpha: 0, duration: 1000 });
     layer.destroy();
   }

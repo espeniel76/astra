@@ -635,6 +635,7 @@ const OUTFIT = {
   tornado: { coat: '#6a4a30', inner: '#d7eef8', v: 8, zipper: '#d7dde2', fur: '#f0e8d8' },
   emperor: { coat: '#1a1020', inner: '#9a3aff', v: 11, trim: '#d8b84a', lapel: '#2a1830', cape: ['#120a18', '#6a1a8a'] },
   goldlord: { coat: '#c8961a', inner: '#fff3c0', v: 10, trim: '#fff3c0', belt: ['#8a6410', '#fff3c0'], cape: ['#8a6410', '#ffd84a'] },
+  stareater: { coat: '#140c2a', inner: '#b06aff', v: 10, trim: '#e0c8ff', stars: '#e0c8ff', collar: '#140c2a', cape: ['#0a0618', '#4a1a8a'] },
   guardian: { coat: '#e8c040', inner: '#ffffff', v: 9, ridge: true, trim: '#fff6c8', pauldron: ['#ffe680', '#fff6c8'], cape: ['#fff3c0', '#e8b923'] },
 };
 export const OUTFIT_IDS = Object.keys(OUTFIT);
@@ -1298,6 +1299,32 @@ function heroDeco(ctx, id, phase) {
           fillStroke(ctx, '#fff6c8', 1.6, '#c8961a');
         }
         circle(ctx, 0, top + 4, 2.6, '#ffffff', 1);
+      }
+      break;
+    case 'stareater': // 별을 삼킨 자: 등 뒤 작은 블랙홀(보랏빛 고리) + 머리 위 떠 있는 별 조각 왕관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 4, 4, 0, BY - 4, R + 22);
+        g.addColorStop(0, 'rgba(0,0,0,0.95)'); g.addColorStop(0.55, 'rgba(40,10,80,0.8)'); g.addColorStop(1, 'rgba(176,106,255,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 4, R + 22, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.translate(0, BY - 4); ctx.rotate(-0.35);
+        ctx.strokeStyle = 'rgba(214,170,255,0.9)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.ellipse(0, 0, R + 18, 7, 0, Math.PI, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        for (const [x, y, r] of [[-30, BY - 26, 1.6], [28, BY - 30, 1.2], [-34, BY + 8, 1.2], [33, BY + 4, 1.6], [20, BY - 44, 1]]) {
+          ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      if (phase === 'mid') { // 앞으로 지나가는 고리의 아래쪽 반
+        ctx.save(); ctx.translate(0, BY - 4); ctx.rotate(-0.35);
+        ctx.strokeStyle = 'rgba(214,170,255,0.95)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.ellipse(0, 0, R + 18, 7, 0, 0, Math.PI); ctx.stroke();
+        ctx.restore();
+      }
+      if (phase === 'front') { // 떠 있는 별 조각 다섯 개 = 왕관
+        for (const [x, y, r] of [[-16, top - 4, 4], [-8, top - 12, 5], [0, top - 16, 6.5], [8, top - 12, 5], [16, top - 4, 4]]) {
+          star(ctx, x, y, r, '#e8d8ff');
+        }
+        circle(ctx, 0, top - 16, 2, '#b06aff', 0.8);
       }
       break;
     case 'tornado': // 회오리 술사: 비행 모자 + 이마 위 고글 + 휘날리는 목도리
