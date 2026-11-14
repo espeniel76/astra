@@ -207,19 +207,15 @@ export class SummonScene extends Phaser.Scene {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
     const col = seven ? 0xffe066 : 0xff3a3a;
-    // 1) 암전: 이 카드만 빼고 까맣게
+    // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
-    slot.back.setDepth(150);
-    const aura = this.add.circle(slot.x, slot.y, Math.max(slot.w, slot.h) * 0.75, col, 0.18).setDepth(149).setAlpha(0);
-    this.tweens.add({ targets: dark, alpha: 0.93, duration: 450 });
+    this.tweens.add({ targets: dark, alpha: 1, duration: 450 }); // 화면 전체 암전(카드도 안 보임)
     setBackdrop('#000000', '#000000');
-    this.tweens.add({ targets: aura, alpha: 1, duration: 900 });
-    this.tweens.add({ targets: slot.back, scale: 1.08, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     sfx.play('summon');
     await wait(this, 500);
 
     // 2) 빛나는 흰 글씨 대사(한 글자씩). 탭하면 바로 다 나온다.
-    const qy = slot.y > 640 ? 300 : 1000;
+    const qy = H / 2; // 화면 정가운데
     const quote = text(this, W / 2, qy, '', 40, '#ffffff', { wordWrap: { width: W - 90 }, strokeThickness: 0, fontStyle: 'bold' })
       .setDepth(160).setShadow(0, 0, '#ffffff', 22, true, true);
     let skip = false;
@@ -248,9 +244,9 @@ export class SummonScene extends Phaser.Scene {
     }
 
     // 4) 어둠이 천천히 걷히며 카드가 뒤집힌다
-    this.tweens.killTweensOf(slot.back);
-    slot.back.setScale(1);
-    this.tweens.add({ targets: [dark, quote, aura], alpha: 0, duration: 900, onComplete: () => { dark.destroy(); quote.destroy(); aura.destroy(); setBackdrop('#05060f', '#1a1f4a'); } });
+
+
+    this.tweens.add({ targets: [dark, quote], alpha: 0, duration: 900, onComplete: () => { dark.destroy(); quote.destroy(); setBackdrop('#05060f', '#1a1f4a'); } });
     await wait(this, 250);
     this.skipAll = false;
     const card = await this.flipCard(slot, r);
