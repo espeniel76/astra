@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- 앱 아이콘 그림판(scripts/make-icons.mjs 가 개발 서버에서 연다). 게임 빌드에는 안 들어간다. -->
+<meta charset="utf-8"><body style="margin:0;background:#000">
+<canvas id="c"></canvas>
+<script type="module">
+import { propTex } from './src/render/props.js';
+import { drawHero } from './src/render/portrait.js';
+let star = null;
+const scene = { textures: { exists: () => false, addCanvas: (k, c) => { star = c; } } };
+propTex(scene, 'originStar');
+// size: 그림 크기, bg: 배경 칠하기, s: 그림 배율(1 = 꽉 차게)
+window.draw = (size, bg, s) => {
+  const cv = document.getElementById('c');
+  cv.width = cv.height = size;
+  const g = cv.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  if (bg) {
+    const r = g.createRadialGradient(size / 2, size * 0.42, 0, size / 2, size / 2, size * 0.75);
+    r.addColorStop(0, '#3a2a7a'); r.addColorStop(0.55, '#1a1440'); r.addColorStop(1, '#0d1020');
+    g.fillStyle = r; g.fillRect(0, 0, size, size);
+  }
+  g.save();
+  g.translate(size / 2, size / 2);
+  g.scale(s, s);
+  // 뒤: 근원의 별
+  g.save();
+  const sw = size * 0.92;
+  g.globalAlpha = 0.95; g.drawImage(star, -sw / 2, -sw / 2, sw, sw);
+  g.restore();
+  // 앞: 아스트라
+  drawHero(g, 0, size * 0.27, size / 150, 'astra');
+  g.restore();
+  return cv.toDataURL('image/png');
+};
+window.ready = true;
+</script>

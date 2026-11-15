@@ -314,9 +314,17 @@ export class BattleScene extends Phaser.Scene {
     const c = this.overlay();
     c.add(text(this, W / 2, 520, '나가면 이번 전투 보상은 없어요.\n나갈까요?', 34, '#ffffff'));
     const yes = button(this, W / 2 - 130, 680, 220, 90, '나가기', () => { this.ended = true; this.paused = false; closeStage(this.app, 'adventure'); }, { fill: 0x6a2a3a });
-    const no = button(this, W / 2 + 130, 680, 220, 90, '계속 싸우기', () => { c.destroy(); yes.destroy(); no.destroy(); this.exitUi = null; this.paused = false; });
+    const no = button(this, W / 2 + 130, 680, 220, 90, '계속 싸우기', () => this.closeExit());
     yes.box.setDepth(101); no.box.setDepth(101);
     this.exitUi = [c, yes, no];
+  }
+
+  // 나가기 창 닫기(계속 싸우기)
+  closeExit() {
+    if (!this.exitUi) return;
+    for (const o of this.exitUi) o.destroy();
+    this.exitUi = null;
+    this.paused = false;
   }
 
   finish(result) {

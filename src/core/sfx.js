@@ -64,6 +64,10 @@ const SOUNDS = {
   star7: () => { thump(55, { gain: 0.8, decay: 0.9 }); [392, 523, 659, 784, 1046, 1318, 1568].forEach((f, i) => bell(f, { gain: 0.13, at: 0.2 + i * 0.1, decay: 2.6 })); },
 };
 
+// 앱이 뒤로 갈 때 소리 장치를 쉬게 한다(src/core/appBridge.js)
+export const suspendAudio = () => { try { ctx?.suspend(); } catch { /* 없어도 됨 */ } };
+export const resumeAudio = () => { try { if (on) ctx?.resume(); } catch { /* 없어도 됨 */ } };
+
 export const sfx = {
   setOn(v) { on = v; },
   play(name) {

@@ -37,6 +37,8 @@ app.startBattle = async stageId => (await import('./game/phaser.js')).startBattl
 app.startSummon = async (results, ticket = false) => (await import('./game/phaser.js')).startSummon(app, results, ticket);
 
 if (TEST) window.astra = app; // 테스트판: 개발용 손잡이
+// 안드로이드 앱(플러터)에서는 뒤로 가기·홈 버튼 창구를 켠다
+if (import.meta.env.MODE === 'app') import('./core/appBridge.js').then(m => m.installAppBridge(app));
 app.show('lobby');
 // 탭을 닫거나 다른 앱으로 갈 때 저장
 document.addEventListener('visibilitychange', () => { if (document.hidden) app.persist(); });

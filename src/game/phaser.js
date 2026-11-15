@@ -56,3 +56,12 @@ async function run(key, data) {
 
 export const startBattle = (app, stageId) => run('battle', { app, stageId });
 export const startSummon = (app, results, ticket = false) => run('summon', { app, results, ticket });
+
+// 휴대폰 뒤로 가기(앱): 전투 중이면 '나갈까요?' 창을 열고, 이미 열려 있으면 닫는다(계속 싸우기)
+export function stageBack() {
+  if (!game) return;
+  if (game.scene.isActive('battle')) {
+    const b = game.scene.getScene('battle');
+    if (b.exitUi) b.closeExit(); else b.askExit();
+  }
+}
