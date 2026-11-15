@@ -1061,15 +1061,20 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: [ember, emberGlow], y: cy + 40, duration: fast(2000), ease: 'Sine.inOut' });
     this.tweens.add({ targets: ember, scale: 2.6, duration: fast(2000), ease: 'Sine.inOut' });
     this.tweens.add({ targets: emberGlow, scale: 5.5, alpha: 0.6, duration: fast(2000), ease: 'Sine.inOut' });
+    // 불의 소용돌이: 부드러운 불빛 덩어리들이 세 갈래 나선을 이루며 돈다
     const ring = this.add.container(cx, cy + 40);
-    for (let i = 0; i < 26; i++) {
-      const a = (i / 26) * Math.PI * 2;
-      ring.add(this.add.image(Math.cos(a) * 210, Math.sin(a) * 210, propTex(this, 'flameFeather')).setScale(TS * 1.1).setAngle((a * 180) / Math.PI + 90));
+    const FIRE = [0xfff3c0, 0xffd84a, 0xffa040, 0xff6a1a, 0xd8300a];
+    for (let arm = 0; arm < 3; arm++) {
+      for (let i = 0; i < 40; i++) {
+        const t = i / 39, a = arm * (Math.PI * 2 / 3) + t * Math.PI * 1.5, d = 60 + t * 220;
+        ring.add(this.add.image(Math.cos(a) * d, Math.sin(a) * d, 'soft').setTint(FIRE[Math.min(4, Math.floor(t * 5))])
+          .setScale(1.5 - t * 0.9, 0.9 - t * 0.5).setRotation(a + Math.PI / 2).setAlpha(0.6 - t * 0.35).setBlendMode('ADD'));
+      }
     }
     ring.setAlpha(0);
     layer.add(ring);
     this.tweens.add({ targets: ring, alpha: 1, duration: fast(1200) });
-    this.tweens.add({ targets: ring, angle: 360, duration: 6000, repeat: -1 });
+    this.tweens.add({ targets: ring, angle: -360, duration: 5000, repeat: -1 });
     await pause(2200);
 
     // 3) 불사조가 날개를 펴며 솟아오른다
@@ -1078,9 +1083,9 @@ export class SummonScene extends Phaser.Scene {
     layer.add(bird);
     this.tweens.add({ targets: [ember, emberGlow], alpha: 0, duration: 800 });
     this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: fast(1400) });
-    await tween(this, { targets: bird, alpha: 1, scale: TS * 0.9, y: cy - 60, duration: fast(1800), ease: 'Back.out' });
+    await tween(this, { targets: bird, alpha: 1, scale: TS * 0.78, y: cy - 60, duration: fast(1800), ease: 'Back.out' });
     this.cameras.main.shake(600, this.flash ? 0.014 : 0.007);
-    this.tweens.add({ targets: bird, scaleX: TS * 0.95, y: cy - 80, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' }); // 날갯짓
+    this.tweens.add({ targets: bird, scaleX: TS * 0.82, y: cy - 80, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' }); // 날갯짓
     const rain = this.add.particles(0, 0, propTex(this, 'flameFeather'), {
       x: { min: 0, max: W }, y: -40, lifespan: 4500, speedY: { min: 90, max: 180 }, speedX: { min: -40, max: 40 },
       scale: { min: TS * 0.5, max: TS * 0.9 }, rotate: { min: -40, max: 40 }, alpha: { start: 1, end: 0.2 }, frequency: 120,

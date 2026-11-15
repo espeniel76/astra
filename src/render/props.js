@@ -339,99 +339,217 @@ function leviathan(ctx) {
 
 // ── 새 ★7 애니메이션 소품(2026-11-15): 용의 황제·불사조 여제·시간의 지배자 ──
 
-// 용 날개(오른쪽 날개, 뿌리가 왼쪽 아래 (30,400)). 520×520
-function dragonWing(ctx) {
-  const root = [30, 400], elbow = [250, 130], tip = [505, 24];
-  const fingers = [[488, 190], [440, 318], [338, 420], [200, 478]];
-  // 막: 뿌리 → 팔뼈 → 끝 → 손가락 끝마다 안쪽으로 휜 가장자리 → 뿌리
-  ctx.beginPath();
-  ctx.moveTo(...root);
-  ctx.quadraticCurveTo(110, 200, elbow[0], elbow[1]);
-  ctx.quadraticCurveTo(380, 40, tip[0], tip[1]);
-  let prev = tip;
-  for (const p of fingers) {
-    const mx = (prev[0] + p[0]) / 2, my = (prev[1] + p[1]) / 2;
-    const vx = elbow[0] - mx, vy = elbow[1] - my, d = Math.hypot(vx, vy);
-    ctx.quadraticCurveTo(mx + (vx / d) * 46, my + (vy / d) * 46, p[0], p[1]);
-    prev = p;
-  }
-  ctx.quadraticCurveTo(110, 470, 40, 440);
-  ctx.closePath();
-  fillOut(ctx, lg(ctx, 60, 60, 420, 480, [[0, '#4ad88a'], [0.45, '#1f8a52'], [1, '#0a3a22']]), 5, '#06261a');
-  // 막의 결(은은한 줄)
-  ctx.save(); ctx.clip();
-  ctx.strokeStyle = 'rgba(160,255,200,0.18)'; ctx.lineWidth = 3;
-  for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.arc(...elbow, i * 46, 0, Math.PI * 0.9); ctx.stroke(); }
-  ctx.restore();
-  // 금빛 뼈대
-  const bone = (a, b, w) => {
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#5a3a00'; ctx.lineWidth = w + 5; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
-    ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = Math.max(1, w * 0.3); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
-  };
-  bone(root, elbow, 16); bone(elbow, tip, 11);
-  for (const p of fingers) bone(elbow, p, 7);
-  // 팔꿈치 발톱
-  path(ctx, [[elbow[0] - 10, elbow[1] - 6], [elbow[0] - 4, elbow[1] - 44], [elbow[0] + 12, elbow[1] - 4]]);
-  fillOut(ctx, lg(ctx, 0, elbow[1] - 44, 0, elbow[1], [[0, '#ffffff'], [1, '#c8961a']]), 3, '#5a3a00');
-  ctx.lineCap = 'butt';
-}
-
-// 하늘을 가로지르는 긴 용의 그림자(머리가 오른쪽). 1000×300
-function dragonSil(ctx) {
-  ctx.fillStyle = 'rgba(4,18,10,0.92)';
-  // 꼬리 → 머리로 갈수록 굵어지는 몸통
-  for (let i = 0; i <= 200; i++) {
-    const t = i / 200, x = 20 + t * 800, y = 170 + Math.sin(t * Math.PI * 2.2) * 50 * (1 - t * 0.5);
-    ctx.beginPath(); ctx.arc(x, y, 4 + t * 34, 0, Math.PI * 2); ctx.fill();
-  }
-  // 머리·뿔·주둥이
-  const hx = 840, hy = 150;
-  ctx.beginPath(); ctx.ellipse(hx, hy, 60, 36, -0.15, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(hx + 30, hy - 20); ctx.lineTo(hx + 140, hy + 4); ctx.lineTo(hx + 40, hy + 34); ctx.closePath(); ctx.fill();
-  for (const [dx, dy] of [[-20, -30], [6, -32]]) { ctx.beginPath(); ctx.moveTo(hx + dx, hy + dy + 6); ctx.lineTo(hx + dx - 60, hy + dy - 50); ctx.lineTo(hx + dx + 14, hy + dy); ctx.closePath(); ctx.fill(); }
-  // 등의 날개
-  ctx.beginPath(); ctx.moveTo(600, 140); ctx.lineTo(500, 10); ctx.lineTo(560, 70); ctx.lineTo(620, 0); ctx.lineTo(640, 80); ctx.lineTo(720, 30); ctx.lineTo(700, 140); ctx.closePath(); ctx.fill();
-  // 빛나는 눈
-  ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(hx + 24, hy - 8, 9, 4, -0.2, 0, Math.PI * 2); ctx.fill();
-}
-
-// 불사조(날개를 활짝 편 불새). 760×560, 몸 가운데 (380,300)
-function phoenixBird(ctx) {
-  const cx = 380;
-  softBlob(ctx, cx, 290, 300, 'rgba(255,160,60,0.4)');
-  const feather = (x, y, a, len, w, c0, c1) => {
-    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
-    ctx.beginPath(); ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(len * 0.5, -w, len, 0); ctx.quadraticCurveTo(len * 0.5, w, 0, 0); ctx.closePath();
-    fillOut(ctx, lg(ctx, 0, 0, len, 0, [[0, c0], [1, c1]]), 2, '#8a2a06');
-    ctx.restore();
-  };
-  // 꼬리깃(아래로 길게 흘러내림)
-  for (let k = -3; k <= 3; k++) feather(cx, 330, Math.PI / 2 + k * 0.12, 210 - Math.abs(k) * 22, 16, '#ffd84a', '#ff5a1a');
-  // 날개: 세 겹 깃털이 위·옆으로 활짝
-  for (const sx of [-1, 1]) {
-    for (const [len, w, c0, c1, n, a0, da] of [[300, 30, '#ffb040', '#ff4a10', 9, -0.95, 0.16], [210, 25, '#ffe080', '#ff8a2a', 8, -0.85, 0.16], [120, 18, '#fffbe0', '#ffc040', 7, -0.75, 0.16]]) {
-      for (let k = 0; k < n; k++) {
-        const a = a0 + k * da;
-        feather(cx + sx * 34, 260, sx > 0 ? a : Math.PI - a, len - k * (len * 0.05), w, c0, c1);
-      }
+// 용 날개(오른쪽 날개). 520×520. 뿌리(어깨)가 왼쪽 아래 (30,400) — 애니메이션이 여기를 축으로 편다.
+// 진짜 날개 구조: 어깨 → 팔꿈치 → 손목(위쪽)까지 굵은 팔뼈, 손목에서 휘어진 긴 손가락뼈 네 개,
+// 손가락 사이 막은 안쪽으로 깊게 파인 곡선. 막은 손목 쪽이 밝고 가장자리로 갈수록 어둡다.
+const qpt = (a, c, b, t) => [(1 - t) ** 2 * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0], (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1]];
+// 굵기가 점점 가늘어지는 뼈(곡선을 따라 원을 이어 그린 뒤 테두리 → 금빛 → 하이라이트)
+function taper(ctx, a, c, b, w0, w1, cols) {
+  const N = Math.ceil((Math.hypot(c[0] - a[0], c[1] - a[1]) + Math.hypot(b[0] - c[0], b[1] - c[1])) / 1.2);
+  for (const [extra, col] of cols) {
+    ctx.fillStyle = col;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, [x, y] = qpt(a, c, b, t);
+      ctx.beginPath(); ctx.arc(x, y, Math.max(0.5, (w0 + (w1 - w0) * t) / 2 + extra), 0, Math.PI * 2); ctx.fill();
     }
   }
-  // 몸통 + 머리 + 볏
-  ctx.beginPath(); ctx.ellipse(cx, 300, 46, 70, 0, 0, Math.PI * 2); fillOut(ctx, lg(ctx, 0, 230, 0, 370, [[0, '#fff6d0'], [0.5, '#ffb040'], [1, '#ff6a1a']]), 3, '#8a2a06');
-  ctx.beginPath(); ctx.arc(cx, 200, 34, 0, Math.PI * 2); fillOut(ctx, lg(ctx, 0, 166, 0, 234, [[0, '#ffffff'], [1, '#ffc040']]), 3, '#8a2a06');
-  for (const [dx, h] of [[-16, 60], [0, 86], [16, 60]]) feather(cx + dx * 0.5, 172, -Math.PI / 2 + dx * 0.02, h, 10, '#ffd84a', '#ff5a1a');
-  path(ctx, [[cx - 9, 206], [cx + 9, 206], [cx, 228]]); fillOut(ctx, '#ffd84a', 2.5, '#8a5a06'); // 부리
-  for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(cx + sx * 14, 192, 6, 0, Math.PI * 2); fillOut(ctx, '#ffffff', 2.5, '#8a2a06'); }
+}
+function claw(ctx, x, y, ang, len) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(-6, 0); ctx.quadraticCurveTo(len * 0.5, -4, len, -10); ctx.quadraticCurveTo(len * 0.5, 4, 6, 6); ctx.closePath();
+  fillOut(ctx, lg(ctx, 0, 0, len, 0, [[0, '#c8961a'], [1, '#fff8e0']]), 2.5, '#3a2600');
+  ctx.restore();
+}
+function dragonWing(ctx) {
+  const root = [30, 400], elbow = [150, 175], wrist = [330, 58];
+  // 손가락: [굽힘 조절점, 끝]
+  const fingers = [[[440, 40], [512, 128]], [[440, 140], [488, 292]], [[390, 230], [392, 418]], [[300, 290], [250, 486]]];
+  const attach = [62, 470];
+  // 막(앞전 → 손가락 끝들 → 몸에 붙는 곳)
+  ctx.beginPath();
+  ctx.moveTo(...root);
+  ctx.quadraticCurveTo(70, 260, ...elbow);
+  ctx.quadraticCurveTo(220, 70, ...wrist);
+  ctx.quadraticCurveTo(...fingers[0][0], ...fingers[0][1]);
+  let prev = fingers[0][1];
+  const edges = fingers.slice(1).map(f => f[1]).concat([attach]);
+  for (const p of edges) {
+    const mx = (prev[0] + p[0]) / 2, my = (prev[1] + p[1]) / 2;
+    const vx = wrist[0] - mx, vy = wrist[1] - my, d = Math.hypot(vx, vy);
+    ctx.quadraticCurveTo(mx + (vx / d) * 70, my + (vy / d) * 70, ...p);
+    prev = p;
+  }
+  ctx.quadraticCurveTo(40, 450, ...root);
+  ctx.closePath();
+  const mg = ctx.createRadialGradient(wrist[0], wrist[1], 10, wrist[0], wrist[1], 470);
+  mg.addColorStop(0, '#7ff0b8'); mg.addColorStop(0.35, '#2fae6a'); mg.addColorStop(0.75, '#14663e'); mg.addColorStop(1, '#0a3a22');
+  fillOut(ctx, mg, 5, '#04200f');
+  // 막 안쪽: 칸마다 가장자리를 조금 더 어둡게 + 가는 핏줄
+  ctx.save(); ctx.clip();
+  for (let k = 0; k < edges.length; k++) {
+    const [ex, ey] = edges[k];
+    const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 150);
+    g.addColorStop(0, 'rgba(4,32,16,0.45)'); g.addColorStop(1, 'rgba(4,32,16,0)');
+    ctx.fillStyle = g; ctx.fillRect(ex - 150, ey - 150, 300, 300);
+  }
+  ctx.strokeStyle = 'rgba(190,255,220,0.22)'; ctx.lineWidth = 2;
+  for (const [c, t] of fingers) {
+    for (const s of [0.35, 0.6, 0.82]) {
+      const [x, y] = qpt(wrist, c, t, s);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x - 30, y + 30, x - 44 + s * 10, y + 70); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // 뼈: 팔(굵게) → 손가락(가늘게)
+  const BONE = [[3, '#3a2600'], [0, '#e8b923'], [-2.2, '#fff3b0']];
+  for (const [c, t] of fingers) taper(ctx, wrist, c, t, 11, 3, BONE);
+  taper(ctx, root, [70, 260], elbow, 22, 15, BONE);
+  taper(ctx, elbow, [220, 70], wrist, 15, 12, BONE);
+  // 마디(팔꿈치·손목)와 발톱
+  for (const [x, y, r] of [[...elbow, 11], [...wrist, 10]]) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); fillOut(ctx, lg(ctx, x - r, y - r, x + r, y + r, [[0, '#fff3b0'], [1, '#c8961a']]), 3, '#3a2600');
+  }
+  claw(ctx, wrist[0] + 4, wrist[1] - 6, -2.2, 46);
+  claw(ctx, elbow[0] - 4, elbow[1] - 6, -2.5, 26);
+  for (const [, t] of fingers) { ctx.beginPath(); ctx.arc(t[0], t[1], 4, 0, Math.PI * 2); fillOut(ctx, '#fff3b0', 2, '#3a2600'); }
 }
 
-// 불꽃 깃털 32×80
+// 하늘을 가로지르는 용(날개를 편 서양 용의 실루엣, 머리가 오른쪽). 900×520
+// 하나의 검은 그림자로 그린 뒤, 테두리에 은은한 비취빛이 돌게 한다.
+function dragonSil(ctx) {
+  const off = document.createElement('canvas');
+  off.width = 900 * 2; off.height = 520 * 2;
+  const o = off.getContext('2d');
+  o.scale(2, 2);
+  o.fillStyle = '#04140c';
+  const blob = (a, c, b, w0, w1) => {
+    for (let i = 0; i <= 60; i++) { const t = i / 60, [x, y] = qpt(a, c, b, t); o.beginPath(); o.arc(x, y, (w0 + (w1 - w0) * t) / 2, 0, Math.PI * 2); o.fill(); }
+  };
+  // 먼 쪽 날개(위로 들림)
+  o.beginPath(); o.moveTo(500, 250); o.quadraticCurveTo(540, 140, 600, 40); o.quadraticCurveTo(600, 110, 640, 120);
+  o.quadraticCurveTo(600, 150, 620, 190); o.quadraticCurveTo(570, 200, 560, 250); o.closePath(); o.fill();
+  // 꼬리: 몸 뒤에서 아래로 휘었다가 끝이 들림 + 끝의 가시
+  blob([420, 300], [220, 440], [40, 330], 58, 8);
+  o.beginPath(); o.moveTo(52, 336); o.lineTo(8, 300); o.lineTo(36, 352); o.lineTo(4, 376); o.lineTo(58, 344); o.closePath(); o.fill();
+  // 몸통
+  o.beginPath(); o.ellipse(470, 290, 115, 58, -0.12, 0, Math.PI * 2); o.fill();
+  // 다리(접힘)
+  for (const x of [430, 520]) { o.beginPath(); o.moveTo(x - 20, 320); o.quadraticCurveTo(x - 10, 380, x + 18, 386); o.lineTo(x + 26, 372); o.quadraticCurveTo(x + 10, 360, x + 18, 320); o.closePath(); o.fill(); }
+  // 목과 머리
+  blob([550, 260], [620, 160], [720, 158], 56, 30);
+  o.beginPath();
+  o.moveTo(700, 135); o.quadraticCurveTo(760, 120, 820, 150); o.lineTo(850, 168); o.lineTo(812, 176);
+  o.lineTo(830, 190); o.quadraticCurveTo(770, 200, 712, 186); o.closePath(); o.fill();
+  for (const [x, y, tx, ty] of [[720, 140, 650, 80], [742, 136, 690, 70]]) { o.beginPath(); o.moveTo(x - 10, y + 4); o.quadraticCurveTo(tx + 20, ty + 30, tx, ty); o.quadraticCurveTo(tx + 34, ty + 34, x + 10, y); o.closePath(); o.fill(); }
+  // 등 가시
+  for (let i = 0; i < 7; i++) { const [x, y] = qpt([380, 250], [480, 215], [600, 215], i / 6); o.beginPath(); o.moveTo(x - 9, y + 6); o.lineTo(x - 2, y - 16); o.lineTo(x + 9, y + 6); o.closePath(); o.fill(); }
+  // 가까운 쪽 날개(크게 펼침): 팔 → 손목 → 손가락 끝, 사이 막은 파인 곡선
+  const w0 = [500, 255], wr = [470, 50];
+  const tips = [[300, 10], [230, 110], [250, 210], [340, 268]];
+  o.beginPath(); o.moveTo(...w0); o.quadraticCurveTo(520, 140, ...wr); o.quadraticCurveTo(380, 0, ...tips[0]);
+  let pv = tips[0];
+  for (const p of tips.slice(1).concat([[440, 290]])) {
+    const mx = (pv[0] + p[0]) / 2, my = (pv[1] + p[1]) / 2, vx = wr[0] - mx, vy = wr[1] - my, d = Math.hypot(vx, vy);
+    o.quadraticCurveTo(mx + (vx / d) * 40, my + (vy / d) * 40, ...p); pv = p;
+  }
+  o.closePath(); o.fill();
+  // 날개 막을 조금 밝게(뼈가 보이게)
+  o.save(); o.globalCompositeOperation = 'source-atop';
+  o.fillStyle = 'rgba(30,90,60,0.55)';
+  o.beginPath(); o.moveTo(...wr); for (const t of tips) o.lineTo(...t); o.lineTo(440, 290); o.closePath(); o.fill();
+  o.strokeStyle = '#04140c'; o.lineWidth = 7; o.lineCap = 'round';
+  for (const t of tips) { o.beginPath(); o.moveTo(...wr); o.quadraticCurveTo((wr[0] + t[0]) / 2 + 10, (wr[1] + t[1]) / 2 - 20, ...t); o.stroke(); }
+  o.restore();
+  // 그림자 붙이기(테두리에 비취빛)
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.shadowColor = 'rgba(90,240,160,0.9)'; ctx.shadowBlur = 26;
+  ctx.drawImage(off, 0, 0);
+  ctx.shadowBlur = 0; ctx.drawImage(off, 0, 0);
+  ctx.restore();
+  // 빛나는 눈
+  ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.ellipse(770, 152, 10, 4, -0.15, 0, Math.PI * 2); ctx.fill();
+  softBlob(ctx, 770, 152, 26, 'rgba(255,224,102,0.6)');
+}
+
+// 불꽃 깃털 하나(뿌리 (0,0)에서 +x 방향으로 len, 끝이 살짝 말린다)
+function flameFeatherShape(ctx, x, y, ang, len, w, curl, cols, out = '#7a2004') {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(len * 0.3, -w, len * 0.75, -w * 0.7 + curl * 0.4, len, curl);
+  ctx.bezierCurveTo(len * 0.86, curl * 0.2 + w * 0.25, len * 0.7, w * 0.8, len * 0.45, w * 0.7);
+  ctx.quadraticCurveTo(len * 0.2, w * 0.6, 0, 0);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0, 0, len, 0);
+  cols.forEach((c, i) => g.addColorStop(i / (cols.length - 1), c));
+  fillOut(ctx, g, 1.6, out);
+  // 깃대(가운데 가는 선)
+  ctx.strokeStyle = 'rgba(255,250,220,0.55)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(2, 0); ctx.quadraticCurveTo(len * 0.5, -w * 0.1, len * 0.9, curl * 0.8); ctx.stroke();
+  ctx.restore();
+}
+
+// 불사조(날개를 위로 활짝 든 장엄한 불새). 900×700, 몸 가운데 (450,380)
+// 날개는 진짜 새처럼: 어깨 → 손목 → 날개 끝으로 이어진 뼈를 따라 깃털이 겹겹이(긴 첫째날개깃 → 둘째날개깃 → 덮깃)
+function phoenixBird(ctx) {
+  ctx.translate(70, 60);
+  const cx = 380;
+  softBlob(ctx, cx, 300, 330, 'rgba(255,150,40,0.38)');
+  softBlob(ctx, cx, 280, 150, 'rgba(255,240,180,0.45)');
+  const HOT = ['#fff6d8', '#ffc040', '#ff6a1a', '#d8300a'];
+  const WARM = ['#fffbe8', '#ffd870', '#ff9a2a'];
+  const GOLD = ['#ffffff', '#fff0b0', '#ffc850'];
+  // 꼬리깃: 아래로 길게 흘러내리며 좌우로 휘고, 끝이 말린다
+  for (let k = -3; k <= 3; k++) {
+    const a = Math.PI / 2 + k * 0.17, len = 250 - Math.abs(k) * 24;
+    flameFeatherShape(ctx, cx + k * 4, 370, a, len, 22, k === 0 ? 0 : -Math.sign(k) * 26, HOT);
+  }
+  for (const sx of [-1, 1]) {
+    const S = [cx + sx * 34, 270], Wr = [cx + sx * 170, 120], T = [cx + sx * 280, 80];
+    const bone = t => (t < 0.5 ? qpt(S, [cx + sx * 80, 160], Wr, t * 2) : qpt(Wr, [cx + sx * 230, 80], T, (t - 0.5) * 2));
+    // 깃털 방향: 몸 쪽은 아래, 날개 끝으로 갈수록 바깥·위로
+    const dir = t => (sx > 0 ? 1.7 - t * 2.2 : Math.PI - (1.7 - t * 2.2));
+    const layers = [
+      { n: 15, len: t => 110 + t * 90, w: 20, cols: HOT, from: 0.08, to: 1.0 },
+      { n: 13, len: t => 76 + t * 60, w: 17, cols: WARM, from: 0.05, to: 0.92 },
+      { n: 11, len: t => 44 + t * 34, w: 13, cols: GOLD, from: 0.04, to: 0.85 },
+    ];
+    for (const L of layers) {
+      for (let i = L.n - 1; i >= 0; i--) {
+        const t = L.from + (L.to - L.from) * (i / (L.n - 1));
+        const [x, y] = bone(t);
+        flameFeatherShape(ctx, x, y, dir(t), L.len(t), L.w, (i % 2 ? 1 : -1) * 6 * sx, L.cols);
+      }
+    }
+    // 날개 앞전(뼈를 덮는 밝은 띠)
+    ctx.strokeStyle = '#fff3c0'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(...S); ctx.quadraticCurveTo(cx + sx * 80, 160, ...Wr); ctx.quadraticCurveTo(cx + sx * 230, 80, ...T); ctx.stroke();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.lineCap = 'butt';
+  }
+  // 몸통: 가늘고 긴 물방울 + 가슴 깃털 비늘
+  ctx.beginPath(); ctx.moveTo(cx, 200);
+  ctx.bezierCurveTo(cx + 46, 230, cx + 44, 330, cx, 390); ctx.bezierCurveTo(cx - 44, 330, cx - 46, 230, cx, 200); ctx.closePath();
+  fillOut(ctx, lg(ctx, 0, 200, 0, 390, [[0, '#ffffff'], [0.4, '#ffd870'], [1, '#ff7a1a']]), 3, '#7a2004');
+  ctx.strokeStyle = 'rgba(200,90,10,0.45)'; ctx.lineWidth = 1.6;
+  for (let r = 0; r < 5; r++) for (let c = -1; c <= 1; c++) { const x = cx + c * 14 + (r % 2) * 7 - 3, y = 250 + r * 22; ctx.beginPath(); ctx.arc(x, y, 8, 0.2, Math.PI - 0.2); ctx.stroke(); }
+  // 목 → 머리(옆을 보는 날렵한 머리, 갈고리 부리)
+  ctx.beginPath(); ctx.moveTo(cx - 18, 220); ctx.quadraticCurveTo(cx - 12, 170, cx + 4, 150); ctx.lineTo(cx + 22, 162); ctx.quadraticCurveTo(cx + 12, 190, cx + 18, 222); ctx.closePath();
+  fillOut(ctx, lg(ctx, 0, 150, 0, 222, [[0, '#ffffff'], [1, '#ffd870']]), 3, '#7a2004');
+  // 볏: 뒤로 휘날리는 불꽃 깃 세 개
+  for (const [a, len] of [[-2.2, 90], [-2.55, 110], [-2.9, 84]]) flameFeatherShape(ctx, cx + 2, 140, a, len, 12, -10, ['#fff6d8', '#ffc040', '#ff5a1a']);
+  ctx.beginPath(); ctx.ellipse(cx + 10, 140, 26, 20, -0.2, 0, Math.PI * 2);
+  fillOut(ctx, lg(ctx, 0, 120, 0, 160, [[0, '#ffffff'], [1, '#ffe08a']]), 3, '#7a2004');
+  ctx.beginPath(); ctx.moveTo(cx + 30, 130); ctx.quadraticCurveTo(cx + 60, 132, cx + 62, 152); ctx.quadraticCurveTo(cx + 50, 144, cx + 32, 150); ctx.closePath();
+  fillOut(ctx, lg(ctx, cx + 30, 0, cx + 62, 0, [[0, '#ffd84a'], [1, '#c8701a']]), 2.5, '#5a2a00');
+  // 날카로운 눈(가늘고 길게, 빛남)
+  ctx.beginPath(); ctx.moveTo(cx + 6, 138); ctx.quadraticCurveTo(cx + 18, 128, cx + 30, 134); ctx.quadraticCurveTo(cx + 18, 142, cx + 6, 138); ctx.closePath();
+  fillOut(ctx, '#fffbe0', 2, '#5a1a00');
+  ctx.fillStyle = '#ff7a1a'; ctx.beginPath(); ctx.arc(cx + 22, 135, 3, 0, Math.PI * 2); ctx.fill();
+}
+
+// 흩날리는 불꽃 깃털 40×96(위가 뿌리)
 function flameFeather(ctx) {
-  ctx.beginPath(); ctx.moveTo(16, 2); ctx.quadraticCurveTo(31, 30, 18, 74); ctx.lineTo(14, 74); ctx.quadraticCurveTo(1, 30, 16, 2); ctx.closePath();
-  fillOut(ctx, lg(ctx, 0, 0, 0, 80, [[0, '#fff3c0'], [0.5, '#ffa040'], [1, '#ff5a1a']]), 1.5, '#a8400a');
-  ctx.strokeStyle = '#a8400a'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(16, 8); ctx.lineTo(16, 79); ctx.stroke();
+  flameFeatherShape(ctx, 20, 4, Math.PI / 2, 88, 14, 8, ['#fff6d8', '#ffc040', '#ff6a1a', '#d8300a']);
 }
 
 // 거대한 시계판(바늘 없음). 600×600
@@ -470,8 +588,8 @@ function gear(ctx) {
 }
 
 const DEFS = {
-  dragonWing: [520, 520, dragonWing], dragonSil: [1000, 300, dragonSil], phoenixBird: [760, 560, phoenixBird],
-  flameFeather: [32, 80, flameFeather], clockFace: [600, 600, clockFace], gear: [200, 200, gear],
+  dragonWing: [520, 520, dragonWing], dragonSil: [900, 520, dragonSil], phoenixBird: [900, 700, phoenixBird],
+  flameFeather: [40, 96, flameFeather], clockFace: [600, 600, clockFace], gear: [200, 200, gear],
   spear: [64, 300, spear], sword: [80, 320, sword], shard: [80, 80, shard], feather: [32, 64, feather], petal: [28, 20, petal],
   treeTrunk: [TREE.w, TREE.h, trunk], treeCanopy: [TREE.w, TREE.h, canopy],
   cloudBank: [420, 700, cloudBank], halo: [560, 560, halo], nebula: [720, 1280, nebula], accretion: [720, 300, accretion],
