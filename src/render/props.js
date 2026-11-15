@@ -78,42 +78,86 @@ function petal(ctx) {
 
 // 세계수: 줄기·가지·뿌리(720×900, 바닥이 y=880) / 잎사귀 덩어리(따로)
 export const TREE = { w: 720, h: 900, base: 880 };
-export const TREE_TIPS = [[160, 360], [570, 330], [110, 520], [620, 500], [210, 640], [520, 620], [360, 180], [260, 250], [470, 240]];
+export const TREE_TIPS = [[360, 140], [230, 200], [490, 190], [140, 300], [580, 290], [280, 330], [440, 320], [100, 410], [620, 400]];
+// 세계수 줄기: 넓게 퍼진 뿌리 → 굵은 줄기 → 위에서 네 갈래로 갈라져 잎 덩어리 속으로 들어간다
 function trunk(ctx) {
   const cx = 360, b = TREE.base;
-  // 뿌리
-  for (const [dx, len] of [[-1, 120], [1, 130], [-1, 70], [1, 80]]) {
-    ctx.beginPath(); ctx.moveTo(cx + dx * 30, b - 30); ctx.quadraticCurveTo(cx + dx * (len * 0.6), b - 10, cx + dx * len, b + 6);
-    ctx.lineTo(cx + dx * (len - 14), b + 10); ctx.quadraticCurveTo(cx + dx * (len * 0.5), b, cx + dx * 10, b - 6); ctx.closePath();
-    fillOut(ctx, '#6b4a2e', 3, '#3a2412');
+  const bark = lg(ctx, cx - 110, 0, cx + 110, 0, [[0, '#a8784a'], [0.4, '#7a5232'], [1, '#3e2814']]);
+  // 뿌리(땅 위로 드러난 굵은 뿌리)
+  for (const [s, len, h] of [[-1, 230, 46], [1, 240, 50], [-1, 150, 30], [1, 160, 32]]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + s * 40, b - h * 2.2);
+    ctx.bezierCurveTo(cx + s * 80, b - h, cx + s * len * 0.6, b - 8, cx + s * len, b + 6);
+    ctx.lineTo(cx + s * (len - 30), b + 10);
+    ctx.bezierCurveTo(cx + s * len * 0.5, b + 2, cx + s * 60, b - 4, cx + s * 20, b);
+    ctx.closePath();
+    fillOut(ctx, bark, 4, '#2a1808');
   }
-  // 가지(줄기에서 잎 덩어리까지)
-  ctx.lineCap = 'round';
-  for (const [x, y] of TREE_TIPS) {
-    const sy = Math.min(b - 160, y + 140);
-    ctx.strokeStyle = '#3a2412'; ctx.lineWidth = 22 - (b - y) / 60;
-    ctx.beginPath(); ctx.moveTo(cx, sy); ctx.quadraticCurveTo((cx + x) / 2, sy - 30, x, y); ctx.stroke();
-    ctx.strokeStyle = '#7a5232'; ctx.lineWidth = 16 - (b - y) / 60;
-    ctx.beginPath(); ctx.moveTo(cx, sy); ctx.quadraticCurveTo((cx + x) / 2, sy - 30, x, y); ctx.stroke();
+  // 위쪽 큰 가지 네 갈래(잎 덩어리 속으로)
+  for (const [ex, ey, w] of [[150, 300, 34], [570, 290, 34], [270, 200, 30], [460, 190, 30]]) {
+    ctx.beginPath();
+    ctx.moveTo(cx - w, 470); ctx.quadraticCurveTo((cx + ex) / 2 - w / 2, (470 + ey) / 2 + 30, ex - w / 3, ey);
+    ctx.lineTo(ex + w / 3, ey - 6); ctx.quadraticCurveTo((cx + ex) / 2 + w / 2, (470 + ey) / 2 + 20, cx + w, 470);
+    ctx.closePath();
+    fillOut(ctx, bark, 4, '#2a1808');
   }
+  // 굵은 줄기(아래가 넓게 퍼짐)
+  ctx.beginPath();
+  ctx.moveTo(cx - 120, b);
+  ctx.bezierCurveTo(cx - 70, b - 60, cx - 64, 640, cx - 56, 450);
+  ctx.lineTo(cx + 56, 450);
+  ctx.bezierCurveTo(cx + 64, 640, cx + 70, b - 60, cx + 120, b);
+  ctx.closePath();
+  fillOut(ctx, bark, 5, '#2a1808');
+  // 나무껍질 결
+  ctx.strokeStyle = 'rgba(42,24,8,0.45)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  for (const dx of [-60, -30, 4, 34, 62]) {
+    ctx.beginPath(); ctx.moveTo(cx + dx * 1.4, b - 10); ctx.bezierCurveTo(cx + dx, 760, cx + dx * 0.8, 620, cx + dx * 0.7, 470); ctx.stroke();
+  }
+  // 옹이 구멍과 빛나는 금빛 무늬(세계수의 힘)
+  ctx.beginPath(); ctx.ellipse(cx + 26, 640, 16, 24, 0, 0, Math.PI * 2); fillOut(ctx, '#2a1808', 3, '#1a0e04');
+  ctx.strokeStyle = 'rgba(255,224,102,0.9)'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(cx - 20, b - 40); ctx.bezierCurveTo(cx - 40, 760, cx + 10, 700, cx - 8, 600); ctx.bezierCurveTo(cx - 24, 540, cx + 10, 500, cx, 460); ctx.stroke();
   ctx.lineCap = 'butt';
-  // 줄기(아래가 넓고 위로 가늘어짐) + 나무껍질 결
-  path(ctx, [[cx - 62, b], [cx - 26, 300], [cx - 10, 150], [cx + 10, 150], [cx + 26, 300], [cx + 62, b]]);
-  fillOut(ctx, lg(ctx, cx - 62, 0, cx + 62, 0, [[0, '#9a6a3a'], [0.45, '#7a5232'], [1, '#4a3018']]), 4, '#2a1808');
-  ctx.strokeStyle = 'rgba(42,24,8,0.5)'; ctx.lineWidth = 3;
-  for (const dx of [-30, -10, 14, 34]) { ctx.beginPath(); ctx.moveTo(cx + dx, b - 20); ctx.quadraticCurveTo(cx + dx * 0.6 + 6, 600, cx + dx * 0.3, 260); ctx.stroke(); }
-  // 줄기 가운데 빛나는 금빛 무늬
-  ctx.strokeStyle = 'rgba(255,216,74,0.8)'; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(cx, b - 60); ctx.quadraticCurveTo(cx - 10, 700, cx + 6, 560); ctx.quadraticCurveTo(cx + 14, 460, cx - 4, 380); ctx.stroke();
 }
+// 잎: 하나로 이어진 커다란 둥근 수관(아래는 진하게, 위는 밝게) + 빛 반점
 function canopy(ctx) {
-  for (const [x, y] of TREE_TIPS) {
-    for (const [dx, dy, r, c] of [[0, 0, 70, '#2f6f2a'], [-34, 16, 48, '#2f6f2a'], [36, 14, 50, '#2f6f2a'], [-10, -14, 54, '#4f9e3a'], [22, -4, 40, '#5fae4a'], [-22, -26, 32, '#8fd86a'], [10, -34, 24, '#a8e88a']]) {
-      ctx.beginPath(); ctx.ellipse(x + dx, y + dy, r, r * 0.86, 0, 0, Math.PI * 2);
-      ctx.fillStyle = c; ctx.fill();
-    }
-    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,50,16,0.5)';
-    ctx.beginPath(); ctx.ellipse(x, y + 6, 76, 62, 0, 0.2, Math.PI - 0.2); ctx.stroke();
+  const cx = 360, cy = 280;
+  const blobs = [];
+  for (let i = 0; i < 26; i++) {
+    const a = (i / 26) * Math.PI * 2;
+    blobs.push([cx + Math.cos(a) * 270, cy + Math.sin(a) * 150, 95]);
+  }
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    blobs.push([cx + Math.cos(a) * 150, cy + Math.sin(a) * 80, 110]);
+  }
+  blobs.push([cx, cy, 160]);
+  const layer = (dy, color, shrink) => {
+    ctx.fillStyle = color;
+    for (const [x, y, r] of blobs) { ctx.beginPath(); ctx.arc(x, y + dy, r - shrink, 0, Math.PI * 2); ctx.fill(); }
+  };
+  // 테두리처럼 보이게 한 겹 더 크게 진한 색
+  layer(6, '#16340f', -5);
+  layer(8, '#24521a', 0);
+  layer(-6, '#3a7a2a', 14);
+  // 잎 뭉치 결: 작은 덩어리를 겹쳐 울퉁불퉁하게(아래는 어둡게, 위는 밝게)
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 70; i++) {
+    const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd());
+    const x = cx + Math.cos(a) * 280 * d, y = cy + Math.sin(a) * 160 * d - 10;
+    const up = (cy + 160 - y) / 320; // 위로 갈수록 1
+    const r = 22 + rnd() * 20;
+    ctx.fillStyle = up > 0.75 ? '#8fd86a' : up > 0.5 ? '#6cbf4e' : up > 0.3 ? '#4f9e3a' : '#3a7a2a';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(20,52,15,0.35)';
+    ctx.beginPath(); ctx.arc(x + r * 0.25, y + r * 0.35, r * 0.7, 0, Math.PI * 0.9); ctx.fill();
+  }
+  // 반짝이는 금빛 잎(가만히 있음)
+  ctx.fillStyle = 'rgba(255,224,102,0.85)';
+  for (const [x, y] of [[cx - 200, cy + 40], [cx + 210, cy + 60], [cx - 60, cy - 60], [cx + 90, cy + 10], [cx - 120, cy + 110], [cx + 140, cy - 60]]) {
+    ctx.beginPath(); ctx.ellipse(x, y, 7, 4, 0.6, 0, Math.PI * 2); ctx.fill();
   }
 }
 
