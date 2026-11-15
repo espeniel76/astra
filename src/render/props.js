@@ -491,6 +491,33 @@ function boltSpear(ctx) {
   ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(cx - 3, 349, 3, 0, Math.PI * 2); ctx.fill();
 }
 
+// 아스트라: 근원의 별(긴 네 갈래 + 짧은 네 갈래, 흰 금빛 몸에 무지개 테). 640×640
+function originStar(ctx) {
+  const c = 320, RAIN = ['#ff6a6a', '#ffa33a', '#ffe066', '#7dff8a', '#7fd8ff', '#8a9aff', '#d08aff'];
+  softBlob(ctx, c, c, 320, 'rgba(255,250,230,0.5)');
+  // 무지개 테: 일곱 빛깔을 조금씩 크게 겹쳐 그림(바깥이 보라 → 안쪽이 빨강)
+  const star4 = (len, wid, rot) => { const p = []; for (let k = 0; k < 8; k++) { const a = rot - Math.PI / 2 + (k * Math.PI) / 4; const r = k % 2 ? wid : len; p.push([c + Math.cos(a) * r, c + Math.sin(a) * r]); } return p; };
+  for (const [len, wid, rot] of [[200, 46, Math.PI / 4], [300, 56, 0]]) {
+    for (let i = 6; i >= 0; i--) {
+      path(ctx, star4(len + i * 5, wid + i * 3, rot));
+      ctx.fillStyle = RAIN[i]; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+    }
+    path(ctx, star4(len, wid, rot));
+    fillOut(ctx, lg(ctx, c - len, c - len, c + len, c + len, [[0, '#ffffff'], [0.5, '#fff6d8'], [1, '#ffe9a0']]), 3, '#8a6ac8');
+    // 각 갈래 가운데 능선(입체감)
+    for (let k = 0; k < 4; k++) {
+      const a = rot - Math.PI / 2 + (k * Math.PI) / 2;
+      ctx.beginPath(); ctx.moveTo(c, c); ctx.lineTo(c + Math.cos(a) * len, c + Math.sin(a) * len); ctx.lineTo(c + Math.cos(a + 0.6) * wid, c + Math.sin(a + 0.6) * wid); ctx.closePath();
+      ctx.fillStyle = 'rgba(200,180,255,0.28)'; ctx.fill();
+    }
+  }
+  // 가운데 고리와 보석
+  ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(c, c, 64, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(c, c, 54, 0, Math.PI * 2); ctx.stroke();
+  for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + (i / 7) * Math.PI * 2; ctx.beginPath(); ctx.arc(c + Math.cos(a) * 64, c + Math.sin(a) * 64, 7, 0, Math.PI * 2); fillOut(ctx, RAIN[i], 2, '#4a3a6a'); }
+  softBlob(ctx, c, c, 46, 'rgba(255,255,255,0.95)');
+}
+
 // 거대한 시계판(바늘 없음). 600×600
 function clockFace(ctx) {
   const c = 300;
@@ -528,7 +555,7 @@ function gear(ctx) {
 
 const DEFS = {
   dragonWing: [520, 520, dragonWing], dragonSil: [900, 520, dragonSil],
-  boltSpear: [140, 560, boltSpear], clockFace: [600, 600, clockFace], gear: [200, 200, gear],
+  boltSpear: [140, 560, boltSpear], originStar: [640, 640, originStar], clockFace: [600, 600, clockFace], gear: [200, 200, gear],
   spear: [64, 300, spear], sword: [80, 320, sword], shard: [80, 80, shard], feather: [32, 64, feather], petal: [28, 20, petal],
   treeTrunk: [TREE.w, TREE.h, trunk], treeCanopy: [TREE.w, TREE.h, canopy],
   cloudBank: [420, 700, cloudBank], halo: [560, 560, halo], nebula: [720, 1280, nebula], accretion: [720, 300, accretion],

@@ -2,7 +2,7 @@
 // 정직한 연출: 마법진·빛기둥·빛 알갱이의 색 = 이번 소환의 최고 별. 처음부터 끝까지 색이 바뀌지 않는다.
 // 순서: 마법진 → 빛기둥 + 빨려 드는 빛 → 카드가 날아와 꽂힘 → 낮은 별부터 뒤집기(★5 이상은 컷신) → 결과.
 import Phaser from 'phaser';
-import { HERO, STAR_COLOR } from '../data/heroes.js';
+import { HERO, HEROES, STAR_COLOR } from '../data/heroes.js';
 import { summon, COST } from '../core/gacha.js';
 import { bump } from '../core/daily.js';
 import { makeRng } from '../core/rng.js';
@@ -12,6 +12,13 @@ import { text, button, heroTex, wait, tween, colorNum, TS, TEXRES, hiDpi } from 
 import { propTex, TREE, TREE_TIPS } from '../render/props.js';
 
 const W = 720, H = 1280;
+const RAINBOW_CSS = ['#ff6a6a', '#ffa33a', '#ffe066', '#7dff8a', '#7fd8ff', '#8a9aff', '#d08aff'].map((c, i, a) => [i / (a.length - 1), c]);
+// 글자를 그라데이션으로 칠한다(stops = [[0~1, 색], ...], across = 가로 방향)
+function gradFill(t, stops, across = false) {
+  const g = across ? t.context.createLinearGradient(0, 0, t.width, 0) : t.context.createLinearGradient(0, t.height * 0.15, 0, t.height * 0.85);
+  for (const [p, c] of stops) g.addColorStop(p, c);
+  return t.setFill(g);
+}
 
 export class SummonScene extends Phaser.Scene {
   constructor() { super('summon'); }
@@ -388,7 +395,7 @@ export class SummonScene extends Phaser.Scene {
     // 6) 이름 + 별 일곱 + ETERNAL
     const name = text(this, W / 2, H - 250, '', 54, '#fff6c8', { stroke: '#6a4a00', strokeThickness: 8 });
     const stars = text(this, W / 2, H - 180, '', 42, '#ffe066', { stroke: '#6a4a00', strokeThickness: 6 });
-    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#ffffff', { stroke: '#8a6410', strokeThickness: 6 }).setAlpha(0).setScale(1.6);
+    const eternal = this.eternalWord();
     layer.add([name, stars, eternal]);
     this.tweens.add({ targets: eternal, alpha: 1, scale: 1, duration: 700, ease: 'Back.out' });
     for (let i = 1; i <= hero.name.length && !skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 120); }
@@ -486,7 +493,7 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: crown, angle: 360, duration: 14000, repeat: -1 });
 
     // 5) 이름
-    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#f0e0ff', { stroke: '#3a0a6a', strokeThickness: 6 }).setAlpha(0).setScale(1.6);
+    const eternal = this.eternalWord();
     const name = text(this, W / 2, H - 250, '', 54, '#f0e0ff', { stroke: '#3a0a6a', strokeThickness: 8 });
     const stars = text(this, W / 2, H - 180, '', 42, '#d8b0ff', { stroke: '#3a0a6a', strokeThickness: 6 });
     layer.add([eternal, name, stars]);
@@ -594,7 +601,7 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: img, y: cy + 190, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     // 6) 이름
-    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, '#ffffff', { stroke: '#000000', strokeThickness: 8 }).setAlpha(0).setScale(1.6);
+    const eternal = this.eternalWord();
     const name = text(this, W / 2, H - 250, '', 54, '#ffffff', { stroke: '#000000', strokeThickness: 9 });
     const stars = text(this, W / 2, H - 180, '', 42, '#ffffff', { stroke: '#000000', strokeThickness: 7 });
     layer.add([eternal, name, stars]);
@@ -610,9 +617,16 @@ export class SummonScene extends Phaser.Scene {
     setBackdrop('#000000', '#000000');
   }
 
+  // ETERNAL 글자: 반짝이는 금속 금빛(위가 밝고 아래로 진해짐) + 짙은 갈색 테두리 + 금빛 후광
+  eternalWord() {
+    return gradFill(text(this, W / 2, 120, 'ETERNAL', 52, '#ffd23a', { stroke: '#2e1800', strokeThickness: 9 }),
+      [[0, '#fffbe0'], [0.42, '#ffd23a'], [0.58, '#e89a1a'], [1, '#9a5a08']])
+      .setShadow(0, 0, '#ffb020', 18, true, true).setAlpha(0).setScale(1.6);
+  }
+
   // ★7 전용 애니메이션 공통 마무리: ETERNAL + 이름 + 별 일곱, 잠시 보여 주고 사라짐
   async eternalTitle(layer, hero, fill, stroke, starFill, pause, isSkipped) {
-    const eternal = text(this, W / 2, 120, 'ETERNAL', 46, fill, { stroke, strokeThickness: 7 }).setAlpha(0).setScale(1.6);
+    const eternal = this.eternalWord();
     const name = text(this, W / 2, H - 250, '', 54, fill, { stroke, strokeThickness: 9 });
     const stars = text(this, W / 2, H - 180, '', 42, starFill, { stroke, strokeThickness: 6 });
     layer.add([eternal, name, stars]);
@@ -861,90 +875,135 @@ export class SummonScene extends Phaser.Scene {
     setBackdrop('#000000', '#000000');
   }
 
-  // 아스트라(근원, 0.001%) 전용(약 16초). 번쩍임 없음: 빛은 모두 천천히 커지고 천천히 사라진다.
-  // 1) 완전한 어둠 속 작은 빛 한 점 2) 빛이 숨 쉬듯 커지다 우주가 태어나며 일곱 빛깔 고리가 퍼져 나간다
-  // 3) 별과 은하가 생겨나 소용돌이친다 4) 가장 밝은 별 속에서 아스트라가 깨어난다(무지개 후광)
-  // 5) ORIGIN + 이름 + 무지개 큰 별
+  // 아스트라(근원, 0.001%) 전용(약 20초, 아들 요청 "위엄 좀 살려"). 번쩍임 없음: 빛은 모두 천천히 커지고 천천히 사라진다.
+  // 1) 완전한 어둠과 정적, 가운데 빛 한 점이 심장처럼 두 번 고동친다
+  // 2) 아홉 ★7 영웅의 그림자가 큰 원을 이루며 나타나 천천히 돈다 — 그리고 하나씩 제 빛깔의 빛줄기가 되어 가운데로 빨려 든다
+  // 3) 태초의 폭발: 일곱 빛깔 고리가 퍼지고, 성운이 밝아지고, 별들이 사방으로 쏟아져 나가며, 무지개 빛살이 돈다
+  // 4) 거대한 여덟 갈래 근원의 별이 펼쳐지고, 아스트라가 위에서 천천히 내려온다
+  // 5) ORIGIN + 이름 + 무지개 큰 별 + "모든 별의 시작"
   async originBirth(r) {
     const hero = HERO[r.id];
     const { layer, state, pause, fast } = this.eternalLayer(0x000000);
     const cx = W / 2, cy = H / 2 - 60;
     const RAINBOW = [0xff6a6a, 0xffa33a, 0xffe066, 0x7dff8a, 0x7fd8ff, 0x8a9aff, 0xd08aff];
     setBackdrop('#000000', '#000000');
+    await pause(900); // 정적
 
-    // 1) 빛 한 점
-    const seed = this.add.circle(cx, cy, 6, 0xffffff, 1).setScale(0);
-    const seedGlow = this.add.circle(cx, cy, 40, 0xffffff, 0.25).setScale(0);
+    // 1) 빛 한 점의 고동
+    const seed = this.add.image(cx, cy, 'soft').setScale(0).setBlendMode('ADD');
+    const seedGlow = this.add.image(cx, cy, 'soft').setTint(0xd8c8ff).setScale(0).setAlpha(0.6).setBlendMode('ADD');
     layer.add([seedGlow, seed]);
-    await tween(this, { targets: [seed, seedGlow], scale: 1, duration: fast(1600), ease: 'Sine.out' });
-    for (let i = 0; i < 2 && !state.skipped; i++) { // 숨 쉬듯(2.4초 주기, 깜빡임 아님)
-      await tween(this, { targets: seedGlow, scale: 2.2, duration: 1200, yoyo: true, ease: 'Sine.inOut' });
+    await tween(this, { targets: seed, scale: 0.25, duration: fast(1300), ease: 'Sine.out' });
+    for (let i = 0; i < 2 && !state.skipped; i++) {
+      sfx.play('reveal');
+      await tween(this, { targets: seedGlow, scale: 2.2 + i, alpha: 0.75, duration: 700, yoyo: true, ease: 'Sine.inOut' });
+      await pause(300);
     }
 
-    // 2) 우주가 태어난다: 성운이 천천히 밝아지고, 일곱 빛깔 고리가 차례로 퍼진다
+    // 2) 아홉 ★7의 그림자가 원을 이룬다 → 하나씩 빛이 되어 가운데로
+    const sevens = HEROES.filter(h => h.star === 7);
+    const ring = this.add.container(cx, cy);
+    layer.add(ring);
+    const R0 = 250;
+    const shades = sevens.map((h, i) => {
+      const a = -Math.PI / 2 + (i / sevens.length) * Math.PI * 2;
+      const x = Math.cos(a) * R0, y = Math.sin(a) * R0;
+      const col = h.look.glow ?? 0xffffff;
+      const glow = this.add.image(x, y, 'soft').setTint(col).setScale(1.6).setAlpha(0).setBlendMode('ADD');
+      const sil = this.add.image(x, y + 40, heroTex(this, h.id)).setOrigin(0.5, 0.86).setScale(0.75 * TS).setTintFill(col).setAlpha(0);
+      ring.add([glow, sil]);
+      return { glow, sil, col, a };
+    });
+    shades.forEach((s, i) => this.tweens.add({ targets: [s.glow, s.sil], alpha: { from: 0, to: 0.85 }, duration: fast(900), delay: state.skipped ? 0 : i * 140 }));
+    this.tweens.add({ targets: ring, angle: 40, duration: 9000, ease: 'Sine.inOut' });
+    await pause(2400);
+    sfx.play('summon');
+    for (const s of shades) {
+      if (state.skipped) break;
+      // 그림자 → 제 빛깔 빛줄기가 되어 가운데로
+      this.tweens.add({ targets: [s.sil, s.glow], x: 0, y: 0, scale: 0.05, alpha: 0, duration: 520, ease: 'Cubic.in' });
+      const streak = this.add.rectangle(0, 0, 10, R0, s.col, 0.9).setOrigin(0.5, 0).setRotation(s.a + Math.PI / 2).setBlendMode('ADD');
+      streak.setPosition(Math.cos(s.a) * R0, Math.sin(s.a) * R0);
+      ring.add(streak);
+      this.tweens.add({ targets: streak, scaleY: 0, x: 0, y: 0, alpha: 0.2, duration: 520, ease: 'Cubic.in', onComplete: () => streak.destroy() });
+      this.tweens.add({ targets: seedGlow, scale: seedGlow.scale + 0.35, duration: 400 });
+      await pause(300);
+    }
+    shades.forEach(s => { s.sil.setVisible(false); s.glow.setVisible(false); });
+    await pause(600);
+
+    // 3) 태초의 폭발
     sfx.play('star7');
     const neb = this.add.image(0, 0, propTex(this, 'nebula')).setOrigin(0, 0).setScale(TS).setAlpha(0);
     layer.addAt(neb, 1);
-    this.tweens.add({ targets: neb, alpha: 1, duration: fast(3000) });
-    this.tweens.add({ targets: seedGlow, scale: 9, alpha: 0, duration: fast(2600), ease: 'Sine.out' });
+    this.tweens.add({ targets: neb, alpha: 1, duration: fast(2600) });
+    this.tweens.add({ targets: seedGlow, scale: 12, alpha: 0, duration: fast(2600), ease: 'Sine.out' });
+    this.tweens.add({ targets: seed, scale: 1.4, alpha: 0.85, duration: fast(1600), ease: 'Sine.out' });
     for (let i = 0; i < 7; i++) {
-      const ring = this.add.circle(cx, cy, 60).setStrokeStyle(10, RAINBOW[i], 0.9).setScale(0.2);
-      layer.add(ring);
-      this.tweens.add({ targets: ring, scale: 9 + i, alpha: 0, duration: fast(3600), delay: state.skipped ? 0 : i * 260, ease: 'Sine.out', onComplete: () => ring.destroy() });
+      const rg = this.add.circle(cx, cy, 60).setStrokeStyle(12, RAINBOW[i], 0.9).setScale(0.2);
+      layer.add(rg);
+      this.tweens.add({ targets: rg, scale: 10 + i, alpha: 0, duration: fast(3400), delay: state.skipped ? 0 : i * 200, ease: 'Sine.out', onComplete: () => rg.destroy() });
     }
-    await pause(2200);
-
-    // 3) 별과 은하가 생겨나 소용돌이친다
-    const galaxy = this.add.container(cx, cy).setScale(1, 0.5);
-    for (let arm = 0; arm < 3; arm++) {
-      for (let i = 0; i < 40; i++) {
-        const t = i / 40, a = arm * (Math.PI * 2 / 3) + t * Math.PI * 2.4, d = 30 + t * 330;
-        galaxy.add(this.add.circle(Math.cos(a) * d, Math.sin(a) * d, 2 + (1 - t) * 3.5, RAINBOW[(arm * 2 + Math.floor(t * 7)) % 7], 0.9 - t * 0.5));
-      }
-    }
-    galaxy.setAlpha(0);
-    layer.add(galaxy);
-    this.tweens.add({ targets: galaxy, alpha: 1, duration: fast(1600) });
-    this.tweens.add({ targets: galaxy, angle: 360, duration: 18000, repeat: -1 });
-    const sparkle = this.add.particles(0, 0, 'dot', {
-      x: { min: 0, max: W }, y: { min: 0, max: H }, lifespan: 3000, scale: { start: 0.6, end: 0 }, alpha: { start: 0.9, end: 0 },
-      tint: RAINBOW, frequency: 60, blendMode: 'ADD',
+    this.cameras.main.shake(900, this.flash ? 0.016 : 0.008);
+    // 별들이 사방으로 쏟아져 나간다(워프)
+    const warp = this.add.particles(cx, cy, 'dot', {
+      speed: { min: 220, max: 760 }, angle: { min: 0, max: 360 }, lifespan: 1800,
+      scale: { start: 0.08, end: 0.55 }, alpha: { start: 0, end: 0.95 }, tint: [0xffffff, ...RAINBOW], frequency: 12, blendMode: 'ADD',
     });
-    layer.add(sparkle);
-    await pause(2600);
+    layer.add(warp);
+    // 무지개 빛살(천천히 돈다)
+    const rays = this.add.container(cx, cy).setAlpha(0);
+    for (let i = 0; i < 14; i++) {
+      const g = this.add.graphics().setBlendMode('ADD');
+      const a = (i / 14) * Math.PI * 2, w = 0.07;
+      g.fillStyle(RAINBOW[i % 7], 0.16).beginPath().moveTo(0, 0)
+        .lineTo(Math.cos(a - w) * 1100, Math.sin(a - w) * 1100).lineTo(Math.cos(a + w) * 1100, Math.sin(a + w) * 1100).closePath().fillPath();
+      rays.add(g);
+    }
+    layer.add(rays);
+    this.tweens.add({ targets: rays, alpha: 1, duration: fast(2000) });
+    this.tweens.add({ targets: rays, angle: 360, duration: 40000, repeat: -1 });
+    await pause(2400);
+    warp.setFrequency(60);
 
-    // 4) 가장 밝은 별 속에서 아스트라가 깨어난다
-    const core = this.add.circle(cx, cy + 40, 30, 0xffffff, 0.95).setScale(0.2);
-    layer.add(core);
-    await tween(this, { targets: core, scale: 5, alpha: 0.4, duration: fast(1500), ease: 'Sine.out' });
-    const halo = this.add.container(cx, cy + 40);
+    // 4) 근원의 별이 펼쳐지고, 아스트라가 위에서 내려온다
+    const star = this.add.image(cx, cy + 20, propTex(this, 'originStar')).setScale(0).setAlpha(0.95);
+    layer.add(star);
+    this.tweens.add({ targets: star, scale: TS * 1.15, angle: 45, duration: fast(2200), ease: 'Back.out' });
+    this.tweens.add({ targets: star, angle: 405, duration: 60000, repeat: -1, delay: 2200 });
+    const halo = this.add.container(cx, cy + 20);
     for (let i = 0; i < 7; i++) {
       const a = -Math.PI / 2 + (i / 7) * Math.PI * 2;
-      halo.add(this.add.star(Math.cos(a) * 230, Math.sin(a) * 230, 5, 14, 34, RAINBOW[i]).setStrokeStyle(3, 0xffffff, 0.9));
+      halo.add(this.add.star(Math.cos(a) * 270, Math.sin(a) * 270, 5, 14, 34, RAINBOW[i]).setStrokeStyle(3, 0xffffff, 0.9));
     }
-    halo.setAlpha(0).setScale(0.4);
+    halo.setAlpha(0).setScale(0.5);
     layer.add(halo);
-    this.tweens.add({ targets: halo, alpha: 1, scale: 1, duration: fast(1600), ease: 'Back.out' });
-    this.tweens.add({ targets: halo, angle: 360, duration: 20000, repeat: -1 });
-    const img = this.add.image(cx, cy + 200, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(0.6 * TS).setAlpha(0);
+    this.tweens.add({ targets: halo, alpha: 1, scale: 1, duration: fast(1800), ease: 'Back.out', delay: state.skipped ? 0 : 600 });
+    this.tweens.add({ targets: halo, angle: -360, duration: 30000, repeat: -1 });
+    const img = this.add.image(cx, cy - 420, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(3 * TS).setAlpha(0);
     layer.add(img);
-    await tween(this, { targets: img, alpha: 1, scale: 2.7 * TS, duration: fast(2200), ease: 'Back.out' });
-    this.cameras.main.shake(600, this.flash ? 0.014 : 0.007);
-    this.tweens.add({ targets: core, alpha: 0.15, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    this.tweens.add({ targets: img, y: cy + 186, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    await pause(900);
+    await tween(this, { targets: img, alpha: 1, y: cy + 200, duration: fast(2600), ease: 'Sine.out' });
+    this.cameras.main.shake(600, this.flash ? 0.012 : 0.006);
+    const foot = this.add.image(cx, cy + 205, 'soft').setTint(0xffffff).setScale(3, 0.7).setAlpha(0).setBlendMode('ADD');
+    layer.addAt(foot, layer.getIndex(img));
+    this.tweens.add({ targets: foot, alpha: 0.7, duration: 800 });
+    this.tweens.add({ targets: img, y: cy + 186, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
-    // 5) ORIGIN + 이름 + 무지개 큰 별
-    const origin = text(this, W / 2, 120, 'ORIGIN', 50, '#ffffff', { stroke: '#6a3aaa', strokeThickness: 8 }).setAlpha(0).setScale(1.6);
-    const name = text(this, W / 2, H - 250, '', 60, '#ffffff', { stroke: '#6a3aaa', strokeThickness: 9 });
-    const big = text(this, W / 2, H - 170, '★', 70, '#ffffff', { stroke: '#b06aff', strokeThickness: 8 }).setShadow(0, 0, '#ffe066', 18, true, true).setAlpha(0);
-    layer.add([origin, name, big]);
-    this.tweens.add({ targets: origin, alpha: 1, scale: 1, duration: 1000, ease: 'Back.out' });
-    for (let i = 1; i <= hero.name.length && !state.skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 220); }
+    // 5) ORIGIN + 이름 + 무지개 큰 별 + 부제
+    const origin = gradFill(text(this, W / 2, 110, 'ORIGIN', 68, '#ffffff', { stroke: '#1e0e3e', strokeThickness: 11 }), RAINBOW_CSS, true).setShadow(0, 0, '#ffffff', 18, true, true).setAlpha(0).setScale(2);
+    const sub = text(this, W / 2, 175, '모든 별의 시작', 30, '#fff6c8', { stroke: '#3a2a6a', strokeThickness: 6 }).setAlpha(0);
+    const name = text(this, W / 2, H - 260, '', 72, '#ffffff', { stroke: '#6a3aaa', strokeThickness: 11 }).setShadow(0, 0, '#d8c8ff', 14, true, true);
+    const big = text(this, W / 2, H - 165, '★', 84, '#ffffff', { stroke: '#b06aff', strokeThickness: 9 }).setShadow(0, 0, '#ffe066', 22, true, true).setAlpha(0).setScale(0.3);
+    layer.add([origin, sub, name, big]);
+    await tween(this, { targets: origin, alpha: 1, scale: 1, duration: 1300, ease: 'Back.out' });
+    this.tweens.add({ targets: sub, alpha: 1, duration: 1000 });
+    for (let i = 1; i <= hero.name.length && !state.skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 320); }
     name.setText(hero.name);
-    this.tweens.add({ targets: big, alpha: 1, angle: 360, duration: 1400, ease: 'Sine.out' });
-    await pause(4000);
-    sparkle.stop();
-    await tween(this, { targets: layer, alpha: 0, duration: 1200 });
+    this.tweens.add({ targets: big, alpha: 1, scale: 1, angle: 360, duration: 1600, ease: 'Back.out' });
+    await pause(4500);
+    warp.stop();
+    await tween(this, { targets: layer, alpha: 0, duration: 1400 });
     layer.destroy();
   }
 
