@@ -44,8 +44,8 @@ export function render(root, app) {
           h('button.btn.grow', { style: 'background:linear-gradient(#ff7a7a,#d84a4a);box-shadow:0 4px 0 #8a2a2a', onclick: () => {
             app.save = defaultSave(); app.persist(); close(); app.toast('새로 시작해요!'); app.show('lobby');
           } }, '다시 시작')))) }, '처음부터 다시 하기'),
-      // 테스트판(?test)에서만: 개발자 미리보기로 가는 버튼
-      /[?&]test\b/.test(location.search) ? h('a.btn.ghost', { href: './dev.html', style: 'display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:6px' }, '🧪 개발자 미리보기 열기') : null,
+      // 테스트판(?test)과 안드로이드 앱에서만: 개발자 미리보기로 가는 버튼(앱에서 모든 연출을 직접 보려고)
+      /[?&]test\b/.test(location.search) || import.meta.env.MODE === 'app' ? h('a.btn.ghost', { href: './dev.html', style: 'display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:6px' }, '🧪 개발자 미리보기 열기') : null,
       h('div.center.dim', { style: 'font-size:12px;margin-top:8px' }, '아스트라 v0.2'),
     ),
   );

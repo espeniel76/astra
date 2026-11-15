@@ -1397,7 +1397,8 @@ export class SummonScene extends Phaser.Scene {
   }
 
   // 이클립스(종말, ★8) 전용(약 20초, 아스트라의 짝). 번쩍임 없음: 빛은 모두 천천히 밝아지고 천천히 사라진다.
-  // 1) 별이 가득한 밤하늘 2) 일곱 별 영웅 아홉 빛깔이 원을 이루고, 별들과 함께 하나씩 꺼진다(한 음씩 내려감)
+  // 1) 별이 가득한 밤하늘(밝은 큰 별 아홉 + 가운데 가장 밝은 별) 2) 큰 별들이 하나씩 별똥별이 되어 떨어지고(한 음씩 내려감)
+  //    어둠이 가장자리에서부터 조여 오다가, 마지막 가운데 별이 천천히 작아지며 꺼진다
   // 3) 완전한 어둠, 아래에서 검은 태양이 떠오르고 금빛 코로나가 번진다 4) 테두리에 다이아몬드 반지처럼 빛 한 점(쿵)
   // 5) 검은 태양 앞에 이클립스가 나타나고 금빛 재가 위로 흩날린다 6) OMEGA + "모든 별의 끝" + 이름 + 검은 큰 별
   async eclipseEnd(r) {
@@ -1406,39 +1407,83 @@ export class SummonScene extends Phaser.Scene {
     const cx = W / 2, cy = H / 2 - 120;
     setBackdrop('#000000', '#000000');
 
-    // 1) 밤하늘
+    // 1) 밤하늘: 작은 별 + 밝게 빛나는 큰 별(빛 갈래 네 개), 천천히 반짝인다
     const neb = this.add.image(0, 0, propTex(this, 'nebula')).setOrigin(0, 0).setScale(TS).setAlpha(0);
     layer.add(neb);
     const dots = [];
-    for (let i = 0; i < 80; i++) {
-      const s = this.add.circle(Phaser.Math.Between(16, W - 16), Phaser.Math.Between(16, H - 16), Phaser.Math.FloatBetween(1.4, 3.4), 0xffffff, 1).setAlpha(0);
+    for (let i = 0; i < 90; i++) {
+      const s = this.add.circle(Phaser.Math.Between(16, W - 16), Phaser.Math.Between(16, H - 16), Phaser.Math.FloatBetween(1.2, 3), 0xffffff, 1).setAlpha(0);
       layer.add(s); dots.push(s);
     }
+    const BRIGHT = [[120, 220], [560, 170], [300, 380], [640, 470], [90, 640], [470, 690], [230, 900], [610, 980], [380, 1110]];
+    const brights = BRIGHT.map(([x, y], i) => {
+      const glow = this.add.image(x, y, 'soft').setTint(i % 3 ? 0xfff3d0 : 0xd8e4ff).setScale(0.55).setAlpha(0).setBlendMode('ADD');
+      const spark = this.add.star(x, y, 4, 2.5, 13, 0xffffff).setAlpha(0);
+      layer.add([glow, spark]);
+      return { glow, spark, x, y };
+    });
+    const core = { glow: this.add.image(cx, cy, 'soft').setTint(0xfff6e0).setScale(0.9).setAlpha(0).setBlendMode('ADD'), spark: this.add.star(cx, cy, 4, 4, 22, 0xffffff).setAlpha(0) };
+    layer.add([core.glow, core.spark]);
     sfx.play('eclipseOpen');
     this.tweens.add({ targets: neb, alpha: 0.9, duration: fast(1400) });
-    dots.forEach(s => this.tweens.add({ targets: s, alpha: Phaser.Math.FloatBetween(0.5, 1), duration: fast(1200), delay: state.skipped ? 0 : Phaser.Math.Between(0, 700) }));
-    await pause(1800);
-
-    // 2) 아홉 빛깔이 원을 이루고, 하나씩 꺼진다
-    const sevens = HEROES.filter(h => h.star === 7);
-    const lights = sevens.map((h, i) => {
-      const a = -Math.PI / 2 + (i / sevens.length) * Math.PI * 2;
-      const l = this.add.image(cx + Math.cos(a) * 240, cy + 80 + Math.sin(a) * 240, 'soft').setTint(h.look.glow ?? 0xffffff).setScale(0.9).setAlpha(0).setBlendMode('ADD');
-      layer.add(l);
-      return l;
+    dots.forEach(s => this.tweens.add({ targets: s, alpha: Phaser.Math.FloatBetween(0.45, 1), duration: fast(1200), delay: state.skipped ? 0 : Phaser.Math.Between(0, 700) }));
+    [...brights, core].forEach((b, i) => {
+      this.tweens.add({ targets: [b.glow, b.spark], alpha: 1, duration: fast(1000), delay: state.skipped ? 0 : 300 + i * 80 });
+      this.tweens.add({ targets: b.glow, scale: b.glow.scale * 1.3, duration: 1800 + i * 150, yoyo: true, repeat: -1, ease: 'Sine.inOut' }); // 천천히 반짝(깜빡임 아님)
     });
-    lights.forEach((l, i) => this.tweens.add({ targets: l, alpha: 0.95, duration: fast(700), delay: state.skipped ? 0 : i * 90 }));
-    await pause(1400);
-    const order = Phaser.Utils.Array.Shuffle([...dots]);
-    order.forEach((s, i) => this.tweens.add({ targets: s, alpha: 0, duration: 700, delay: state.skipped ? 0 : 300 + i * 40 }));
-    for (let i = 0; i < lights.length && !state.skipped; i++) {
-      sfx.play('eclipseFade', i);
-      this.tweens.add({ targets: lights[i], alpha: 0, scale: 0.2, duration: 700, ease: 'Sine.in' });
-      await pause(380);
+    await pause(2200);
+
+    // 2) 별들이 하나씩 떨어져 사라지고(별똥별), 어둠이 가장자리에서부터 천천히 조여 온다
+    if (!this.textures.exists('vignette')) { // 가운데는 투명, 바깥으로 갈수록 까만 둥근 막
+      const c = document.createElement('canvas');
+      c.width = c.height = 256;
+      const x = c.getContext('2d');
+      const g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.1, 'rgba(0,0,0,0)'); g.addColorStop(0.26, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+      x.fillStyle = 'rgba(0,0,0,1)'; x.fillRect(0, 0, 256, 256); x.globalCompositeOperation = 'copy'; x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+      this.textures.addCanvas('vignette', c);
     }
-    lights.forEach(l => l.setVisible(false));
-    this.tweens.add({ targets: neb, alpha: 0, duration: fast(1500) });
-    await pause(1600);
+    // 아주 크게 시작해(화면 전체가 투명한 가운데) 줄어들면서 어둠이 조여 온다. 끝까지 화면 전체를 덮을 만큼 크다
+    const vig = this.add.image(cx, cy, 'vignette').setScale(120);
+    layer.add(vig);
+    const order = Phaser.Utils.Array.Shuffle([...dots]);
+    order.forEach((s, i) => this.tweens.add({ targets: s, alpha: 0, duration: 900, delay: state.skipped ? 0 : 200 + i * 40 }));
+    const fall = b => { // 별똥별: 별이 꼬리를 그리며 비스듬히 떨어지다 사그라든다
+      const g = this.add.graphics().setBlendMode('ADD');
+      layer.addAt(g, layer.getIndex(vig));
+      const p = { t: 0 }, dx = -220, dy = 360;
+      const draw = () => {
+        g.clear();
+        const hx = b.x + dx * p.t, hy = b.y + dy * p.t, fade = 1 - p.t;
+        for (let k = 0; k < 12; k++) {
+          const t0 = Math.max(0, p.t - k * 0.045), t1 = Math.max(0, p.t - (k + 1) * 0.045);
+          g.lineStyle(9 * (1 - k / 12) + 1.5, k < 2 ? 0xffffff : 0xffe9b0, 0.9 * fade * (1 - k / 12));
+          g.lineBetween(b.x + dx * t0, b.y + dy * t0, b.x + dx * t1, b.y + dy * t1);
+        }
+        g.fillStyle(0xffe9b0, 0.35 * fade).fillCircle(hx, hy, 14 * fade + 2);
+        g.fillStyle(0xffffff, fade).fillCircle(hx, hy, 6 * fade + 1.5);
+      };
+      this.tweens.add({ targets: [b.glow, b.spark], alpha: 0, duration: 250 });
+      this.tweens.add({ targets: p, t: 1, duration: 900, ease: 'Quad.in', onUpdate: draw, onComplete: () => g.destroy() });
+    };
+    // 바깥 별부터 떨어지고, 별 하나가 떨어질 때마다 어둠도 한 걸음씩 조여 온다
+    const fallOrder = [...brights].sort((p, q) => Math.hypot(q.x - cx, q.y - cy) - Math.hypot(p.x - cx, p.y - cy));
+    for (let i = 0; i < fallOrder.length && !state.skipped; i++) {
+      sfx.play('eclipseFade', i);
+      fall(fallOrder[i]);
+      this.tweens.add({ targets: vig, scale: 120 - (120 - 14) * ((i + 1) / fallOrder.length) ** 0.6, duration: 520, ease: 'Sine.out' });
+      await pause(520);
+    }
+    brights.forEach(b => { b.glow.setVisible(false); b.spark.setVisible(false); });
+    this.tweens.add({ targets: neb, alpha: 0, duration: fast(1200) });
+    // 마지막 별 하나(가운데)가 천천히 작아지며 꺼진다
+    await pause(500);
+    sfx.play('eclipseFade', 10);
+    this.tweens.add({ targets: vig, scale: 9.5, duration: fast(1600), ease: 'Sine.in' });
+    this.tweens.add({ targets: core.spark, scale: 0, angle: 45, duration: fast(1600), ease: 'Sine.in' });
+    await tween(this, { targets: core.glow, scale: 0, alpha: 0, duration: fast(1600), ease: 'Sine.in' });
+    vig.setVisible(false);
+    await pause(700);
 
     // 3) 검은 태양이 떠오르고 코로나가 번진다
     sfx.play('eclipseRise');

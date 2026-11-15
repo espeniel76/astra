@@ -38,6 +38,22 @@ function play(results) {
   startSummon(app, results);
 }
 
+// 안드로이드 앱 안에서 열었을 때: 휴대폰 뒤로 가기 = 연출 중이면 연출 끄기, 아니면 게임으로 돌아가기
+const IN_APP = import.meta.env.MODE === 'app';
+const toGame = () => { location.href = './index.html'; };
+if (IN_APP) {
+  window.__app = {
+    back() {
+      const stage = document.getElementById('stage');
+      if (stage && !stage.hidden) import('./game/phaser.js').then(m => m.closeStage(app, 'dev'));
+      else toGame();
+      return 'handled';
+    },
+    pause() { return 'ok'; },
+    resume() { return 'ok'; },
+  };
+}
+
 function render() {
   const btn = (label, fn, cls = '') => h('button.btn' + cls, { onclick: fn }, label);
   const toggle = (key, label, desc) => {
@@ -47,7 +63,7 @@ function render() {
     return h('label.switch.card', h('div', h('b', label), h('div.dim', { style: 'font-size:13px' }, desc)), box);
   };
   root.replaceChildren(
-    h('div.top', h('h1', '🧪 개발자 미리보기')),
+    h('div.top', IN_APP ? h('button.back', { onclick: toGame, 'aria-label': '게임으로' }, '‹') : null, h('h1', '🧪 개발자 미리보기')),
     h('div.dim', { style: 'font-size:13px;margin-bottom:10px' }, '뽑기 연출만 틀어 봐요. 진짜 게임 기록은 안 바뀌어요.'),
     h('div.col',
       toggle('isNew', '처음 뽑은 영웅처럼(NEW)', '끄면 이미 가진 영웅이 겹친 것처럼(+2) 보여요.'),
