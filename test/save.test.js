@@ -25,7 +25,7 @@ describe('저장', () => {
     expect(s.settings.sound).toBe(true);
   });
   it('모르는 영웅·스테이지는 버리고 팀에서도 뺀다', () => {
-    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ heroes: { nope: { level: 3, dupes: 0 }, slinger: { level: 2, dupes: 1 } }, team: ['nope', 'slinger', null], cleared: ['1-1', '9-9'] }) }));
+    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ heroes: { nope: { level: 3, dupes: 0 }, slinger: { level: 2, dupes: 1 } }, team: ['nope', 'slinger', null], cleared: ['1-1', '99-9'] }) }));
     expect(Object.keys(s.heroes)).toEqual(['slinger']);
     expect(s.team).toEqual([null, 'slinger', null]);
     expect(s.cleared).toEqual(['1-1']);
@@ -85,7 +85,7 @@ describe('v2 저장', () => {
     expect(s.pity).toBe(49);
   });
   it('별 기록은 0~3으로 고친다', () => {
-    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 2, stars: { '1-1': 9, '1-2': -1, '9-9': 3 }, tickets: { star4: 2 } }) }));
+    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 2, stars: { '1-1': 9, '1-2': -1, '99-9': 3 }, tickets: { star4: 2 } }) }));
     expect(s.stars).toEqual({ '1-1': 3 });
     expect(s.cleared).toEqual(['1-1']);
     expect(s.tickets.star4).toBe(2);

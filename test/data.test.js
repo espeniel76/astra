@@ -35,13 +35,24 @@ describe('영웅 데이터', () => {
 });
 
 describe('스테이지 데이터', () => {
-  it('스테이지 30개, 보스 3개', () => {
-    expect(STAGES.length).toBe(30);
-    expect(STAGES.filter(s => s.boss).map(s => s.id)).toEqual(['1-10', '2-10', '3-10']);
-    expect(CHAPTERS.map(c => c.name)).toEqual(['초원', '숲', '동굴']);
+  it('15챕터, 스테이지 150개, 보스 15개', () => {
+    expect(STAGES.length).toBe(150);
+    expect(STAGES.filter(s => s.boss).map(s => s.id)).toEqual(CHAPTERS.map(c => `${c.n}-10`));
+    expect(CHAPTERS.map(c => c.name)).toEqual(['초원', '숲', '동굴', '사막', '설원', '늪지', '화산', '해안', '유적', '수정 동굴', '묘지', '하늘 섬', '어둠의 성', '별의 공허', '천공']);
   });
-  it('첫 클리어 다이아 합은 7050', () => {
-    expect(STAGES.reduce((t, s) => t + s.firstDia, 0)).toBe(27 * 150 + 3 * 1000);
+  it('첫 클리어 다이아 합', () => {
+    expect(STAGES.reduce((t, s) => t + s.firstDia, 0)).toBe(135 * 150 + 15 * 1000);
+  });
+  it('깰 때마다 다이아 조금(보통 10, 보스 30)', () => {
+    for (const s of STAGES) expect(s.dia).toBe(s.boss ? 30 : 10);
+  });
+  it('챕터마다 몬스터가 겹치지 않고, 보스는 boss 표시', () => {
+    const all = CHAPTERS.flatMap(c => [...c.foes, c.boss]);
+    expect(new Set(all).size).toBe(all.length);
+    for (const c of CHAPTERS) {
+      expect(MONSTERS[c.boss].boss).toBe(true);
+      for (const m of c.foes) expect(MONSTERS[m].boss).toBe(false);
+    }
   });
   it('모든 적은 몬스터 목록에 있고 한 스테이지 최대 3마리', () => {
     for (const s of STAGES) {

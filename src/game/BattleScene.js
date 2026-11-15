@@ -7,7 +7,7 @@ import { bump } from '../core/daily.js';
 import { sfx } from '../core/sfx.js';
 import { closeStage, setBackdrop } from './phaser.js';
 import { text, button, heroTex, monTex, wait, tween, colorNum, PX, TEXRES, TS, hiDpi } from './ui.js';
-import { bgTexture, addAmbient } from './backgrounds.js';
+import { bgTexture, addAmbient, BACKDROP } from './backgrounds.js';
 import { starsFor, recordStars } from '../core/stars.js';
 
 const W = 720;
@@ -63,7 +63,7 @@ export class BattleScene extends Phaser.Scene {
 
   drawBackground() {
     const kind = CHAPTERS[this.stage.chapter - 1].bg;
-    setBackdrop({ meadow: '#6cc4f5', forest: '#1d3b2c', cave: '#120e1c' }[kind], '#0d1020');
+    setBackdrop(BACKDROP[kind], '#0d1020');
     this.add.rectangle(W / 2, 640, W, 1280, 0x0d1020);
     this.add.image(0, 0, bgTexture(this, kind)).setOrigin(0, 0).setScale(TS);
     addAmbient(this, kind);
@@ -332,7 +332,7 @@ export class BattleScene extends Phaser.Scene {
       const got = starsFor(this.b, st);
       const { first } = recordStars(s, st.id, got);
       s.gold += gold;
-      if (first) s.diamonds += st.firstDia;
+      s.diamonds += st.dia + (first ? st.firstDia : 0);
       this.app.persist();
       const title = add(text(this, W / 2, 300, '승리!', 96, '#ffe066'));
       title.setScale(0.4);
@@ -348,7 +348,7 @@ export class BattleScene extends Phaser.Scene {
         add(text(this, W / 2 + (i - 1) * 120, 500, conds[i], 17, on ? '#ffe9a0' : '#8a90aa', { wordWrap: { width: 116 } }));
       }
       add(text(this, W / 2, 575, `🪙 ${gold.toLocaleString('ko-KR')}${this.b.goldMul > 1 ? ' (×2)' : ''}`, 44, '#ffd36a'));
-      if (first) add(text(this, W / 2, 640, `💎 ${st.firstDia.toLocaleString('ko-KR')} (첫 클리어)`, 40, '#7fd8ff'));
+      add(text(this, W / 2, 640, first ? `💎 ${st.dia} + ${st.firstDia.toLocaleString('ko-KR')} (첫 클리어)` : `💎 ${st.dia}`, 40, '#7fd8ff'));
       const idx = STAGES.indexOf(st);
       const next = STAGES[idx + 1];
       if (next) add(button(this, W / 2, 780, 420, 100, `다음: ${next.id}${next.boss ? ' 보스' : ''}`, () => this.scene.restart({ app: this.app, stageId: next.id }), { fill: 0x3cb94e }));

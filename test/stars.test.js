@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { STAGES, STAGE } from '../src/data/stages.js';
+import { STAGES, STAGE, CHAPTERS } from '../src/data/stages.js';
 import { MONSTERS } from '../src/data/monsters.js';
 import { starsFor, recordStars, chestState, claimChest } from '../src/core/stars.js';
 import { defaultSave } from '../src/core/save.js';
 
 describe('새 적은 조금씩', () => {
   it('챕터 졸개 a는 1부터, b는 4부터, c는 7부터 나온다', () => {
-    for (const ch of [1, 2, 3]) {
+    for (const { n: ch } of CHAPTERS) {
       const st = STAGES.filter(s => s.chapter === ch);
       const firstSeen = {};
       for (const s of st) for (const f of s.foes) firstSeen[f.mon] ??= s.n;

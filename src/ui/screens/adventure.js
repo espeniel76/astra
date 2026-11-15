@@ -15,13 +15,13 @@ const starRow = n => h('span.stage-stars', '★'.repeat(n), h('i', '★'.repeat(
 export function render(root, app, params = {}) {
   const s = app.save;
   const next = STAGES.find(st => !s.cleared.includes(st.id));
-  const chapter = params.chapter || (next ? next.chapter : 3);
+  const chapter = params.chapter || (next ? next.chapter : CHAPTERS.length);
   const chapUnlocked = c => c === 1 || s.cleared.includes(`${c - 1}-10`);
   const power = teamPower(s);
   const chests = chestState(s, chapter);
   root.append(
     app.top('모험'),
-    h('div.tabs', ...CHAPTERS.map(c => h('button' + (chapter === c.n ? '.on' : ''), {
+    h('div.tabs.scroll', ...CHAPTERS.map(c => h('button' + (chapter === c.n ? '.on' : ''), {
       onclick: () => { if (!chapUnlocked(c.n)) return app.toast(`${c.n - 1}챕터 보스를 먼저 물리쳐요`); app.show('adventure', { chapter: c.n }); },
     }, chapUnlocked(c.n) ? `${c.n}. ${c.name}` : `🔒 ${c.name}`))),
     h('div.card.row', { style: 'margin-bottom:10px;padding:10px 14px' },
@@ -43,6 +43,13 @@ export function render(root, app, params = {}) {
         open && st.newFoe && !n ? h('span.newfoe', 'NEW') : null);
     })),
   );
+  // 챕터 15개: 탭 줄을 옆으로 밀어 보기. 고른 챕터가 가운데 오게, PC는 마우스 휠로도 밀림
+  const tabs = root.querySelector('.tabs.scroll');
+  const on = tabs?.querySelector('.on');
+  if (on) requestAnimationFrame(() => { tabs.scrollLeft = on.offsetLeft - tabs.offsetLeft - (tabs.clientWidth - on.offsetWidth) / 2; });
+  tabs?.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { tabs.scrollLeft += e.deltaY; e.preventDefault(); }
+  }, { passive: false });
 }
 
 function preview(app, id) {
@@ -63,7 +70,7 @@ function preview(app, id) {
     weak ? h('div.center', { style: 'color:var(--bad);font-size:14px' }, '조금 힘들 수 있어요. 영웅을 레벨업하면 좋아요!') : null,
     h('div.card', { style: 'font-size:14px' },
       h('div', '★ 깨기'), h('div', '★★ 아무도 안 쓰러지기'), h('div', `★★★ 아무도 안 쓰러지고 ${st.limit}번 행동 안에 깨기`)),
-    h('div.card.center', `보상: 🪙 ${fmt(st.gold)}`, first ? h('b', { style: 'color:var(--dia)' }, `  +💎 ${fmt(st.firstDia)} (첫 클리어)`) : null),
+    h('div.card.center', `보상: 🪙 ${fmt(st.gold)}  💎 ${st.dia}`, first ? h('b', { style: 'color:var(--dia)' }, `  +💎 ${fmt(st.firstDia)} (첫 클리어)`) : null),
     teamCount
       ? h('button.btn', { onclick: () => { close(); app.startBattle(id); } }, '출발!')
       : h('div.col', h('div.center', '편성에서 영웅을 넣어 주세요'), h('button.btn.ghost', { onclick: () => { close(); app.show('team'); } }, '편성으로')),

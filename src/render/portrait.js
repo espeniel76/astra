@@ -53,7 +53,27 @@ function heroSrc(id, px, silhouette, res) {
     }
   });
 }
-const monSrc = (id, px, res) => cached(`m:${id}:${px}:${res}`, px, res, ctx => drawMonster(ctx, px / 2, px * 0.86, px / 100, id));
+// 큰 보스가 그림 칸(100 기준, 발밑 86) 밖으로 잘리지 않게: 한 번 그려 보고 넘치면 그만큼 줄인다
+const fitCache = new Map();
+function monFit(id) {
+  if (fitCache.has(id)) return fitCache.get(id);
+  const N = 400, fx = 200, fy = 300;
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const ctx = c.getContext('2d');
+  drawMonster(ctx, fx, fy, 1, id);
+  const d = ctx.getImageData(0, 0, N, N).data;
+  let left = N, right = 0, top = N;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (d[(y * N + x) * 4 + 3] < 90) continue; // 은은한 빛은 빼고 몸만
+    if (x < left) left = x; if (x > right) right = x; if (y < top) top = y;
+  }
+  const half = Math.max(fx - left, right - fx, 1), up = Math.max(fy - top, 1);
+  const k = Math.min(1, 48 / half, 83 / up);
+  fitCache.set(id, k);
+  return k;
+}
+const monSrc = (id, px, res) => cached(`m:${id}:${px}:${res}`, px, res, ctx => drawMonster(ctx, px / 2, px * 0.86, (px / 100) * monFit(id), id));
 
 // 정사각형 초상화(복사본). 발은 아래쪽 86%. 캔버스 크기는 px × 화면 밀도(CSS로 크기를 정해 쓴다).
 export const heroCanvas = (id, px = 120, { silhouette = false } = {}) => copy(heroSrc(id, px, silhouette, SCREEN_RES));

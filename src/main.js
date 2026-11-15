@@ -36,6 +36,7 @@ const app = createApp(document.getElementById('app'), save,
 app.startBattle = async stageId => (await import('./game/phaser.js')).startBattle(app, stageId);
 app.startSummon = async (results, ticket = false) => (await import('./game/phaser.js')).startSummon(app, results, ticket);
 
+if (TEST) window.astra = app; // 테스트판: 개발용 손잡이
 app.show('lobby');
 // 탭을 닫거나 다른 앱으로 갈 때 저장
 document.addEventListener('visibilitychange', () => { if (document.hidden) app.persist(); });

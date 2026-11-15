@@ -70,6 +70,9 @@ button { font: inherit; color: inherit; }
 .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
 .tabs button { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); font-weight: 700; cursor: pointer; }
 .tabs button.on { background: var(--accent); border-color: var(--accent); }
+.tabs.scroll { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.tabs.scroll::-webkit-scrollbar { display: none; }
+.tabs.scroll button { flex: 0 0 auto; padding: 0 14px; white-space: nowrap; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 .hcard { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 4px 4px 6px; text-align: center; cursor: pointer; position: relative; }
 .hcard canvas { width: 100%; height: auto; display: block; }
