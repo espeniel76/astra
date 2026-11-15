@@ -661,7 +661,7 @@ export class SummonScene extends Phaser.Scene {
     setBackdrop('#000000', '#000000');
   }
 
-  // 세계수의 여왕 전용(약 11초): 1) 땅이 갈라지고 2) 거대한 나무가 하늘까지 자라며 가지를 뻗는다
+  // 세계수의 여왕 전용(약 14초): 1) 새벽 밤하늘·오로라 아래 금빛 씨앗이 빛나고 2) 새싹이 돋아 거대한 세계수로 한 번에 자란다(금빛 기운이 솟음)
   // 3) 가지마다 빛나는 꽃이 피고 꽃잎이 흩날린다 4) 나무 밑동의 빛 속에서 여왕이 나타난다 5) ETERNAL + 이름. 번쩍임 없음.
   async worldTreeBloom(r) {
     const hero = HERO[r.id];
@@ -669,35 +669,76 @@ export class SummonScene extends Phaser.Scene {
     const cx = W / 2, ground = H / 2 + 260;
     setBackdrop('#06120a', '#0a1a0c');
 
-    // 하늘과 땅
+    // 하늘: 새벽 밤하늘 + 별 + 천천히 일렁이는 오로라 / 땅: 언덕
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0x0a1a2a, 0x0a1a2a, 0x2a5a2a, 0x2a5a2a, 1).fillRect(0, 0, W, ground);
-    sky.fillStyle(0x1e3a14, 1).fillRect(0, ground, W, H - ground);
+    sky.fillGradientStyle(0x050c1e, 0x050c1e, 0x1a4a4a, 0x1a4a4a, 1).fillRect(0, 0, W, ground);
     sky.setAlpha(0);
     layer.add(sky);
-    this.tweens.add({ targets: sky, alpha: 1, duration: fast(1000) });
-    // 1) 땅이 갈라지는 금빛 틈
-    const crack = this.add.graphics();
-    layer.add(crack);
-    crack.lineStyle(5, 0xffd84a, 1).beginPath().moveTo(cx - 160, ground + 6).lineTo(cx - 60, ground - 2).lineTo(cx, ground + 8).lineTo(cx + 70, ground).lineTo(cx + 170, ground + 6).strokePath();
-    crack.setScale(0, 1).setPosition(cx * (1 - 0), 0);
-    crack.x = 0;
-    await tween(this, { targets: crack, scaleX: 1, duration: fast(800), ease: 'Cubic.out' });
-    sfx.play('summon');
+    this.tweens.add({ targets: sky, alpha: 1, duration: fast(1200) });
+    for (let i = 0; i < 70; i++) {
+      const st = this.add.circle(Math.random() * W, Math.random() * (ground - 120), 1 + Math.random() * 2, 0xffffff, 0.8).setAlpha(0);
+      layer.add(st);
+      this.tweens.add({ targets: st, alpha: 0.2 + Math.random() * 0.7, duration: 1500, delay: Math.random() * 800 });
+    }
+    for (const [y, c, a] of [[220, 0x6affc8, 0.3], [300, 0x9fe07a, 0.22], [170, 0x7fd8ff, 0.2]]) {
+      const au = this.add.ellipse(W / 2, y, W * 1.6, 90, c, a).setAngle(-8).setAlpha(0);
+      layer.add(au);
+      this.tweens.add({ targets: au, alpha: 1, duration: 1800 });
+      this.tweens.add({ targets: au, x: W / 2 + 60, angle: 6, duration: 7000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
+    const hill = this.add.graphics();
+    hill.fillStyle(0x0a1e0c, 1).fillEllipse(W / 2, ground + 300, W * 1.8, 640);
+    hill.fillGradientStyle(0x2a5a22, 0x2a5a22, 0x0a1e0c, 0x0a1e0c, 1).fillRect(0, ground + 6, W, H - ground);
+    hill.fillStyle(0x2f6a26, 1).fillEllipse(W / 2, ground + 20, W * 1.3, 40);
+    layer.add(hill);
 
-    // 2) 나무가 자란다: 줄기·가지 그림이 아래에서 위로 드러나고, 잎이 피어난다
-    const top0 = ground - TREE.base; // 나무 그림의 맨 위가 놓일 화면 높이
-    const trunkImg = this.add.image(0, top0, propTex(this, 'treeTrunk')).setOrigin(0, 0).setScale(TS);
-    const canopyImg = this.add.image(W / 2, top0 + TREE.h / 2, propTex(this, 'treeCanopy')).setAlpha(0).setScale(0.85 * TS);
-    layer.add([trunkImg, canopyImg]);
-    const grow = { p: 0 };
-    const reveal = () => { const h = TREE.h * grow.p * TEXRES; trunkImg.setCrop(0, TREE.h * TEXRES - h, TREE.w * TEXRES, h); };
-    reveal();
+    // 1) 금빛 씨앗이 빛난다
+    const seedGlow = this.add.circle(cx, ground - 6, 60, 0xffe066, 0.35).setScale(0.1);
+    const seed = this.add.circle(cx, ground - 6, 9, 0xfff3c0, 1).setStrokeStyle(3, 0xc8961a).setScale(0);
+    layer.add([seedGlow, seed]);
+    await tween(this, { targets: seed, scale: 1, duration: fast(600), ease: 'Back.out' });
+    sfx.play('summon');
+    this.tweens.add({ targets: seedGlow, scale: 1, duration: fast(1200), ease: 'Sine.out' });
+    await pause(900);
+
+    // 2) 새싹
+    const sprout = this.add.graphics();
+    sprout.lineStyle(5, 0x5fae48, 1).lineBetween(0, 0, 0, -40);
+    sprout.fillStyle(0x7fcf5a, 1).fillEllipse(-14, -40, 26, 12).fillEllipse(14, -44, 26, 12);
+    const sproutC = this.add.container(cx, ground - 6, [sprout]).setScale(0);
+    layer.add(sproutC);
+    await tween(this, { targets: sproutC, scale: 1, duration: fast(900), ease: 'Back.out' });
+
+    // 3) 시간을 빨리 감은 듯 세계수가 한 번에 자란다(전체가 커지며, 잎은 중간부터 피어남)
+    const top0 = ground - TREE.base; // 다 자란 나무 그림의 맨 위
+    const trunkImg = this.add.image(0, 0, propTex(this, 'treeTrunk')).setOrigin(0.5, TREE.base / TREE.h).setScale(TS);
+    const canopyImg = this.add.image(0, 0, propTex(this, 'treeCanopy')).setOrigin(0.5, TREE.base / TREE.h).setScale(TS).setAlpha(0);
+    const treeC = this.add.container(cx, ground, [trunkImg, canopyImg]).setScale(0.06);
+    layer.add(treeC);
+    const energy = this.add.particles(0, 0, 'dot', {
+      x: { min: cx - 70, max: cx + 70 }, y: ground, lifespan: 2600, speedY: { min: -260, max: -140 }, speedX: { min: -20, max: 20 },
+      scale: { start: 0.7, end: 0.1 }, alpha: { start: 0.9, end: 0 }, tint: [0xffe066, 0xfff3c0], frequency: 50, blendMode: 'ADD',
+    });
+    layer.addAt(energy, layer.getIndex(treeC) + 1);
     sfx.play('star7');
-    this.tweens.add({ targets: canopyImg, alpha: 1, scale: TS, duration: fast(1800), delay: state.skipped ? 0 : 1900, ease: 'Back.out' });
-    await tween(this, { targets: grow, p: 1, duration: fast(3200), ease: 'Sine.inOut', onUpdate: reveal });
-    reveal();
-    await pause(500);
+    this.tweens.add({ targets: sproutC, alpha: 0, duration: 600 });
+    this.tweens.add({ targets: seedGlow, scale: 4, alpha: 0, duration: fast(2400) });
+    this.tweens.add({ targets: canopyImg, alpha: 1, duration: fast(2200), delay: state.skipped ? 0 : 1300 });
+    await tween(this, { targets: treeC, scale: 1, duration: fast(4000), ease: 'Sine.inOut' });
+    this.cameras.main.shake(400, this.flash ? 0.01 : 0.005);
+    // 수관 뒤로 천천히 도는 빛살
+    const rays = this.add.container(cx, top0 + 250);
+    for (let i = 0; i < 14; i++) {
+      const g = this.add.graphics();
+      g.fillStyle(0xfff3c0, 0.16).fillTriangle(0, 0, -40, -700, 40, -700);
+      g.rotation = (i / 14) * Math.PI * 2;
+      rays.add(g);
+    }
+    rays.setAlpha(0);
+    layer.addAt(rays, layer.getIndex(hill) + 1);
+    this.tweens.add({ targets: rays, alpha: 1, duration: 1500 });
+    this.tweens.add({ targets: rays, angle: 360, duration: 30000, repeat: -1 });
+    await pause(400);
 
     // 3) 빛나는 꽃(다섯 잎) + 꽃잎이 흩날린다
     const flower = (x, y, c) => {
