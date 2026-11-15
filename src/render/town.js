@@ -89,11 +89,16 @@ function bubble(ctx, x, y, str, t) {
 }
 
 export function startTown(canvas, { heroes = [], badges = {}, hint = null, onBuilding, onHero }) {
-  canvas.width = TW; canvas.height = TH;
+  // 휴대폰 화면 밀도에 맞춰 2배로 촘촘하게 그린다(좌표는 그대로 720×840 기준)
+  const RES = 2;
+  canvas.width = TW * RES; canvas.height = TH * RES;
   const ctx = canvas.getContext('2d');
+  ctx.setTransform(RES, 0, 0, RES, 0, 0);
   const bg = document.createElement('canvas');
-  bg.width = TW; bg.height = TH;
-  drawStatic(bg.getContext('2d'));
+  bg.width = TW * RES; bg.height = TH * RES;
+  const bctx = bg.getContext('2d');
+  bctx.scale(RES, RES);
+  drawStatic(bctx);
   const rng = makeRng(7);
   const clouds = [0, 1, 2].map(i => ({ x: rng() * TW, y: 40 + i * 50, s: 0.7 + rng() * 0.6, v: 6 + rng() * 6 }));
   // 걸어 다니는 영웅(광장 타원 안)
@@ -111,7 +116,7 @@ export function startTown(canvas, { heroes = [], badges = {}, hint = null, onBui
     const dt = Math.min(50, now - last); last = now;
     if (!canvas.isConnected) { stop(); return; }
     if (document.hidden || canvas.closest('[hidden]')) return;
-    ctx.drawImage(bg, 0, 0);
+    ctx.drawImage(bg, 0, 0, TW, TH);
     for (const c of clouds) {
       c.x += (c.v * dt) / 1000; if (c.x > TW + 120) c.x = -160;
       for (const [dx, dy, r] of [[0, 0, 26], [28, -10, 32], [60, 0, 24], [30, 10, 30]]) ellipse(ctx, c.x + dx * c.s, c.y + dy * c.s, r * c.s, r * c.s * 0.8, 'rgba(255,255,255,0.9)');

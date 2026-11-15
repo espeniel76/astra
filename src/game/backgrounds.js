@@ -200,8 +200,11 @@ export function bgTexture(scene, kind) {
   const key = `bg:${kind}`;
   if (!scene.textures.exists(key)) {
     const c = document.createElement('canvas');
-    c.width = BG_W; c.height = BG_H;
-    DRAW[kind](c.getContext('2d'), makeRng(kind.length * 977));
+    // 2배로 촘촘하게(BattleScene 이 0.5배로 표시)
+    c.width = BG_W * 2; c.height = BG_H * 2;
+    const ctx = c.getContext('2d');
+    ctx.scale(2, 2);
+    DRAW[kind](ctx, makeRng(kind.length * 977));
     scene.textures.addCanvas(key, c);
   }
   return key;
@@ -210,8 +213,9 @@ export function bgTexture(scene, kind) {
 function cloudTexture(scene) {
   if (scene.textures.exists('cloud')) return 'cloud';
   const c = document.createElement('canvas');
-  c.width = 220; c.height = 90;
+  c.width = 440; c.height = 180;
   const ctx = c.getContext('2d');
+  ctx.scale(2, 2);
   for (const [x, y, r] of [[60, 58, 30], [100, 40, 38], [145, 52, 32], [180, 62, 22], [30, 66, 18]]) ellipse(ctx, x, y, r, r * 0.85, 'rgba(255,255,255,0.95)');
   ellipse(ctx, 110, 72, 95, 16, 'rgba(220,235,250,0.9)');
   scene.textures.addCanvas('cloud', c);
@@ -235,7 +239,7 @@ export function addAmbient(scene, kind) {
     // 구름은 오른쪽으로 천천히 흘러가고, 화면을 벗어나면 왼쪽 밖에서 다시 들어온다
     const clouds = [];
     for (let i = 0; i < 4; i++) {
-      const cl = scene.add.image(-200 + i * 260, 60 + (i % 2) * 70 + i * 12, key).setScale(0.8 + (i % 3) * 0.25).setAlpha(0.95);
+      const cl = scene.add.image(-200 + i * 260, 60 + (i % 2) * 70 + i * 12, key).setScale((0.8 + (i % 3) * 0.25) / 2).setAlpha(0.95);
       clouds.push({ cl, v: 9 + i * 2 });
     }
     const move = (t, dt) => { for (const c of clouds) { c.cl.x += (c.v * dt) / 1000; if (c.cl.x > 900) c.cl.x = -260; } };

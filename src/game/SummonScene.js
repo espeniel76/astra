@@ -8,7 +8,7 @@ import { bump } from '../core/daily.js';
 import { makeRng } from '../core/rng.js';
 import { sfx } from '../core/sfx.js';
 import { closeStage, setBackdrop } from './phaser.js';
-import { text, button, heroTex, wait, tween, colorNum } from './ui.js';
+import { text, button, heroTex, wait, tween, colorNum, TS, TEXRES, hiDpi } from './ui.js';
 import { propTex, TREE, TREE_TIPS } from '../render/props.js';
 
 const W = 720, H = 1280;
@@ -26,6 +26,7 @@ export class SummonScene extends Phaser.Scene {
   }
 
   create() {
+    hiDpi(this);
     if (!this.textures.exists('dot')) {
       const g = this.make.graphics({ add: false });
       g.fillStyle(0xffffff, 1).fillCircle(8, 8, 8);
@@ -90,9 +91,9 @@ export class SummonScene extends Phaser.Scene {
     // 2) 빛기둥이 솟고 3) 빛 알갱이가 빨려 들어온다
     // 빛기둥: 가운데가 하얗고 가장자리·위쪽으로 갈수록 부드럽게 사라지는 그림
     const pillar = this.add.image(W / 2, CY, this.pillarTexture(STAR_COLOR[top])).setOrigin(0.5, 1).setDepth(3).setBlendMode('ADD');
-    pillar.setScale(0, 1);
+    pillar.setScale(0, TS);
     const pw = { w: 0 };
-    const drawPillar = w => pillar.setScale(w / 128, 1);
+    const drawPillar = w => pillar.setScale((w / 128) * TS, TS);
     this.tweens.add({ targets: pw, w: big ? 260 : 190, duration: 1100, ease: 'Cubic.out', onUpdate: () => drawPillar(pw.w) });
     const motes = this.add.particles(W / 2, 560, 'dot', {
       emitZone: { type: 'random', source: new Phaser.Geom.Circle(0, 0, 440) },
@@ -136,8 +137,9 @@ export class SummonScene extends Phaser.Scene {
     const key = `pillar:${css}`;
     if (this.textures.exists(key)) return key;
     const c = document.createElement('canvas');
-    c.width = 128; c.height = 1000;
+    c.width = 128 * TEXRES; c.height = 1000 * TEXRES;
     const ctx = c.getContext('2d');
+    ctx.scale(TEXRES, TEXRES);
     const hg = ctx.createLinearGradient(0, 0, 128, 0);
     hg.addColorStop(0, 'rgba(0,0,0,0)'); hg.addColorStop(0.25, css); hg.addColorStop(0.5, '#ffffff'); hg.addColorStop(0.75, css); hg.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = hg; ctx.fillRect(0, 0, 128, 1000);
@@ -193,7 +195,7 @@ export class SummonScene extends Phaser.Scene {
     g.fillStyle(0x151a38, 1).fillRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
     g.fillGradientStyle(col, col, 0x151a38, 0x151a38, 0.45, 0.45, 0, 0).fillRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h * 0.75, 16);
     g.lineStyle(r.star >= 5 ? 6 : 4, col, 1).strokeRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
-    const img = this.add.image(0, slot.h * 0.12, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(big ? 1.4 : 0.72);
+    const img = this.add.image(0, slot.h * 0.12, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale((big ? 1.4 : 0.72) * TS);
     const name = text(this, 0, slot.h * 0.3, HERO[r.id].name, big ? 34 : 18, '#ffffff', { wordWrap: { width: slot.w - 10 } });
     const st = r.awaken
       ? text(this, 0, slot.h * 0.42, '★', big ? 54 : 30, '#ffe066', { stroke: '#8a4a10', strokeThickness: 5 }) // 큰 별 하나 = ★8
@@ -326,13 +328,13 @@ export class SummonScene extends Phaser.Scene {
     }
     const feathers = this.add.particles(0, 0, propTex(this, 'feather'), {
       x: { min: 0, max: W }, y: -40, lifespan: 6000, speedY: { min: 60, max: 120 }, speedX: { min: -30, max: 30 },
-      scale: { min: 0.6, max: 1.1 }, rotate: { start: -30, end: 60 },
+      scale: { min: 0.6 * TS, max: 1.1 * TS }, rotate: { start: -30, end: 60 },
       alpha: { start: 0.95, end: 0.2 }, frequency: 120,
     });
     layer.add(feathers);
 
     // 4) 수호신이 내려온다
-    const img = this.add.image(W / 2, -260, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.6);
+    const img = this.add.image(W / 2, -260, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.6 * TS);
     layer.add(img);
     await tween(this, { targets: img, y: cy + 200, duration: skipped ? 1 : 2700, ease: 'Sine.out' });
     this.cameras.main.shake(500, this.flash ? 0.018 : 0.01);
@@ -347,7 +349,7 @@ export class SummonScene extends Phaser.Scene {
     for (let i = 0; i < 5; i++) {
       const a = -Math.PI / 2 + (i / 5) * Math.PI * 2;
       // 창끝이 바깥을 향하게(그림은 위가 창끝)
-      const sp = this.add.image(Math.cos(a) * 700, Math.sin(a) * 700, propTex(this, 'spear')).setOrigin(0.5, 0.45).setScale(0.62).setRotation(a + Math.PI / 2);
+      const sp = this.add.image(Math.cos(a) * 700, Math.sin(a) * 700, propTex(this, 'spear')).setOrigin(0.5, 0.45).setScale(0.62 * TS).setRotation(a + Math.PI / 2);
       spears.add(sp);
       this.tweens.add({ targets: sp, x: Math.cos(a) * 310, y: Math.sin(a) * 310, duration: skipped ? 1 : 900, delay: skipped ? 0 : i * 240, ease: 'Back.out' });
     }
@@ -427,9 +429,9 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: [ring, ring2], angle: 18, duration: 3000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     // 4) 블랙홀 속에서 떠오른다
-    const img = this.add.image(cx, cy + 170, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(0.1).setAlpha(0);
+    const img = this.add.image(cx, cy + 170, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(0.1 * TS).setAlpha(0);
     layer.add(img);
-    this.tweens.add({ targets: img, alpha: 1, scale: 2.6, y: cy + 190, duration: skipped ? 1 : 2200, ease: 'Back.out' });
+    this.tweens.add({ targets: img, alpha: 1, scale: 2.6 * TS, y: cy + 190, duration: skipped ? 1 : 2200, ease: 'Back.out' });
     await pause(2200);
     this.cameras.main.shake(500, this.flash ? 0.016 : 0.008);
     this.tweens.add({ targets: img, y: cy + 176, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -438,7 +440,7 @@ export class SummonScene extends Phaser.Scene {
     layer.add(crown);
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
-      crown.add(this.add.image(Math.cos(a) * 250, Math.sin(a) * 250 * 0.5, propTex(this, 'shard')).setScale(0.7));
+      crown.add(this.add.image(Math.cos(a) * 250, Math.sin(a) * 250 * 0.5, propTex(this, 'shard')).setScale(0.7 * TS));
     }
     crown.setAlpha(0);
     this.tweens.add({ targets: crown, alpha: 1, duration: 900 });
@@ -515,7 +517,7 @@ export class SummonScene extends Phaser.Scene {
     for (let i = 0; i < 7; i++) {
       const x = cx + (i - 3) * 95, y = cy + 120 - Math.abs(i - 3) * 30;
       // 은빛 장검 그림(아래가 칼끝). 칼끝이 땅(y + 225)에 꽂힌다
-      const sw = this.add.image(x, -60, propTex(this, 'sword')).setOrigin(0.5, 1).setScale(0.82);
+      const sw = this.add.image(x, -60, propTex(this, 'sword')).setOrigin(0.5, 1).setScale(0.82 * TS);
       layer.add(sw);
       await tween(this, { targets: sw, y: y + 225, duration: fast(320), ease: 'Quad.in' });
       if (!skipped) { sfx.play('hit'); this.cameras.main.shake(140, this.flash ? 0.01 : 0.005); }
@@ -523,10 +525,10 @@ export class SummonScene extends Phaser.Scene {
     }
 
     // 5) 심판자가 걸어 나온다
-    const img = this.add.image(cx, cy + 250, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.1).setAlpha(0);
+    const img = this.add.image(cx, cy + 250, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.1 * TS).setAlpha(0);
     layer.add(img);
     sfx.play('star7');
-    await tween(this, { targets: img, alpha: 1, scale: 2.6, y: cy + 200, duration: fast(1800), ease: 'Sine.out' });
+    await tween(this, { targets: img, alpha: 1, scale: 2.6 * TS, y: cy + 200, duration: fast(1800), ease: 'Sine.out' });
     this.tweens.add({ targets: img, y: cy + 190, duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     // 6) 이름
@@ -648,9 +650,9 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: swirl, angle: -360, duration: 5000, repeat: -1 });
 
     // 4) 군주가 올라온다
-    const img = this.add.image(cx, cy + 360, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.2).setAlpha(0);
+    const img = this.add.image(cx, cy + 360, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.2 * TS).setAlpha(0);
     layer.add(img);
-    await tween(this, { targets: img, alpha: 1, y: cy + 200, scale: 2.6, duration: fast(2200), ease: 'Sine.out' });
+    await tween(this, { targets: img, alpha: 1, y: cy + 200, scale: 2.6 * TS, duration: fast(2200), ease: 'Sine.out' });
     this.cameras.main.shake(500, this.flash ? 0.014 : 0.007);
     this.tweens.add({ targets: img, y: cy + 186, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
@@ -685,14 +687,14 @@ export class SummonScene extends Phaser.Scene {
 
     // 2) 나무가 자란다: 줄기·가지 그림이 아래에서 위로 드러나고, 잎이 피어난다
     const top0 = ground - TREE.base; // 나무 그림의 맨 위가 놓일 화면 높이
-    const trunkImg = this.add.image(0, top0, propTex(this, 'treeTrunk')).setOrigin(0, 0);
-    const canopyImg = this.add.image(W / 2, top0 + TREE.h / 2, propTex(this, 'treeCanopy')).setAlpha(0).setScale(0.85);
+    const trunkImg = this.add.image(0, top0, propTex(this, 'treeTrunk')).setOrigin(0, 0).setScale(TS);
+    const canopyImg = this.add.image(W / 2, top0 + TREE.h / 2, propTex(this, 'treeCanopy')).setAlpha(0).setScale(0.85 * TS);
     layer.add([trunkImg, canopyImg]);
     const grow = { p: 0 };
-    const reveal = () => { const h = TREE.h * grow.p; trunkImg.setCrop(0, TREE.h - h, TREE.w, h); };
+    const reveal = () => { const h = TREE.h * grow.p * TEXRES; trunkImg.setCrop(0, TREE.h * TEXRES - h, TREE.w * TEXRES, h); };
     reveal();
     sfx.play('star7');
-    this.tweens.add({ targets: canopyImg, alpha: 1, scale: 1, duration: fast(1800), delay: state.skipped ? 0 : 1900, ease: 'Back.out' });
+    this.tweens.add({ targets: canopyImg, alpha: 1, scale: TS, duration: fast(1800), delay: state.skipped ? 0 : 1900, ease: 'Back.out' });
     await tween(this, { targets: grow, p: 1, duration: fast(3200), ease: 'Sine.inOut', onUpdate: reveal });
     reveal();
     await pause(500);
@@ -715,7 +717,7 @@ export class SummonScene extends Phaser.Scene {
     blossoms.forEach((b, i) => this.tweens.add({ targets: b, scale: 1, duration: fast(450), delay: state.skipped ? 0 : i * 45, ease: 'Back.out' }));
     const petals = this.add.particles(0, 0, propTex(this, 'petal'), {
       x: { min: 40, max: W - 40 }, y: { min: 60, max: 420 }, lifespan: 5000, speedY: { min: 40, max: 90 }, speedX: { min: -40, max: 20 },
-      scale: { min: 0.7, max: 1.1 }, rotate: { start: 0, end: 300 }, alpha: { start: 0.95, end: 0 }, frequency: 80,
+      scale: { min: 0.7 * TS, max: 1.1 * TS }, rotate: { start: 0, end: 300 }, alpha: { start: 0.95, end: 0 }, frequency: 80,
     });
     layer.add(petals);
     await pause(1200);
@@ -724,9 +726,9 @@ export class SummonScene extends Phaser.Scene {
     const light = this.add.circle(cx, ground - 60, 40, 0xfff3c0, 0.9).setScale(0.2);
     layer.add(light);
     await tween(this, { targets: light, scale: 3, alpha: 0.35, duration: fast(1200), ease: 'Sine.out' });
-    const img = this.add.image(cx, ground + 10, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.6).setAlpha(0);
+    const img = this.add.image(cx, ground + 10, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.6 * TS).setAlpha(0);
     layer.add(img);
-    await tween(this, { targets: img, alpha: 1, scale: 2.5, y: ground - 10, duration: fast(1800), ease: 'Back.out' });
+    await tween(this, { targets: img, alpha: 1, scale: 2.5 * TS, y: ground - 10, duration: fast(1800), ease: 'Back.out' });
     this.tweens.add({ targets: img, y: ground - 24, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.tweens.add({ targets: light, alpha: 0.15, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
@@ -839,10 +841,10 @@ export class SummonScene extends Phaser.Scene {
       layer.add(dust);
     }
 
-    const img = this.add.image(W / 2, 1400, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.6);
+    const img = this.add.image(W / 2, 1400, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.6 * TS);
     layer.add(img);
     if (this.flash) this.time.delayedCall(500, () => this.whiteFlash());
-    this.tweens.add({ targets: img, y: 760, scale: seven ? 3.2 : 2.8, duration: 1300, delay: 500, ease: 'Back.out' });
+    this.tweens.add({ targets: img, y: 760, scale: (seven ? 3.2 : 2.8) * TS, duration: 1300, delay: 500, ease: 'Back.out' });
 
     const name = text(this, W / 2, 860, '', 60, '#ffffff');
     const stars = text(this, W / 2, 940, '', 44, STAR_COLOR[r.star]);

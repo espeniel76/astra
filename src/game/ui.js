@@ -2,25 +2,30 @@
 import { heroSource, monsterSource } from '../render/portrait.js';
 
 export const FONT = '"Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif';
-export const PX = 220; // 텍스처 한 변
+export const PX = 220; // 캐릭터 그림 한 변(화면 기준)
+export const TEXRES = 2; // 텍스처는 2배로 촘촘하게 그린다
+export const TS = 1 / TEXRES; // 그래서 표시할 땐 0.5배
+export const ZOOM = 2; // 게임 캔버스도 2배 크기 → 카메라 확대 2배
+// 씬 시작할 때 부른다: 720×1280 좌표 그대로 쓰면서 2배 선명하게
+export const hiDpi = scene => scene.cameras.main.setZoom(ZOOM).centerOn(360, 640);
 
 export const colorNum = c => parseInt(c.slice(1), 16);
 
 export function heroTex(scene, id) {
   const key = `hero:${id}`;
-  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, heroSource(id, PX));
+  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, heroSource(id, PX * TEXRES));
   return key;
 }
 export function monTex(scene, id) {
   const key = `mon:${id}`;
-  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, monsterSource(id, PX));
+  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, monsterSource(id, PX * TEXRES));
   return key;
 }
 
 export function text(scene, x, y, str, size = 28, color = '#ffffff', more = {}) {
   return scene.add.text(x, y, str, {
     fontFamily: FONT, fontSize: `${size}px`, color, fontStyle: 'bold',
-    stroke: '#000000', strokeThickness: Math.max(3, size / 7), align: 'center', ...more,
+    stroke: '#000000', strokeThickness: Math.max(3, size / 7), align: 'center', resolution: ZOOM, ...more,
   }).setOrigin(0.5);
 }
 

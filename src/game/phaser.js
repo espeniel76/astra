@@ -17,8 +17,9 @@ function ensureGame() {
     game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: 'stage',
-      width: 720,
-      height: 1280,
+      // 화면은 720×1280 기준으로 짜고, 실제로는 2배(1440×2560)로 그려 휴대폰에서도 선명하게(각 씬 카메라 확대 2배)
+      width: 1440,
+      height: 2560,
       backgroundColor: '#0d1020',
       // 가운데 맞춤은 #stage(flex)가 한다. Phaser도 맞추면 PC에서 두 번 밀려 오른쪽으로 치우친다.
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.NO_CENTER },

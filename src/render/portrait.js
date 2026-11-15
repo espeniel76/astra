@@ -19,13 +19,19 @@ export function drawHero(ctx, x, y, s, id, opts = {}) {
   drawPerson(ctx, x, y, s, { ...heroLook(id, opts.aim ?? -0.25), ...opts });
 }
 
+// 화면(DOM) 초상화는 기기 화면 밀도(devicePixelRatio)만큼 촘촘하게 그려서 선명하게 한다.
+// 그림 좌표는 그대로 px 기준이고, 캔버스 실제 크기만 px × res.
+export const SCREEN_RES = Math.min(3, Math.max(1, Math.ceil(globalThis.devicePixelRatio || 1)));
+
 const cache = new Map();
-function cached(key, px, draw) {
+function cached(key, px, res, draw) {
   let c = cache.get(key);
   if (!c) {
     c = document.createElement('canvas');
-    c.width = c.height = px;
-    draw(c.getContext('2d'));
+    c.width = c.height = Math.round(px * res);
+    const ctx = c.getContext('2d');
+    ctx.scale(res, res);
+    draw(ctx);
     cache.set(key, c);
   }
   return c;
@@ -37,9 +43,8 @@ function copy(src) {
   return c;
 }
 
-const heroKey = (id, px, sil) => `h:${id}:${px}:${sil}`;
-function heroSrc(id, px, silhouette) {
-  return cached(heroKey(id, px, silhouette), px, ctx => {
+function heroSrc(id, px, silhouette, res) {
+  return cached(`h:${id}:${px}:${silhouette}:${res}`, px, res, ctx => {
     drawHero(ctx, px / 2, px * 0.86, px / 100, id);
     if (silhouette) {
       ctx.globalCompositeOperation = 'source-in';
@@ -48,11 +53,11 @@ function heroSrc(id, px, silhouette) {
     }
   });
 }
-const monSrc = (id, px) => cached(`m:${id}:${px}`, px, ctx => drawMonster(ctx, px / 2, px * 0.86, px / 100, id));
+const monSrc = (id, px, res) => cached(`m:${id}:${px}:${res}`, px, res, ctx => drawMonster(ctx, px / 2, px * 0.86, px / 100, id));
 
-// 정사각형 초상화(복사본). 발은 아래쪽 86%.
-export const heroCanvas = (id, px = 120, { silhouette = false } = {}) => copy(heroSrc(id, px, silhouette));
-export const monsterCanvas = (id, px = 120) => copy(monSrc(id, px));
-// Phaser 텍스처용 원본
-export const heroSource = (id, px) => heroSrc(id, px, false);
-export const monsterSource = (id, px) => monSrc(id, px);
+// 정사각형 초상화(복사본). 발은 아래쪽 86%. 캔버스 크기는 px × 화면 밀도(CSS로 크기를 정해 쓴다).
+export const heroCanvas = (id, px = 120, { silhouette = false } = {}) => copy(heroSrc(id, px, silhouette, SCREEN_RES));
+export const monsterCanvas = (id, px = 120) => copy(monSrc(id, px, SCREEN_RES));
+// Phaser 텍스처용 원본(정확히 px 크기)
+export const heroSource = (id, px) => heroSrc(id, px, false, 1);
+export const monsterSource = (id, px) => monSrc(id, px, 1);

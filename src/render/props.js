@@ -127,8 +127,11 @@ export function propTex(scene, name) {
   if (!scene.textures.exists(key)) {
     const [w, h, draw] = DEFS[name];
     const c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    draw(c.getContext('2d'));
+    // 2배로 촘촘하게(표시할 때 0.5배)
+    c.width = w * 2; c.height = h * 2;
+    const ctx = c.getContext('2d');
+    ctx.scale(2, 2);
+    draw(ctx);
     scene.textures.addCanvas(key, c);
   }
   return key;

@@ -6,7 +6,7 @@ import { HERO, STAR_COLOR } from '../data/heroes.js';
 import { bump } from '../core/daily.js';
 import { sfx } from '../core/sfx.js';
 import { closeStage, setBackdrop } from './phaser.js';
-import { text, button, heroTex, monTex, wait, tween, colorNum, PX } from './ui.js';
+import { text, button, heroTex, monTex, wait, tween, colorNum, PX, TEXRES, TS, hiDpi } from './ui.js';
 import { bgTexture, addAmbient } from './backgrounds.js';
 import { starsFor, recordStars } from '../core/stars.js';
 
@@ -39,6 +39,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create() {
+    hiDpi(this);
     const s = this.app.save;
     this.b = createBattle({
       team: s.team.map(id => (id && s.heroes[id] ? { id, ...s.heroes[id] } : null)),
@@ -64,7 +65,7 @@ export class BattleScene extends Phaser.Scene {
     const kind = CHAPTERS[this.stage.chapter - 1].bg;
     setBackdrop({ meadow: '#6cc4f5', forest: '#1d3b2c', cave: '#120e1c' }[kind], '#0d1020');
     this.add.rectangle(W / 2, 640, W, 1280, 0x0d1020);
-    this.add.image(0, 0, bgTexture(this, kind)).setOrigin(0, 0);
+    this.add.image(0, 0, bgTexture(this, kind)).setOrigin(0, 0).setScale(TS);
     addAmbient(this, kind);
     // 위쪽 막대 뒤 살짝 어둡게(글자가 잘 보이게)
     const g = this.add.graphics();
@@ -78,12 +79,12 @@ export class BattleScene extends Phaser.Scene {
   addUnitView(u) {
     const { x, y } = this.pos(u);
     const key = u.side === 'ally' ? heroTex(this, u.id) : monTex(this, u.id);
-    const scale = u.side === 'ally' ? 1.05 : 1.05;
+    const scale = 1.05 * TS; // 텍스처가 2배라 0.5배 곱함
     const img = this.add.image(x, y, key).setOrigin(0.5, 0.86).setScale(scale);
     if (u.side === 'foe') img.setFlipX(true);
     const bar = this.add.graphics();
     const label = text(this, x, y + 40, u.side === 'ally' ? u.name : `${u.name} Lv${u.lv}`, 18, '#ffffff');
-    const icons = text(this, x, y - PX * 0.86 * scale - 4, '', 22, '#ffffff', { strokeThickness: 0 });
+    const icons = text(this, x, y - PX * TEXRES * 0.86 * scale - 4, '', 22, '#ffffff', { strokeThickness: 0 });
     const v = { u, img, bar, label, icons, scale, hpShown: u.hp };
     this.views.set(u.uid, v);
     return v;
@@ -114,7 +115,7 @@ export class BattleScene extends Phaser.Scene {
           this.refresh();
         }
       }, { fill: colorNum(STAR_COLOR[u.star]) & 0x7f7f7f });
-      const icon = this.add.image(0, -18, heroTex(this, u.id)).setScale(0.45).setOrigin(0.5, 0.86);
+      const icon = this.add.image(0, -18, heroTex(this, u.id)).setScale(0.45 * TS).setOrigin(0.5, 0.86);
       icon.y = 20;
       btn.box.addAt(icon, 1);
       btn.label.setY(55).setFontSize(22);
@@ -291,7 +292,7 @@ export class BattleScene extends Phaser.Scene {
         const old = [...this.views.values()].find(v => v.u.side === 'foe' && v.u.slot === u.slot && !v.u.alive);
         if (old) { old.img.destroy(); old.bar.destroy(); old.label.destroy(); old.icons.destroy(); this.views.delete(old.u.uid); }
         const v = this.addUnitView(u);
-        v.img.setAlpha(0).setScale(0.3);
+        v.img.setAlpha(0).setScale(0.3 * TS);
         this.float(e.from, e.name, '#ffb0b0', 34);
         await tween(this, { targets: v.img, alpha: 1, scale: v.scale, duration: 350, ease: 'Back.out' });
         return;

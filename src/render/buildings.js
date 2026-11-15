@@ -303,8 +303,10 @@ export function buildingSprite(key) {
   if (cache.has(key)) return cache.get(key);
   const d = DEFS[key];
   const c = document.createElement('canvas');
-  c.width = 300; c.height = d.top + 30;
+  const RES = 2; // 2배로 촘촘하게
+  c.width = 300 * RES; c.height = (d.top + 30) * RES;
   const ctx = c.getContext('2d');
+  ctx.scale(RES, RES);
   ctx.translate(150, d.top);
   d.draw(ctx);
   const out = { canvas: c, ox: 150, oy: d.top };
@@ -316,7 +318,7 @@ export function drawBuilding(ctx, key, x, y, t, s = 1) {
   const sp = buildingSprite(key);
   ctx.save();
   ctx.translate(x, y); ctx.scale(s, s);
-  ctx.drawImage(sp.canvas, -sp.ox, -sp.oy);
+  ctx.drawImage(sp.canvas, -sp.ox, -sp.oy, sp.canvas.width / 2, sp.canvas.height / 2);
   DEFS[key].fx?.(ctx, t);
   ctx.restore();
 }
