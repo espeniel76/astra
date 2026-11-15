@@ -59,6 +59,12 @@ function render() {
       h('h2', { style: 'margin:8px 0 0' }, '10+1 묶음 (최고 별 고르기)'),
       h('div.dev-row', ...[1, 2, 3, 4, 5, 6, 7].map(s =>
         btn(h('span', { style: `color:${STAR_COLOR[s]}` }, `★${s}`), () => play(bundle(s)), '.ghost'))),
+      h('h2', { style: 'margin:8px 0 0' }, '★7 각성(큰 별 ★8)'),
+      h('div.grid', ...ofStar(7).map(x => heroCard({ save }, x.id, {
+        showLevel: false,
+        onclick: () => play([{ ...result(x), isNew: false, dupes: 5, awaken: true }]),
+      }))),
+      h('div.dim', { style: 'font-size:12px' }, '★7 전용 애니메이션 → 카드 → 작은 별 일곱 개가 모여 큰 별 하나 + "각성!"'),
       h('h2', { style: 'margin:8px 0 0' }, '영웅 골라서 보기'),
       ...[7, 6, 5, 4, 3, 2, 1].flatMap(s => [
         h('div', { style: 'margin-top:6px' }, stars(s), h('span.dim', ` ${ofStar(s).length}명`)),

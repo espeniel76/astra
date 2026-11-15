@@ -43,7 +43,11 @@ export function normalize(raw) {
   if (isObj(raw.heroes)) {
     for (const [id, h] of Object.entries(raw.heroes)) {
       if (!HERO[id] || !isObj(h)) continue;
-      s.heroes[id] = { level: num(h.level, 1, 1, maxLevel(id)), dupes: num(h.dupes, 0, 0, DUPE_MAX) };
+      const dupes = num(h.dupes, 0, 0, DUPE_MAX);
+      // 각성은 ★7을 +5까지 겹쳤을 때만 인정
+      const awakened = h.awakened === true && HERO[id].star === 7 && dupes >= DUPE_MAX;
+      s.heroes[id] = { level: num(h.level, 1, 1, maxLevel(id, awakened)), dupes };
+      if (awakened) s.heroes[id].awakened = true;
     }
   }
   if (Array.isArray(raw.team)) {

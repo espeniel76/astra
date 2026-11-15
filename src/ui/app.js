@@ -22,7 +22,10 @@ export function h(sel, attrs, ...kids) {
   return el;
 }
 
-export const stars = n => h('span.stars', { style: `color:${STAR_COLOR[n]}` }, '★'.repeat(n));
+// 별 표시. 각성한 ★7은 큰 별 하나(★8)
+export const stars = (n, awakened = false) => (awakened
+  ? h('span.bigstar', '★')
+  : h('span.stars', { style: `color:${STAR_COLOR[n]}` }, '★'.repeat(n)));
 export const fmt = n => n.toLocaleString('ko-KR');
 
 // 영웅 카드(격자용)
@@ -32,7 +35,7 @@ export function heroCard(app, id, { onclick, picked, showLevel = true, silhouett
   const el = h('div.hcard', { style: `border-color:${STAR_COLOR[hero.star]}`, onclick },
     heroCanvas(id, 120, { silhouette }),
     h('div.nm', silhouette ? '???' : hero.name),
-    stars(hero.star));
+    stars(hero.star, own?.awakened));
   if (picked) el.classList.add('picked');
   if (own && showLevel && !silhouette) {
     el.append(h('div.lv', `Lv${own.level}`));

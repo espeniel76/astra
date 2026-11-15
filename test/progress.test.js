@@ -40,7 +40,7 @@ describe('레벨업', () => {
   it('최대 레벨이면 더 안 오른다', () => {
     const s = mkSave(1e9, { slinger: { level: 10, dupes: 0 } });
     expect(levelUp(s, 'slinger')).toEqual({ ok: false, reason: 'max' });
-    expect(MAX_LEVEL).toBe(50);
+    expect(MAX_LEVEL).toBe(60); // 각성(★8) 최대 레벨
     expect(DUPE_MAX).toBe(5);
   });
   it('없는 영웅은 레벨업 불가', () => {
@@ -80,5 +80,27 @@ describe('v2: 높은 별은 진짜 세다', () => {
     const s = mkSave(0, { slinger: { level: 2, dupes: 0 }, herbalist: { level: 1, dupes: 0 } });
     s.team = ['slinger', null, 'herbalist'];
     expect(teamPower(s)).toBe(power('slinger', 2, 0) + power('herbalist', 1, 0));
+  });
+});
+
+import { awaken } from '../src/core/progress.js';
+
+describe('★7 각성(큰 별 ★8)', () => {
+  it('같은 ★7을 +5까지 겹쳐야 각성할 수 있다', () => {
+    const s = mkSave(0, { guardian: { level: 1, dupes: 4 }, executioner: { level: 1, dupes: 5 } });
+    expect(awaken(s, 'guardian')).toEqual({ ok: false, reason: 'dupes' });
+    expect(awaken(s, 'executioner')).toEqual({ ok: false, reason: 'star' });
+    s.heroes.guardian.dupes = 5;
+    expect(awaken(s, 'guardian')).toEqual({ ok: true });
+    expect(s.heroes.guardian.awakened).toBe(true);
+    expect(awaken(s, 'guardian')).toEqual({ ok: false, reason: 'done' });
+  });
+  it('각성하면 능력치 2배, 최대 레벨 60', () => {
+    const a = heroStats('guardian', 10, 5), b = heroStats('guardian', 10, 5, true);
+    expect(Math.abs(b.atk - a.atk * 2)).toBeLessThanOrEqual(1);
+    expect(maxLevel('guardian')).toBe(50);
+    expect(maxLevel('guardian', true)).toBe(60);
+    const s = mkSave(1e12, { guardian: { level: 50, dupes: 5, awakened: true } });
+    expect(levelUp(s, 'guardian')).toEqual({ ok: true });
   });
 });

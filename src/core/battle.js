@@ -22,9 +22,9 @@ function makeUnit(b, side, slot, o) {
   };
 }
 
-function heroUnit(b, slot, { id, level = 1, dupes = 0 }) {
+function heroUnit(b, slot, { id, level = 1, dupes = 0, awakened = false }) {
   const h = HERO[id];
-  const st = heroStats(id, level, dupes);
+  const st = heroStats(id, level, dupes, awakened);
   return makeUnit(b, 'ally', slot, {
     id, name: h.name, star: h.star, role: h.role, ...st,
     skill: h.skill, cdMax: h.skill.cd, cd: 1, passive: h.passive,

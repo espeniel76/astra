@@ -101,3 +101,12 @@ describe('v2 별 상자 저장', () => {
     expect(loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 2, pity: 900 }) })).pity).toBe(299);
   });
 });
+
+describe('각성 저장', () => {
+  it('각성은 ★7 +5일 때만 남고, 레벨 상한도 60', () => {
+    const s = loadSave(mem({ [SAVE_KEY]: JSON.stringify({ version: 2, heroes: { guardian: { level: 58, dupes: 5, awakened: true }, judge: { level: 3, dupes: 2, awakened: true }, slinger: { level: 3, dupes: 5, awakened: true } } }) }));
+    expect(s.heroes.guardian).toEqual({ level: 58, dupes: 5, awakened: true });
+    expect(s.heroes.judge.awakened).toBe(undefined);
+    expect(s.heroes.slinger.awakened).toBe(undefined);
+  });
+});

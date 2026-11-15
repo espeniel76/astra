@@ -9,6 +9,7 @@ import { makeRng } from '../core/rng.js';
 import { sfx } from '../core/sfx.js';
 import { closeStage, setBackdrop } from './phaser.js';
 import { text, button, heroTex, wait, tween, colorNum } from './ui.js';
+import { propTex, TREE, TREE_TIPS } from '../render/props.js';
 
 const W = 720, H = 1280;
 
@@ -19,6 +20,7 @@ export class SummonScene extends Phaser.Scene {
     this.app = app;
     this.results = results;
     this.ticket = ticket;
+    this.awaken = !!results[0]?.awaken; // ★7 각성(★8) 연출
     this.flash = app.save.settings.flash;
     this.skipAll = false;
   }
@@ -193,7 +195,9 @@ export class SummonScene extends Phaser.Scene {
     g.lineStyle(r.star >= 5 ? 6 : 4, col, 1).strokeRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
     const img = this.add.image(0, slot.h * 0.12, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(big ? 1.4 : 0.72);
     const name = text(this, 0, slot.h * 0.3, HERO[r.id].name, big ? 34 : 18, '#ffffff', { wordWrap: { width: slot.w - 10 } });
-    const st = text(this, 0, slot.h * 0.42, '★'.repeat(r.star), big ? 28 : 16, STAR_COLOR[r.star], { strokeThickness: 3 });
+    const st = r.awaken
+      ? text(this, 0, slot.h * 0.42, '★', big ? 54 : 30, '#ffe066', { stroke: '#8a4a10', strokeThickness: 5 }) // 큰 별 하나 = ★8
+      : text(this, 0, slot.h * 0.42, '★'.repeat(r.star), big ? 28 : 16, STAR_COLOR[r.star], { strokeThickness: 3 });
     c.add([g, img, name, st]);
     const tag = r.isNew ? 'NEW' : r.overflowGold ? `+🪙${r.overflowGold}` : `+${r.dupes}`;
     c.add(text(this, slot.w / 2 - 22, -slot.h / 2 + 18, tag, big ? 26 : 16, r.isNew ? '#7dff8a' : '#ffd36a').setOrigin(1, 0.5));
@@ -267,6 +271,7 @@ export class SummonScene extends Phaser.Scene {
     card.setDepth(6);
     // 5) 찌릿찌릿
     this.crackle(card, slot, col, outer);
+    if (r.awaken) await this.awakenBurst(card, slot, r);
   }
 
   // ★7 전용 애니메이션(약 6초, 탭하면 넘어감). 번쩍임 없이: 모든 빛은 천천히 밝아지고 천천히 사라진다.
@@ -319,10 +324,10 @@ export class SummonScene extends Phaser.Scene {
       layer.add(ring);
       this.tweens.add({ targets: ring, scale: 1, alpha: 1, duration: 1800, delay: i * 400, ease: 'Cubic.out' });
     }
-    const feathers = this.add.particles(0, 0, 'dot', {
-      x: { min: 0, max: W }, y: -30, lifespan: 5000, speedY: { min: 70, max: 140 }, speedX: { min: -30, max: 30 },
-      scaleX: { min: 0.35, max: 0.6 }, scaleY: { min: 0.9, max: 1.4 }, rotate: { min: -40, max: 40 },
-      alpha: { start: 0.95, end: 0.2 }, tint: [0xffffff, 0xfff3c0, 0xffd84a], frequency: 70,
+    const feathers = this.add.particles(0, 0, propTex(this, 'feather'), {
+      x: { min: 0, max: W }, y: -40, lifespan: 6000, speedY: { min: 60, max: 120 }, speedX: { min: -30, max: 30 },
+      scale: { min: 0.6, max: 1.1 }, rotate: { start: -30, end: 60 },
+      alpha: { start: 0.95, end: 0.2 }, frequency: 120,
     });
     layer.add(feathers);
 
@@ -341,13 +346,8 @@ export class SummonScene extends Phaser.Scene {
     layer.add(spears);
     for (let i = 0; i < 5; i++) {
       const a = -Math.PI / 2 + (i / 5) * Math.PI * 2;
-      const sp = this.add.container(Math.cos(a) * 700, Math.sin(a) * 700).setRotation(a + Math.PI / 2);
-      const g = this.add.graphics();
-      g.fillStyle(0x8a6410, 1).fillRect(-4, -10, 8, 90);
-      g.fillStyle(0xffd84a, 1).fillRect(-3, -8, 6, 86);
-      g.fillStyle(0xfff6c8, 1).fillTriangle(-13, -10, 13, -10, 0, -52);
-      g.lineStyle(3, 0x8a6410, 1).strokeTriangle(-13, -10, 13, -10, 0, -52);
-      sp.add(g);
+      // 창끝이 바깥을 향하게(그림은 위가 창끝)
+      const sp = this.add.image(Math.cos(a) * 700, Math.sin(a) * 700, propTex(this, 'spear')).setOrigin(0.5, 0.45).setScale(0.62).setRotation(a + Math.PI / 2);
       spears.add(sp);
       this.tweens.add({ targets: sp, x: Math.cos(a) * 310, y: Math.sin(a) * 310, duration: skipped ? 1 : 900, delay: skipped ? 0 : i * 240, ease: 'Back.out' });
     }
@@ -438,7 +438,7 @@ export class SummonScene extends Phaser.Scene {
     layer.add(crown);
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
-      crown.add(this.add.star(Math.cos(a) * 250, Math.sin(a) * 250 * 0.5, 5, 9, 22, 0xe8d8ff).setStrokeStyle(2, VIOLET));
+      crown.add(this.add.image(Math.cos(a) * 250, Math.sin(a) * 250 * 0.5, propTex(this, 'shard')).setScale(0.7));
     }
     crown.setAlpha(0);
     this.tweens.add({ targets: crown, alpha: 1, duration: 900 });
@@ -514,20 +514,10 @@ export class SummonScene extends Phaser.Scene {
     // 4) 은빛 검 일곱 자루가 하나씩 꽂힌다
     for (let i = 0; i < 7; i++) {
       const x = cx + (i - 3) * 95, y = cy + 120 - Math.abs(i - 3) * 30;
-      const sw = this.add.container(x, -200).setScale(1.5);
-      const g = this.add.graphics();
-      g.fillStyle(DARK, 1).fillRect(-6, -150, 12, 140);
-      g.fillStyle(0xd7dde2, 1).fillRect(-4, -148, 8, 136);
-      g.fillStyle(0xffffff, 0.9).fillRect(-1, -146, 2, 130);
-      g.fillStyle(DARK, 1).fillRect(-23, -15, 46, 11);
-      g.fillStyle(0xf4f4f4, 1).fillRect(-21, -13, 42, 7);
-      g.fillStyle(DARK, 1).fillRect(-5, -6, 10, 26);
-      g.fillStyle(0xf4f4f4, 1).fillCircle(0, 24, 6);
-      g.lineStyle(2, DARK, 1).strokeCircle(0, 24, 6);
-      sw.add(g);
-      sw.setRotation(Math.PI); // 칼끝이 아래로
+      // 은빛 장검 그림(아래가 칼끝). 칼끝이 땅(y + 225)에 꽂힌다
+      const sw = this.add.image(x, -60, propTex(this, 'sword')).setOrigin(0.5, 1).setScale(0.82);
       layer.add(sw);
-      await tween(this, { targets: sw, y, duration: fast(320), ease: 'Quad.in' });
+      await tween(this, { targets: sw, y: y + 225, duration: fast(320), ease: 'Quad.in' });
       if (!skipped) { sfx.play('hit'); this.cameras.main.shake(140, this.flash ? 0.01 : 0.005); }
       await pause(160);
     }
@@ -621,14 +611,22 @@ export class SummonScene extends Phaser.Scene {
     const eyeLid = { open: 0 };
     const eye = this.add.graphics();
     layer.add(eye);
+    const almond = (rx, h) => {
+      const pts = [];
+      for (let i = 0; i <= 24; i++) { const t = (i / 24) * Math.PI; pts.push({ x: cx - rx * Math.cos(t), y: cy - h * Math.pow(Math.sin(t), 1.3) }); }
+      for (let i = 24; i >= 0; i--) { const t = (i / 24) * Math.PI; pts.push({ x: cx - rx * Math.cos(t), y: cy + h * 0.8 * Math.pow(Math.sin(t), 1.3) }); }
+      return pts;
+    };
     const drawEye = () => {
       eye.clear();
-      const h = 90 * eyeLid.open;
-      eye.fillStyle(0x7ff0e8, 0.18).fillEllipse(cx, cy, 420, 220);
-      if (h > 1) {
-        eye.fillStyle(0xf4fffe, 1).fillEllipse(cx, cy, 300, h * 2);
-        eye.lineStyle(6, 0x0e4a50, 1).strokeEllipse(cx, cy, 300, h * 2);
-      } else eye.lineStyle(6, 0x0e4a50, 1).lineBetween(cx - 150, cy, cx + 150, cy);
+      const h = 95 * eyeLid.open;
+      eye.fillStyle(0x7ff0e8, 0.14).fillEllipse(cx, cy, 520, 280);
+      eye.fillStyle(0x0e4a50, 1).fillPoints(almond(196, Math.max(14, h + 18)), true); // 눈꺼풀
+      eye.lineStyle(4, 0x3fd8d0, 0.9).strokePoints(almond(196, Math.max(14, h + 18)), true);
+      if (h > 2) {
+        eye.fillStyle(0xf4fffe, 1).fillPoints(almond(160, h), true); // 흰 눈(동공 없음)
+        eye.fillStyle(0xbff8f4, 0.8).fillEllipse(cx - 40, cy - h * 0.35, 70, Math.max(2, h * 0.28));
+      }
     };
     drawEye();
     sfx.play('star7');
@@ -685,54 +683,39 @@ export class SummonScene extends Phaser.Scene {
     await tween(this, { targets: crack, scaleX: 1, duration: fast(800), ease: 'Cubic.out' });
     sfx.play('summon');
 
-    // 2) 나무가 자란다(줄기 → 가지)
-    const tree = this.add.graphics();
-    layer.add(tree);
+    // 2) 나무가 자란다: 줄기·가지 그림이 아래에서 위로 드러나고, 잎이 피어난다
+    const top0 = ground - TREE.base; // 나무 그림의 맨 위가 놓일 화면 높이
+    const trunkImg = this.add.image(0, top0, propTex(this, 'treeTrunk')).setOrigin(0, 0);
+    const canopyImg = this.add.image(W / 2, top0 + TREE.h / 2, propTex(this, 'treeCanopy')).setAlpha(0).setScale(0.85);
+    layer.add([trunkImg, canopyImg]);
     const grow = { p: 0 };
-    const branches = [[-1, 0.45, 150, -0.9], [1, 0.5, 160, -0.8], [-1, 0.68, 130, -0.6], [1, 0.72, 120, -0.55], [-1, 0.86, 90, -0.4], [1, 0.88, 95, -0.35]];
-    const topY = 150;
-    const drawTree = () => {
-      tree.clear();
-      const trunkTop = ground - (ground - topY) * Math.min(1, grow.p / 0.6);
-      tree.fillStyle(0x5a3a1e, 1).fillTriangle(cx - 46, ground, cx + 46, ground, cx, trunkTop);
-      tree.fillStyle(0x7a5232, 1).fillTriangle(cx - 30, ground, cx + 10, ground, cx - 6, trunkTop + 40);
-      for (const [sx, at, len, ang] of branches) {
-        const bp = Math.max(0, Math.min(1, (grow.p - 0.4 - at * 0.3) / 0.35));
-        if (!bp) continue;
-        const by = ground - (ground - topY) * at;
-        const ex = cx + sx * Math.cos(ang) * len * bp * 2.2, ey = by + Math.sin(ang) * len * bp;
-        tree.lineStyle(14 - at * 8, 0x5a3a1e, 1).lineBetween(cx, by, ex, ey);
-        tree.fillStyle(0x3f8a3a, 1).fillCircle(ex, ey, 46 * bp);
-        tree.fillStyle(0x6acf4a, 1).fillCircle(ex - 10 * sx, ey - 12, 30 * bp);
-      }
-      if (grow.p > 0.6) {
-        const cp = Math.min(1, (grow.p - 0.6) / 0.4);
-        tree.fillStyle(0x3f8a3a, 1).fillCircle(cx, topY + 10, 90 * cp);
-        tree.fillStyle(0x6acf4a, 1).fillCircle(cx - 20, topY - 6, 60 * cp);
-      }
-    };
+    const reveal = () => { const h = TREE.h * grow.p; trunkImg.setCrop(0, TREE.h - h, TREE.w, h); };
+    reveal();
     sfx.play('star7');
-    await tween(this, { targets: grow, p: 1, duration: fast(3200), ease: 'Sine.inOut', onUpdate: drawTree });
-    drawTree();
+    this.tweens.add({ targets: canopyImg, alpha: 1, scale: 1, duration: fast(1800), delay: state.skipped ? 0 : 1900, ease: 'Back.out' });
+    await tween(this, { targets: grow, p: 1, duration: fast(3200), ease: 'Sine.inOut', onUpdate: reveal });
+    reveal();
+    await pause(500);
 
-    // 3) 빛나는 꽃 + 꽃잎
+    // 3) 빛나는 꽃(다섯 잎) + 꽃잎이 흩날린다
+    const flower = (x, y, c) => {
+      const f = this.add.container(x, y);
+      for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; f.add(this.add.circle(Math.cos(a) * 7, Math.sin(a) * 7, 6, c).setStrokeStyle(1.5, 0xc85a98)); }
+      f.add(this.add.circle(0, 0, 4.5, 0xffe066).setStrokeStyle(1.2, 0xc8961a));
+      return f;
+    };
     const blossoms = [];
-    const spots = [[cx, topY + 10], [cx - 40, topY - 10], [cx + 50, topY + 30], ...branches.map(([sx, at, len, ang]) => {
-      const by = ground - (ground - topY) * at;
-      return [cx + sx * Math.cos(ang) * len * 2.2, by + Math.sin(ang) * len];
-    })];
-    for (const [x, y] of spots) {
+    for (const [tx, ty] of TREE_TIPS) {
       for (let k = 0; k < 3; k++) {
-        const b = this.add.circle(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 40, 7, k % 2 ? 0xffb8e0 : 0xffe066).setScale(0);
+        const b = flower(tx + (Math.random() - 0.5) * 90, top0 + ty + (Math.random() - 0.5) * 60, k % 2 ? 0xffb8e0 : 0xfff3f8).setScale(0);
         layer.add(b);
         blossoms.push(b);
       }
     }
-    blossoms.forEach((b, i) => this.tweens.add({ targets: b, scale: 1, duration: fast(400), delay: state.skipped ? 0 : i * 40, ease: 'Back.out' }));
-    const petals = this.add.particles(0, 0, 'dot', {
-      x: { min: 40, max: W - 40 }, y: { min: 60, max: 400 }, lifespan: 5000, speedY: { min: 40, max: 90 }, speedX: { min: -40, max: 20 },
-      scaleX: { min: 0.3, max: 0.5 }, scaleY: { min: 0.2, max: 0.35 }, rotate: { min: 0, max: 360 },
-      alpha: { start: 0.9, end: 0 }, tint: [0xffb8e0, 0xffe9a0, 0xffffff], frequency: 60,
+    blossoms.forEach((b, i) => this.tweens.add({ targets: b, scale: 1, duration: fast(450), delay: state.skipped ? 0 : i * 45, ease: 'Back.out' }));
+    const petals = this.add.particles(0, 0, propTex(this, 'petal'), {
+      x: { min: 40, max: W - 40 }, y: { min: 60, max: 420 }, lifespan: 5000, speedY: { min: 40, max: 90 }, speedX: { min: -40, max: 20 },
+      scale: { min: 0.7, max: 1.1 }, rotate: { start: 0, end: 300 }, alpha: { start: 0.95, end: 0 }, frequency: 80,
     });
     layer.add(petals);
     await pause(1200);
@@ -750,6 +733,31 @@ export class SummonScene extends Phaser.Scene {
     await this.eternalTitle(layer, hero, '#fff6c8', '#2a5a24', '#ffe066', pause, () => state.skipped);
     petals.stop();
     setBackdrop('#000000', '#000000');
+  }
+
+  // 각성: 뒤집힌 카드 위로 작은 별 일곱 개가 모여 큰 별 하나가 된다 + '각성!'
+  async awakenBurst(card, slot, r) {
+    const cx = slot.x, cy = slot.y - slot.h / 2 - 70;
+    const small = [];
+    for (let i = 0; i < 7; i++) {
+      const a = -Math.PI / 2 + (i / 7) * Math.PI * 2;
+      const st = text(this, cx + Math.cos(a) * 140, cy + Math.sin(a) * 90, '★', 36, '#ffe066', { stroke: '#8a4a10', strokeThickness: 4 }).setDepth(180).setAlpha(0);
+      small.push(st);
+      this.tweens.add({ targets: st, alpha: 1, duration: 400, delay: i * 120 });
+    }
+    await wait(this, 1300);
+    await Promise.all(small.map(st => tween(this, { targets: st, x: cx, y: cy, scale: 0.5, duration: 700, ease: 'Cubic.in' })));
+    small.forEach(st => st.destroy());
+    sfx.play('star7');
+    this.cameras.main.shake(400, this.flash ? 0.012 : 0.006);
+    const big = text(this, cx, cy, '★', 150, '#ffe066', { stroke: '#8a4a10', strokeThickness: 10 }).setDepth(180).setScale(0.2);
+    big.setShadow(0, 0, '#fff3c0', 30, true, true);
+    const label = text(this, cx, cy + 110, '각성!', 64, '#ffffff', { stroke: '#8a4a10', strokeThickness: 10 }).setDepth(180).setAlpha(0);
+    await tween(this, { targets: big, scale: 1, duration: 700, ease: 'Back.out' });
+    this.tweens.add({ targets: label, alpha: 1, duration: 500 });
+    this.tweens.add({ targets: big, angle: 360, duration: 12000, repeat: -1 });
+    await wait(this, 2200);
+    this.tweens.add({ targets: [big, label], alpha: 0, duration: 800 });
   }
 
   // 카드 둘레의 번개. 번쩍임이 꺼져 있으면 밝기는 그대로 두고 모양만 천천히 바뀐다.
@@ -876,6 +884,11 @@ export class SummonScene extends Phaser.Scene {
 
   showEnd() {
     const s = this.app.save;
+    if (this.awaken) {
+      text(this, W / 2, 1090, '큰 별 하나 ★8 · 능력치 2배 · 최대 레벨 60', 28, '#ffe9a0');
+      button(this, W / 2, 1200, 420, 96, '좋아요!', () => closeStage(this.app, 'heroDetail', { id: this.results[0].id }), { size: 32, fill: 0xc8961a });
+      return;
+    }
     if (this.ticket) {
       // 시작 선물: 편성에 넣어 줬으니 바로 마을로 돌아가 첫 모험으로
       const inTeam = s.team.includes(this.results[0].id);
