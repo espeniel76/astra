@@ -267,7 +267,7 @@ export class SummonScene extends Phaser.Scene {
     }
 
     // 3) 쾅: 번쩍 + 화면 흔들림
-    sfx.play(seven ? 'star7' : 'star6');
+    sfx.play(r.id === 'astra' ? 'originCard' : seven ? 'star7' : 'star6');
     this.cameras.main.shake(seven ? 900 : 650, this.flash ? 0.02 : 0.012);
     if (this.flash) {
       // 번쩍임 효과가 켜져 있을 때만 진짜 점멸(세 번)
@@ -895,7 +895,7 @@ export class SummonScene extends Phaser.Scene {
     layer.add([seedGlow, seed]);
     await tween(this, { targets: seed, scale: 0.25, duration: fast(1300), ease: 'Sine.out' });
     for (let i = 0; i < 2 && !state.skipped; i++) {
-      sfx.play('reveal');
+      sfx.play('originHeart');
       await tween(this, { targets: seedGlow, scale: 2.2 + i, alpha: 0.75, duration: 700, yoyo: true, ease: 'Sine.inOut' });
       await pause(300);
     }
@@ -914,12 +914,14 @@ export class SummonScene extends Phaser.Scene {
       ring.add([glow, sil]);
       return { glow, sil, col, a };
     });
+    sfx.play('originDrone');
     shades.forEach((s, i) => this.tweens.add({ targets: [s.glow, s.sil], alpha: { from: 0, to: 0.85 }, duration: fast(900), delay: state.skipped ? 0 : i * 140 }));
     this.tweens.add({ targets: ring, angle: 40, duration: 9000, ease: 'Sine.inOut' });
     await pause(2400);
-    sfx.play('summon');
+    let absorbed = 0;
     for (const s of shades) {
       if (state.skipped) break;
+      sfx.play('originAbsorb', absorbed++);
       // 그림자 → 제 빛깔 빛줄기가 되어 가운데로
       this.tweens.add({ targets: [s.sil, s.glow], x: 0, y: 0, scale: 0.05, alpha: 0, duration: 520, ease: 'Cubic.in' });
       const streak = this.add.rectangle(0, 0, 10, R0, s.col, 0.9).setOrigin(0.5, 0).setRotation(s.a + Math.PI / 2).setBlendMode('ADD');
@@ -933,7 +935,7 @@ export class SummonScene extends Phaser.Scene {
     await pause(600);
 
     // 3) 태초의 폭발
-    sfx.play('star7');
+    sfx.play('originBang');
     const neb = this.add.image(0, 0, propTex(this, 'nebula')).setOrigin(0, 0).setScale(TS).setAlpha(0);
     layer.addAt(neb, 1);
     this.tweens.add({ targets: neb, alpha: 1, duration: fast(2600) });
@@ -983,6 +985,7 @@ export class SummonScene extends Phaser.Scene {
     const img = this.add.image(cx, cy - 420, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(3 * TS).setAlpha(0);
     layer.add(img);
     await pause(900);
+    sfx.play('originDescend');
     await tween(this, { targets: img, alpha: 1, y: cy + 200, duration: fast(2600), ease: 'Sine.out' });
     this.cameras.main.shake(600, this.flash ? 0.012 : 0.006);
     const foot = this.add.image(cx, cy + 205, 'soft').setTint(0xffffff).setScale(3, 0.7).setAlpha(0).setBlendMode('ADD');
@@ -996,6 +999,7 @@ export class SummonScene extends Phaser.Scene {
     const name = text(this, W / 2, H - 260, '', 72, '#ffffff', { stroke: '#6a3aaa', strokeThickness: 11 }).setShadow(0, 0, '#d8c8ff', 14, true, true);
     const big = text(this, W / 2, H - 165, '★', 84, '#ffffff', { stroke: '#b06aff', strokeThickness: 9 }).setShadow(0, 0, '#ffe066', 22, true, true).setAlpha(0).setScale(0.3);
     layer.add([origin, sub, name, big]);
+    sfx.play('originTitle');
     await tween(this, { targets: origin, alpha: 1, scale: 1, duration: 1300, ease: 'Back.out' });
     this.tweens.add({ targets: sub, alpha: 1, duration: 1000 });
     for (let i = 1; i <= hero.name.length && !state.skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 320); }
@@ -1474,7 +1478,7 @@ export class SummonScene extends Phaser.Scene {
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0).setInteractive();
     layer.add(dark);
     this.tweens.add({ targets: dark, fillAlpha: 0.9, duration: 600 });
-    sfx.play(seven ? 'star7' : 'star6');
+    sfx.play(r.id === 'astra' ? 'originCard' : seven ? 'star7' : 'star6');
 
     // 빛줄기: 천천히 돌며 밝아진다
     const beams = this.add.container(W / 2, 560);
