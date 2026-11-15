@@ -1024,83 +1024,88 @@ export class SummonScene extends Phaser.Scene {
     setBackdrop('#000000', '#000000');
   }
 
-  // 불사조 여제 전용(약 12초): 1) 어둠 속 잿더미, 불씨 하나가 숨 쉬듯 빛난다 2) 불씨가 불덩이로 커지며 불꽃 고리가 돈다
-  // 3) 불덩이를 깨고 거대한 불사조가 날개를 펴며 솟아오르고 불꽃 깃털이 흩날린다 4) 불사조가 여제의 모습으로 내려앉는다
-  // 5) ETERNAL + 이름. 번쩍임 없음.
+  // 불사조 여제 전용(약 11초, 아들 요청으로 불사조는 안 나옴): 1) 어둠 속 잿더미 위에 식어 가는 불씨, 가는 연기가 오른다
+  // 2) 불씨가 숨 쉬듯 천천히 붉어진다 3) 작은 불꽃이 피어나 점점 커져 큰 불길로 다시 타오른다(불티가 솟음)
+  // 4) 불길 한가운데서 여제가 나타난다 5) ETERNAL + 이름. 번쩍임 없음(밝기는 모두 천천히 변함).
   async phoenixRebirth(r) {
     const hero = HERO[r.id];
-    const { layer, state, pause, fast } = this.eternalLayer(0x050202);
-    const cx = W / 2, cy = H / 2 - 40;
-    setBackdrop('#050202', '#050202');
-    // 잿더미(아래쪽 회색 언덕)와 꺼질 듯한 불씨들
+    const { layer, state, pause, fast } = this.eternalLayer(0x040202);
+    const cx = W / 2, cy = H / 2 - 40, fy = cy + 250; // fy = 불씨 자리
+    setBackdrop('#040202', '#040202');
+    // 하늘(처음엔 안 보이다가 불이 붙으면 천천히 달아오름)
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x0a0302, 0x0a0302, 0x6a2008, 0x6a2008, 1).fillRect(0, 0, W, H);
+    sky.setAlpha(0);
+    layer.add(sky);
+    // 잿더미
     const ash = this.add.graphics();
-    ash.fillStyle(0x1a1412, 1).fillEllipse(cx, H + 40, W * 1.6, 420);
-    ash.fillStyle(0x2a201c, 1).fillEllipse(cx, H + 70, W * 1.2, 330);
+    ash.fillStyle(0x161210, 1).fillEllipse(cx, H + 60, W * 1.7, 460);
+    ash.fillStyle(0x221c18, 1).fillEllipse(cx, H + 90, W * 1.2, 360);
+    ash.fillStyle(0x2e2620, 1).fillEllipse(cx, fy + 60, 320, 70);
     layer.add(ash);
-    const sparks = this.add.particles(0, 0, 'dot', {
-      x: { min: 60, max: W - 60 }, y: { min: H - 140, max: H - 40 }, lifespan: 3000, speedY: { min: -60, max: -20 }, speedX: { min: -10, max: 10 },
-      scale: { min: 0.15, max: 0.35 }, alpha: { start: 0.9, end: 0 }, tint: [0xff8a2a, 0xffd84a], frequency: 110, blendMode: 'ADD',
+
+    // 1) 식어 가는 불씨 + 가는 회색 연기
+    const coal = this.add.image(cx, fy + 40, 'soft').setTint(0x8a2a10).setScale(0).setAlpha(0.7).setBlendMode('ADD');
+    const core = this.add.image(cx, fy + 40, 'soft').setTint(0xff7a2a).setScale(0).setAlpha(0.5).setBlendMode('ADD');
+    layer.add([coal, core]);
+    const smoke = this.add.particles(cx, fy + 30, 'soft', {
+      x: { min: -14, max: 14 }, lifespan: 3200, speedY: { min: -60, max: -35 }, speedX: { min: -12, max: 18 },
+      scale: { start: 0.25, end: 1.1 }, alpha: { start: 0.22, end: 0 }, tint: 0x6a625c, frequency: 160,
+    });
+    layer.add(smoke);
+    sfx.play('summon');
+    this.tweens.add({ targets: coal, scale: 0.9, duration: fast(1200), ease: 'Sine.out' });
+    await tween(this, { targets: core, scale: 0.18, duration: fast(1200), ease: 'Sine.out' });
+    await pause(600);
+
+    // 2) 숨 쉬듯 붉어진다(한 번에 1.2초씩 천천히)
+    for (let i = 0; i < 2 && !state.skipped; i++) {
+      this.tweens.add({ targets: coal, scale: 1.3 + i * 0.4, alpha: 0.9, duration: 1200, yoyo: true, ease: 'Sine.inOut' });
+      await tween(this, { targets: core, scale: 0.3 + i * 0.12, alpha: 0.9, duration: 1200, yoyo: true, ease: 'Sine.inOut' });
+    }
+    smoke.stop();
+
+    // 3) 다시 타오른다: 작은 불꽃 → 중간 → 큰 불길. 불꽃은 부드러운 빛 알갱이들이 위로 흘러가며 색이 노랑 → 주황 → 빨강으로 식는다
+    sfx.play('star7');
+    const FIRE = [0xfffbe0, 0xffd060, 0xff8a2a, 0xd8300a, 0x3a0a02];
+    const flame = (spread, speed, size, freq, life) => {
+      const e = this.add.particles(cx, fy + 40, 'soft', {
+        x: { min: -spread, max: spread }, lifespan: { min: life * 0.7, max: life },
+        speedY: { min: -speed, max: -speed * 0.55 }, speedX: { min: -24, max: 24 },
+        scale: { start: size, end: 0.05 }, alpha: { start: 0.5, end: 0 },
+        color: FIRE, blendMode: 'ADD', frequency: freq, emitting: false,
+      });
+      layer.add(e);
+      return e;
+    };
+    const small = flame(10, 200, 0.45, 30, 800);
+    const mid = flame(26, 330, 0.8, 18, 1100);
+    const big = flame(60, 560, 1.3, 10, 1400);
+    const sparks = this.add.particles(cx, fy + 20, 'dot', {
+      x: { min: -80, max: 80 }, lifespan: 2600, speedY: { min: -420, max: -180 }, speedX: { min: -70, max: 70 },
+      scale: { start: 0.35, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffe080, 0xffa040], blendMode: 'ADD', frequency: 50, emitting: false,
     });
     layer.add(sparks);
-    sfx.play('summon');
+    small.start();
+    this.tweens.add({ targets: [coal, core], alpha: 0, duration: 1500 });
+    await pause(1300);
+    mid.start();
+    this.tweens.add({ targets: sky, alpha: 0.6, duration: fast(1800) });
+    await pause(1300);
+    big.start(); sparks.start();
+    this.tweens.add({ targets: sky, alpha: 1, duration: fast(1600) });
+    const warm = this.add.image(cx, fy - 120, 'soft').setTint(0xff8a2a).setScale(0.5).setAlpha(0).setBlendMode('ADD');
+    layer.addAt(warm, 2);
+    this.tweens.add({ targets: warm, scale: 7, alpha: 0.55, duration: fast(1800), ease: 'Sine.out' });
+    this.cameras.main.shake(700, this.flash ? 0.012 : 0.006);
+    await pause(1400);
 
-    // 1) 불씨
-    const ember = this.add.image(cx, cy + 260, 'soft').setTint(0xfff3c0).setScale(0).setBlendMode('ADD');
-    const emberGlow = this.add.image(cx, cy + 260, 'soft').setTint(0xff6a1a).setAlpha(0.8).setScale(0).setBlendMode('ADD');
-    layer.add([emberGlow, ember]);
-    this.tweens.add({ targets: ember, scale: 0.35, duration: fast(1200), ease: 'Sine.out' });
-    await tween(this, { targets: emberGlow, scale: 1, duration: fast(1200), ease: 'Sine.out' });
-    for (let i = 0; i < 2 && !state.skipped; i++) await tween(this, { targets: emberGlow, scale: 1.8, duration: 1100, yoyo: true, ease: 'Sine.inOut' });
-
-    // 2) 불덩이로 커지며 위로 떠오르고, 불꽃 고리가 돈다
-    const sky = this.add.graphics();
-    sky.fillGradientStyle(0x050202, 0x050202, 0x5a1a06, 0x5a1a06, 1).fillRect(0, 0, W, H);
-    sky.setAlpha(0);
-    layer.addAt(sky, 1);
-    this.tweens.add({ targets: sky, alpha: 1, duration: fast(2400) });
-    this.tweens.add({ targets: [ember, emberGlow], y: cy + 40, duration: fast(2000), ease: 'Sine.inOut' });
-    this.tweens.add({ targets: ember, scale: 2.6, duration: fast(2000), ease: 'Sine.inOut' });
-    this.tweens.add({ targets: emberGlow, scale: 5.5, alpha: 0.6, duration: fast(2000), ease: 'Sine.inOut' });
-    // 불의 소용돌이: 부드러운 불빛 덩어리들이 세 갈래 나선을 이루며 돈다
-    const ring = this.add.container(cx, cy + 40);
-    const FIRE = [0xfff3c0, 0xffd84a, 0xffa040, 0xff6a1a, 0xd8300a];
-    for (let arm = 0; arm < 3; arm++) {
-      for (let i = 0; i < 40; i++) {
-        const t = i / 39, a = arm * (Math.PI * 2 / 3) + t * Math.PI * 1.5, d = 60 + t * 220;
-        ring.add(this.add.image(Math.cos(a) * d, Math.sin(a) * d, 'soft').setTint(FIRE[Math.min(4, Math.floor(t * 5))])
-          .setScale(1.5 - t * 0.9, 0.9 - t * 0.5).setRotation(a + Math.PI / 2).setAlpha(0.6 - t * 0.35).setBlendMode('ADD'));
-      }
-    }
-    ring.setAlpha(0);
-    layer.add(ring);
-    this.tweens.add({ targets: ring, alpha: 1, duration: fast(1200) });
-    this.tweens.add({ targets: ring, angle: -360, duration: 5000, repeat: -1 });
-    await pause(2200);
-
-    // 3) 불사조가 날개를 펴며 솟아오른다
-    sfx.play('star7');
-    const bird = this.add.image(cx, cy + 60, propTex(this, 'phoenixBird')).setScale(TS * 0.3).setAlpha(0);
-    layer.add(bird);
-    this.tweens.add({ targets: [ember, emberGlow], alpha: 0, duration: 800 });
-    this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: fast(1400) });
-    await tween(this, { targets: bird, alpha: 1, scale: TS * 0.78, y: cy - 60, duration: fast(1800), ease: 'Back.out' });
-    this.cameras.main.shake(600, this.flash ? 0.014 : 0.007);
-    this.tweens.add({ targets: bird, scaleX: TS * 0.82, y: cy - 80, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' }); // 날갯짓
-    const rain = this.add.particles(0, 0, propTex(this, 'flameFeather'), {
-      x: { min: 0, max: W }, y: -40, lifespan: 4500, speedY: { min: 90, max: 180 }, speedX: { min: -40, max: 40 },
-      scale: { min: TS * 0.5, max: TS * 0.9 }, rotate: { min: -40, max: 40 }, alpha: { start: 1, end: 0.2 }, frequency: 120,
-    });
-    layer.add(rain);
-    await pause(2000);
-
-    // 4) 불사조가 빛으로 접혀 여제가 된다
-    const img = this.add.image(cx, cy + 200, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.2 * TS).setAlpha(0);
+    // 4) 불길 한가운데서 여제가 나타난다(불은 계속 뒤에서 탄다)
+    const img = this.add.image(cx, fy + 60, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.2 * TS).setAlpha(0);
     layer.add(img);
-    this.tweens.add({ targets: bird, scale: TS * 0.4, alpha: 0, y: cy + 60, duration: fast(1300), ease: 'Sine.in' });
-    await tween(this, { targets: img, alpha: 1, scale: 2.7 * TS, duration: fast(1500), ease: 'Back.out' });
-    const halo = this.add.circle(cx, cy + 40, 200, 0xffa040, 0.18);
-    layer.addAt(halo, layer.getIndex(img));
-    this.tweens.add({ targets: halo, scale: 1.15, alpha: 0.1, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    small.stop();
+    await tween(this, { targets: img, alpha: 1, y: cy + 200, scale: 2.7 * TS, duration: fast(1800), ease: 'Back.out' });
+    this.tweens.add({ targets: warm, alpha: 0.35, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.tweens.add({ targets: img, y: cy + 186, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     await this.eternalTitle(layer, hero, '#fff6e0', '#8a2a06', '#ffd84a', pause, () => state.skipped);
