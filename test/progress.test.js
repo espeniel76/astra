@@ -40,7 +40,7 @@ describe('레벨업', () => {
   it('최대 레벨이면 더 안 오른다', () => {
     const s = mkSave(1e9, { slinger: { level: 10, dupes: 0 } });
     expect(levelUp(s, 'slinger')).toEqual({ ok: false, reason: 'max' });
-    expect(MAX_LEVEL).toBe(60); // 각성(★8) 최대 레벨
+    expect(MAX_LEVEL).toBe(70); // 근원(0.001%) 최대 레벨
     expect(DUPE_MAX).toBe(5);
   });
   it('없는 영웅은 레벨업 불가', () => {
@@ -54,8 +54,8 @@ import { HEROES } from '../src/data/heroes.js';
 describe('v2: 높은 별은 진짜 세다', () => {
   const byStarRole = (star, role) => HEROES.find(h => h.star === star && h.role === role);
   it('별 배율과 최대 레벨', () => {
-    expect(STAR_MULT.slice(1)).toEqual([1, 1.3, 1.7, 2.2, 2.9, 8.7, 17.4]);
-    expect(MAX_LEVEL_BY_STAR.slice(1)).toEqual([10, 15, 20, 25, 30, 40, 50]);
+    expect(STAR_MULT.slice(1)).toEqual([1, 1.3, 1.7, 2.2, 2.9, 8.7, 17.4, 34.8]);
+    expect(MAX_LEVEL_BY_STAR.slice(1)).toEqual([10, 15, 20, 25, 30, 40, 50, 70]);
     expect(maxLevel('slinger')).toBe(10);
     expect(maxLevel('guardian')).toBe(50);
   });

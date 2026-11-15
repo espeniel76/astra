@@ -635,6 +635,7 @@ const OUTFIT = {
   tornado: { coat: '#6a4a30', inner: '#d7eef8', v: 8, zipper: '#d7dde2', fur: '#f0e8d8' },
   emperor: { coat: '#1a1020', inner: '#9a3aff', v: 11, trim: '#d8b84a', lapel: '#2a1830', cape: ['#120a18', '#6a1a8a'] },
   goldlord: { coat: '#c8961a', inner: '#fff3c0', v: 10, trim: '#fff3c0', belt: ['#8a6410', '#fff3c0'], cape: ['#8a6410', '#ffd84a'] },
+  astra: { coat: '#f8f4ff', inner: '#b8a8ff', v: 10, ridge: true, trim: '#ffe066', stars: '#ffe066', collar: '#f8f4ff', pauldron: ['#ffffff', '#ffe066'], cape: ['#ffffff', '#b8a8ff'] },
   abysslord: { coat: '#0e2a30', inner: '#3fd8d0', v: 10, ridge: true, trim: '#7ff0e8', collar: '#0e2a30', pauldron: ['#1a4a50', '#7ff0e8'], cape: ['#06161a', '#1a6a70'] },
   worldtree: { coat: '#2a5a2a', inner: '#ffd84a', v: 9, trim: '#ffe9a0', collar: '#2a5a2a', belt: ['#5a3a1e', '#ffd84a'], cape: ['#3a7a32', '#c9a24a'] },
   judge: { coat: '#141418', inner: '#f4f4f4', v: 10, ridge: true, trim: '#f4f4f4', collar: '#141418', pauldron: ['#2a2a30', '#ffffff'], belt: ['#08080a', '#d7dde2'], cape: ['#f2f2f2', '#141418'] },
@@ -1302,6 +1303,29 @@ function heroDeco(ctx, id, phase) {
           fillStroke(ctx, '#fff6c8', 1.6, '#c8961a');
         }
         circle(ctx, 0, top + 4, 2.6, '#ffffff', 1);
+      }
+      break;
+    case 'astra': // 아스트라(근원): 등 뒤 무지개빛 별 일곱 개의 후광 + 머리 위 빛나는 큰 별과 은빛 관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 6, 4, 0, BY - 6, R + 30);
+        g.addColorStop(0, 'rgba(255,255,255,0.75)'); g.addColorStop(0.5, 'rgba(216,200,255,0.35)'); g.addColorStop(1, 'rgba(216,200,255,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 6, R + 30, 0, Math.PI * 2); ctx.fill();
+        const RAIN = ['#ff6a6a', '#ffa33a', '#ffe066', '#7dff8a', '#7fd8ff', '#8a9aff', '#d08aff'];
+        for (let k = 0; k < 7; k++) {
+          const a = -Math.PI / 2 + (k / 7) * Math.PI * 2;
+          star(ctx, Math.cos(a) * (R + 18), BY - 6 + Math.sin(a) * (R + 18), 5.5, RAIN[k]);
+        }
+      }
+      if (phase === 'front') {
+        rr(ctx, -14, top + 1, 28, 5, 2.5); fillStroke(ctx, '#e8ecf0', 1.4, '#8a8f99');
+        for (const x of [-9, 9]) circle(ctx, x, top + 3, 1.8, '#b8a8ff', 0.6);
+        // 위로 솟은 네 갈래 빛의 별
+        ctx.save(); ctx.translate(0, top - 14);
+        const gg = ctx.createRadialGradient(0, 0, 1, 0, 0, 16); gg.addColorStop(0, 'rgba(255,255,255,1)'); gg.addColorStop(1, 'rgba(255,240,200,0)');
+        ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, -15); ctx.quadraticCurveTo(2, -2, 15, 0); ctx.quadraticCurveTo(2, 2, 0, 15); ctx.quadraticCurveTo(-2, 2, -15, 0); ctx.quadraticCurveTo(-2, -2, 0, -15); ctx.closePath();
+        fillStroke(ctx, '#ffffff', 1.4, '#c8a8ff');
+        ctx.restore();
       }
       break;
     case 'abysslord': // 심해의 군주: 등 뒤 물의 고리와 물방울 + 머리 위 산호 왕관

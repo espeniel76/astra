@@ -184,7 +184,7 @@ textarea { width: 100%; min-height: 90px; border-radius: 10px; border: 1px solid
 #stage canvas { margin: 0 !important; }
 
 /* 개발자 미리보기 */
-.dev-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.dev-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
 .dev-row .btn { padding: 0; font-size: 15px; min-height: 48px; }
 
 /* ★7 각성(큰 별 ★8) */
@@ -195,3 +195,8 @@ textarea { width: 100%; min-height: 90px; border-radius: 10px; border: 1px solid
 .awaken-card { border-color: #ffe066; background: linear-gradient(#2a2440, #171c36); margin-top: 10px; }
 .awakened-card { border-color: #ffe066; margin-top: 10px; }
 .detail-art.aw canvas { filter: drop-shadow(0 0 14px rgba(255, 224, 102, 0.9)); }
+
+/* 근원(★8, 0.001%): 무지개빛 큰 별 */
+.bigstar.origin { background: linear-gradient(90deg, #ff6a6a, #ffa33a, #ffe066, #7dff8a, #7fd8ff, #8a9aff, #d08aff); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)); font-size: 30px; }
+.hstars.big.origin { background: linear-gradient(90deg, #ff6a6a, #ffe066, #7dff8a, #7fd8ff, #d08aff); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }

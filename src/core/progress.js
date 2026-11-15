@@ -4,9 +4,9 @@
 import { HERO, STAR_MULT } from '../data/heroes.js';
 
 export { STAR_MULT };
-export const MAX_LEVEL_BY_STAR = [0, 10, 15, 20, 25, 30, 40, 50];
+export const MAX_LEVEL_BY_STAR = [0, 10, 15, 20, 25, 30, 40, 50, 70];
 export const AWAKEN_MAX_LEVEL = 60;
-export const MAX_LEVEL = AWAKEN_MAX_LEVEL;
+export const MAX_LEVEL = 70; // 근원(★8)
 export const maxLevel = (id, awakened = false) => (awakened ? AWAKEN_MAX_LEVEL : MAX_LEVEL_BY_STAR[HERO[id].star]);
 export const DUPE_MAX = 5;
 

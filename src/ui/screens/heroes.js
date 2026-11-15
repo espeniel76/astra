@@ -26,7 +26,7 @@ export function render(root, app, params = {}) {
     if (!id) return h('div.tslot.empty', { onclick: () => { editing = true; app.refresh(); } }, h('span', '+'), h('small', '영웅을 넣어요'));
     const hero = HERO[id];
     return h('div.tslot', { style: `--c:${STAR_COLOR[hero.star]}`, onclick: () => app.show('heroDetail', { id, from: 'heroes' }) },
-      s.heroes[id]?.awakened ? h('div.hstars.big', '★') : h('div.hstars', '★'.repeat(hero.star)),
+      hero.star === 8 ? h('div.hstars.big.origin', '★') : s.heroes[id]?.awakened ? h('div.hstars.big', '★') : h('div.hstars', '★'.repeat(hero.star)),
       heroCanvas(id, 120),
       h('div.tname', hero.name),
       h('button.tx', { onclick: e => { e.stopPropagation(); s.team[i] = null; save(); }, 'aria-label': '빼기' }, '✕'));
@@ -50,7 +50,7 @@ export function render(root, app, params = {}) {
         app.show('heroDetail', { id: x.id, from: 'heroes' });
       },
     },
-      own?.awakened ? h('div.hstars.big', '★') : h('div.hstars', '★'.repeat(x.star)),
+      x.star === 8 ? h('div.hstars.big.origin', '★') : own?.awakened ? h('div.hstars.big', '★') : h('div.hstars', '★'.repeat(x.star)),
       heroCanvas(x.id, 120, { silhouette: !own }),
       h('div.hlv', own ? `Lv ${own.level}/${maxLevel(x.id, own.awakened)}` : '미보유'));
     if (own?.dupes) el.append(h('div.hdupe', `+${own.dupes}`));

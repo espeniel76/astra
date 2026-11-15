@@ -7,7 +7,7 @@ const mkSave = (diamonds, pity = 0) => ({ diamonds, gold: 0, pity, heroes: {} })
 
 describe('소환 규칙', () => {
   it('확률·천장·가격은 설계대로', () => {
-    expect(RATES).toEqual({ 1: 45, 2: 34, 3: 15, 4: 5, 5: 0.85, 6: 0.12, 7: 0.03 });
+    expect(RATES).toEqual({ 1: 44.999, 2: 34, 3: 15, 4: 5, 5: 0.85, 6: 0.12, 7: 0.03, 8: 0.001 });
     expect(PITY).toBe(300);
     expect(COST).toEqual({ 1: 100, 11: 1000 });
   });
@@ -114,5 +114,15 @@ describe('v2 소환', () => {
     expect(s.diamonds).toBe(0);
     expect(s.pity).toBe(10);
     expect(useTicket(s, makeRng(3))).toEqual({ ok: false, reason: 'ticket' });
+  });
+});
+
+describe('0.001% 근원 영웅', () => {
+  it('근원(★8)은 아스트라 한 명이고, 확률대로 아주 가끔 나온다', () => {
+    const r = makeRng(99);
+    let n = 0;
+    for (let i = 0; i < 2_000_000; i++) if (rollStar(r) === 8) n++;
+    expect(n).toBeGreaterThanOrEqual(5);   // 기대값 20
+    expect(n).toBeLessThanOrEqual(45);
   });
 });

@@ -197,7 +197,9 @@ export class SummonScene extends Phaser.Scene {
     g.lineStyle(r.star >= 5 ? 6 : 4, col, 1).strokeRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
     const img = this.add.image(0, slot.h * 0.12, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale((big ? 1.4 : 0.72) * TS);
     const name = text(this, 0, slot.h * 0.3, HERO[r.id].name, big ? 34 : 18, '#ffffff', { wordWrap: { width: slot.w - 10 } });
-    const st = r.awaken
+    const st = r.star === 8
+      ? text(this, 0, slot.h * 0.42, '★', big ? 58 : 32, '#ffffff', { stroke: '#b06aff', strokeThickness: 6 }).setShadow(0, 0, '#ffe066', 12, true, true) // 근원: 무지개빛 큰 별
+      : r.awaken
       ? text(this, 0, slot.h * 0.42, '★', big ? 54 : 30, '#ffe066', { stroke: '#8a4a10', strokeThickness: 5 }) // 큰 별 하나 = ★8
       : text(this, 0, slot.h * 0.42, '★'.repeat(r.star), big ? 28 : 16, STAR_COLOR[r.star], { strokeThickness: 3 });
     c.add([g, img, name, st]);
@@ -212,9 +214,9 @@ export class SummonScene extends Phaser.Scene {
   async mythicReveal(slot, r) {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
-    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a }[r.id] ?? 0xffe066) : 0xff3a3a;
+    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a, astra: 'rainbow' }[r.id] ?? 0xffe066) : 0xff3a3a;
     // 번개 바깥 빛: 심판자 회색, 심해의 군주 깊은 청록, 세계수의 여왕 금색
-    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a }[r.id] ?? col;
+    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a, astra: 0xffffff }[r.id] ?? col;
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
     this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
@@ -240,6 +242,7 @@ export class SummonScene extends Phaser.Scene {
       else if (r.id === 'judge') await this.finalJudgment(r);
       else if (r.id === 'abysslord') await this.abyssRise(r);
       else if (r.id === 'worldtree') await this.worldTreeBloom(r);
+      else if (r.id === 'astra') await this.originBirth(r);
       else await this.eternalDescent(r);
     }
 
@@ -845,6 +848,93 @@ export class SummonScene extends Phaser.Scene {
     setBackdrop('#000000', '#000000');
   }
 
+  // 아스트라(근원, 0.001%) 전용(약 16초). 번쩍임 없음: 빛은 모두 천천히 커지고 천천히 사라진다.
+  // 1) 완전한 어둠 속 작은 빛 한 점 2) 빛이 숨 쉬듯 커지다 우주가 태어나며 일곱 빛깔 고리가 퍼져 나간다
+  // 3) 별과 은하가 생겨나 소용돌이친다 4) 가장 밝은 별 속에서 아스트라가 깨어난다(무지개 후광)
+  // 5) ORIGIN + 이름 + 무지개 큰 별
+  async originBirth(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x000000);
+    const cx = W / 2, cy = H / 2 - 60;
+    const RAINBOW = [0xff6a6a, 0xffa33a, 0xffe066, 0x7dff8a, 0x7fd8ff, 0x8a9aff, 0xd08aff];
+    setBackdrop('#000000', '#000000');
+
+    // 1) 빛 한 점
+    const seed = this.add.circle(cx, cy, 6, 0xffffff, 1).setScale(0);
+    const seedGlow = this.add.circle(cx, cy, 40, 0xffffff, 0.25).setScale(0);
+    layer.add([seedGlow, seed]);
+    await tween(this, { targets: [seed, seedGlow], scale: 1, duration: fast(1600), ease: 'Sine.out' });
+    for (let i = 0; i < 2 && !state.skipped; i++) { // 숨 쉬듯(2.4초 주기, 깜빡임 아님)
+      await tween(this, { targets: seedGlow, scale: 2.2, duration: 1200, yoyo: true, ease: 'Sine.inOut' });
+    }
+
+    // 2) 우주가 태어난다: 성운이 천천히 밝아지고, 일곱 빛깔 고리가 차례로 퍼진다
+    sfx.play('star7');
+    const neb = this.add.image(0, 0, propTex(this, 'nebula')).setOrigin(0, 0).setScale(TS).setAlpha(0);
+    layer.addAt(neb, 1);
+    this.tweens.add({ targets: neb, alpha: 1, duration: fast(3000) });
+    this.tweens.add({ targets: seedGlow, scale: 9, alpha: 0, duration: fast(2600), ease: 'Sine.out' });
+    for (let i = 0; i < 7; i++) {
+      const ring = this.add.circle(cx, cy, 60).setStrokeStyle(10, RAINBOW[i], 0.9).setScale(0.2);
+      layer.add(ring);
+      this.tweens.add({ targets: ring, scale: 9 + i, alpha: 0, duration: fast(3600), delay: state.skipped ? 0 : i * 260, ease: 'Sine.out', onComplete: () => ring.destroy() });
+    }
+    await pause(2200);
+
+    // 3) 별과 은하가 생겨나 소용돌이친다
+    const galaxy = this.add.container(cx, cy).setScale(1, 0.5);
+    for (let arm = 0; arm < 3; arm++) {
+      for (let i = 0; i < 40; i++) {
+        const t = i / 40, a = arm * (Math.PI * 2 / 3) + t * Math.PI * 2.4, d = 30 + t * 330;
+        galaxy.add(this.add.circle(Math.cos(a) * d, Math.sin(a) * d, 2 + (1 - t) * 3.5, RAINBOW[(arm * 2 + Math.floor(t * 7)) % 7], 0.9 - t * 0.5));
+      }
+    }
+    galaxy.setAlpha(0);
+    layer.add(galaxy);
+    this.tweens.add({ targets: galaxy, alpha: 1, duration: fast(1600) });
+    this.tweens.add({ targets: galaxy, angle: 360, duration: 18000, repeat: -1 });
+    const sparkle = this.add.particles(0, 0, 'dot', {
+      x: { min: 0, max: W }, y: { min: 0, max: H }, lifespan: 3000, scale: { start: 0.6, end: 0 }, alpha: { start: 0.9, end: 0 },
+      tint: RAINBOW, frequency: 60, blendMode: 'ADD',
+    });
+    layer.add(sparkle);
+    await pause(2600);
+
+    // 4) 가장 밝은 별 속에서 아스트라가 깨어난다
+    const core = this.add.circle(cx, cy + 40, 30, 0xffffff, 0.95).setScale(0.2);
+    layer.add(core);
+    await tween(this, { targets: core, scale: 5, alpha: 0.4, duration: fast(1500), ease: 'Sine.out' });
+    const halo = this.add.container(cx, cy + 40);
+    for (let i = 0; i < 7; i++) {
+      const a = -Math.PI / 2 + (i / 7) * Math.PI * 2;
+      halo.add(this.add.star(Math.cos(a) * 230, Math.sin(a) * 230, 5, 14, 34, RAINBOW[i]).setStrokeStyle(3, 0xffffff, 0.9));
+    }
+    halo.setAlpha(0).setScale(0.4);
+    layer.add(halo);
+    this.tweens.add({ targets: halo, alpha: 1, scale: 1, duration: fast(1600), ease: 'Back.out' });
+    this.tweens.add({ targets: halo, angle: 360, duration: 20000, repeat: -1 });
+    const img = this.add.image(cx, cy + 200, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(0.6 * TS).setAlpha(0);
+    layer.add(img);
+    await tween(this, { targets: img, alpha: 1, scale: 2.7 * TS, duration: fast(2200), ease: 'Back.out' });
+    this.cameras.main.shake(600, this.flash ? 0.014 : 0.007);
+    this.tweens.add({ targets: core, alpha: 0.15, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: img, y: cy + 186, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    // 5) ORIGIN + 이름 + 무지개 큰 별
+    const origin = text(this, W / 2, 120, 'ORIGIN', 50, '#ffffff', { stroke: '#6a3aaa', strokeThickness: 8 }).setAlpha(0).setScale(1.6);
+    const name = text(this, W / 2, H - 250, '', 60, '#ffffff', { stroke: '#6a3aaa', strokeThickness: 9 });
+    const big = text(this, W / 2, H - 170, '★', 70, '#ffffff', { stroke: '#b06aff', strokeThickness: 8 }).setShadow(0, 0, '#ffe066', 18, true, true).setAlpha(0);
+    layer.add([origin, name, big]);
+    this.tweens.add({ targets: origin, alpha: 1, scale: 1, duration: 1000, ease: 'Back.out' });
+    for (let i = 1; i <= hero.name.length && !state.skipped; i++) { name.setText(hero.name.slice(0, i)); await wait(this, 220); }
+    name.setText(hero.name);
+    this.tweens.add({ targets: big, alpha: 1, angle: 360, duration: 1400, ease: 'Sine.out' });
+    await pause(4000);
+    sparkle.stop();
+    await tween(this, { targets: layer, alpha: 0, duration: 1200 });
+    layer.destroy();
+  }
+
   // 각성: 뒤집힌 카드 위로 작은 별 일곱 개가 모여 큰 별 하나가 된다 + '각성!'
   async awakenBurst(card, slot, r) {
     const cx = slot.x, cy = slot.y - slot.h / 2 - 70;
@@ -891,12 +981,17 @@ export class SummonScene extends Phaser.Scene {
       }
       return pts;
     };
+    // 근원(아스트라)은 번개마다 무지개 일곱 빛깔 중 하나
+    const RAINBOW = [0xff6a6a, 0xffa33a, 0xffe066, 0x7dff8a, 0x7fd8ff, 0x8a9aff, 0xd08aff];
+    const rainbow = col === 'rainbow';
+    if (rainbow) col = 0xffffff;
     const draw = () => {
       g.clear();
       const n = 4 + Math.floor(Math.random() * 3);
       for (let k = 0; k < n; k++) {
         const pts = bolt(slot.w * (0.25 + Math.random() * 0.25));
-        for (const [w, c, a] of [[9, outer, 0.45], [3.5, col, 0.95], [1.4, 0xffffff, 1]]) {
+        const bc = rainbow ? RAINBOW[Math.floor(Math.random() * 7)] : col;
+        for (const [w, c, a] of [[9, rainbow ? bc : outer, 0.45], [3.5, bc, 0.95], [1.4, 0xffffff, 1]]) {
           g.lineStyle(w, c, a);
           g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
           for (const [px, py] of pts.slice(1)) g.lineTo(px, py);

@@ -6,11 +6,12 @@
 import { HEROES } from '../data/heroes.js';
 import { DUPE_MAX } from './progress.js';
 
-export const RATES = { 1: 45, 2: 34, 3: 15, 4: 5, 5: 0.85, 6: 0.12, 7: 0.03 };
+// ★8 = 근원(아스트라 한 명): 0.001%(10만 번에 1번). ★1에서 0.001%를 덜어 합 100%
+export const RATES = { 1: 44.999, 2: 34, 3: 15, 4: 5, 5: 0.85, 6: 0.12, 7: 0.03, 8: 0.001 };
 export const PITY = 300;
 export const COST = { 1: 100, 11: 1000 };
 // +5 이후에 또 겹치면 별에 따라 골드로 바꿔 준다
-export const OVERFLOW_GOLD = [0, 100, 200, 400, 800, 1500, 5000, 10000];
+export const OVERFLOW_GOLD = [0, 100, 200, 400, 800, 1500, 5000, 10000, 30000];
 
 const BY_STAR = {};
 for (const h of HEROES) (BY_STAR[h.star] ||= []).push(h.id);
@@ -18,7 +19,7 @@ for (const h of HEROES) (BY_STAR[h.star] ||= []).push(h.id);
 // minStar 보다 낮은 별은 빼고, 남은 별끼리는 공개 확률의 비율대로 뽑는다
 export function rollStar(rng, minStar = 1) {
   const min = minStar === true ? 6 : Math.max(1, minStar || 1);
-  const stars = [7, 6, 5, 4, 3, 2, 1].filter(s => s >= min);
+  const stars = [8, 7, 6, 5, 4, 3, 2, 1].filter(s => s >= min);
   const total = stars.reduce((t, s) => t + RATES[s], 0);
   let x = rng() * total;
   for (const s of stars) {

@@ -23,7 +23,9 @@ export function h(sel, attrs, ...kids) {
 }
 
 // 별 표시. 각성한 ★7은 큰 별 하나(★8)
-export const stars = (n, awakened = false) => (awakened
+export const stars = (n, awakened = false) => (n === 8
+  ? h('span.bigstar.origin', '★')
+  : awakened
   ? h('span.bigstar', '★')
   : h('span.stars', { style: `color:${STAR_COLOR[n]}` }, '★'.repeat(n)));
 export const fmt = n => n.toLocaleString('ko-KR');

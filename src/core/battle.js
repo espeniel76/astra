@@ -47,6 +47,9 @@ export function createBattle({ team = [], stageId = null, foes = null, seed = Da
   team.forEach((t, i) => { if (t && HERO[t.id]) b.units.push(heroUnit(b, i, t)); });
   const list = foes || STAGE[stageId]?.foes || [];
   list.forEach((f, i) => b.units.push(monsterUnit(b, i, f)));
+  // 아스트라(근원): 전투가 시작되면 아군 전체에 별빛 보호막(아스트라 공격력 × mult)
+  const origin = b.units.find(u => u.side === 'ally' && u.passive?.k === 'origin');
+  if (origin) for (const a of b.units.filter(u => u.side === 'ally')) a.shield = Math.min(a.maxHp, Math.round(origin.atk * origin.passive.mult));
   // 최후의 심판자: 전투가 시작되면 적 전체에 선고(방어 -30%, 전투 내내)
   const judge = b.units.find(u => u.side === 'ally' && u.passive?.k === 'sentence');
   if (judge) for (const f of b.units.filter(u => u.side === 'foe')) f.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });

@@ -52,7 +52,7 @@ export function render(root, app) {
 function rates(app) {
   app.modal(close => h('div.col',
     h('h2', { style: 'margin:0' }, '소환 확률'),
-    h('table.rates', ...[7, 6, 5, 4, 3, 2, 1].map(n => h('tr', h('td', stars(n)), h('td', { style: `text-align:right;color:${STAR_COLOR[n]};font-weight:800` }, `${RATES[n]}%`)))),
-    h('div.dim', { style: 'font-size:13px' }, `★6 이상이 계속 안 나와도 ${PITY}번째 소환은 ★6 이상이 확정이에요(★6:★7 = 4:1). 10+1 소환에는 ★4 이상이 꼭 1명 들어가요. 같은 별 안에서는 모든 영웅이 똑같은 확률이에요.`),
+    h('table.rates', ...[8, 7, 6, 5, 4, 3, 2, 1].map(n => h('tr', h('td', stars(n)), h('td', { style: `text-align:right;color:${STAR_COLOR[n]};font-weight:800` }, `${RATES[n]}%`)))),
+    h('div.dim', { style: 'font-size:13px' }, `★6 이상이 계속 안 나와도 ${PITY}번째 소환은 ★6 이상이 확정이에요(★6:★7 = 4:1). 10+1 소환에는 ★4 이상이 꼭 1명 들어가요. 같은 별 안에서는 모든 영웅이 똑같은 확률이에요. 무지개 별 ★8 근원(아스트라)은 0.001%, 10만 번에 한 번이에요.`),
     h('button.btn.ghost', { onclick: close }, '닫기')));
 }

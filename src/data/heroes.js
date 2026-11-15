@@ -1,7 +1,8 @@
 // 영웅 목록. ★1~★5는 아스트라의 판타지 영웅(임시 명단), ★6·★7은 좀비 생존자의 전설·신화·이터널 영웅.
 // skill.fx 는 src/core/skills.js 가 실행한다. cd = 쿨타임(그 영웅의 행동 횟수 기준).
 
-export const STAR_COLOR = [null, '#b8c2cc', '#55d468', '#5a9dff', '#b56dff', '#ffa33a', '#ff4d4d', '#ffe066'];
+// ★8 = 근원(0.001% 영웅): 무지개빛이라 대표 색은 흰색
+export const STAR_COLOR = [null, '#b8c2cc', '#55d468', '#5a9dff', '#b56dff', '#ffa33a', '#ff4d4d', '#ffe066', '#ffffff'];
 export const ROLE_NAME = { tank: '탱커', dps: '공격', support: '지원' };
 
 const ROLE = {
@@ -11,7 +12,7 @@ const ROLE = {
 };
 
 // 별 배율: ★6은 ★5의 3배, ★7은 ★6의 2배. 방어는 너무 단단해지지 않게 0.7제곱만.
-export const STAR_MULT = [0, 1, 1.3, 1.7, 2.2, 2.9, 8.7, 17.4];
+export const STAR_MULT = [0, 1, 1.3, 1.7, 2.2, 2.9, 8.7, 17.4, 34.8];
 
 function base(star, role, spdAdj = 0) {
   const r = ROLE[role];
@@ -302,6 +303,11 @@ export const HEROES = [
     S('세계수의 축복', '아군 전체를 크게 치료하고, 3턴 동안 매 턴 조금씩 더 치료해요. (전투마다 한 번, 쓰러진 아군을 전부 되살려요)', 3,
       { t: 'heal', target: 'allies', mult: 2.0 }, st('allies', 'regen', 3, 0.7)),
     { shirt: 0x2a5a2a, gun: 'flowerstaff', glow: 0x9fe07a }, '뿌리가 살아 있는 한, 숲은 다시 자란다.', { passive: { k: 'rebirth', hp: 0.4 } }),
+  // 근원(★8, 소환 0.001%): 아스트라 — 모든 별이 태어난 최초의 별(아들 요청, 2026-11-15)
+  H('astra', '아스트라', 8, 'dps',
+    S('태초의 빛', '태초의 빛으로 적 전체를 크게 때리고, 아군 전체를 치료하며 2턴 동안 공격력을 30% 올려요. (전투가 시작되면 아군 전체에 별빛 보호막)', 3,
+      dmg('all', 2.5), { t: 'heal', target: 'allies', mult: 1.0 }, st('allies', 'atkUp', 2, 0.3)),
+    { shirt: 0xf8f4ff, gun: 'starstaff', glow: 0xfff6ff }, '모든 별은 나에게서 태어났다. 너도.', { passive: { k: 'origin', mult: 2 } }),
 ];
 
 export const HERO = Object.fromEntries(HEROES.map(h => [h.id, h]));

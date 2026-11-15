@@ -53,11 +53,11 @@ function render() {
       toggle('isNew', '처음 뽑은 영웅처럼(NEW)', '끄면 이미 가진 영웅이 겹친 것처럼(+2) 보여요.'),
       toggle('flash', '번쩍임 효과 켜고 보기', '진짜 점멸·빠른 번개가 나와요. 기본 게임에서는 꺼져 있어요.'),
       h('h2', { style: 'margin:8px 0 0' }, '한 장 공개'),
-      h('div.dev-row', ...[1, 2, 3, 4, 5, 6, 7].map(s =>
+      h('div.dev-row', ...[1, 2, 3, 4, 5, 6, 7, 8].map(s =>
         btn(h('span', { style: `color:${STAR_COLOR[s]}` }, `★${s}`), () => play([result(pick(ofStar(s)))]), '.ghost'))),
       h('div.dim', { style: 'font-size:12px' }, '★1~★4: 카드 뒤집기 · ★5: 컷신 · ★6: 암전 + 대사 + 번개 · ★7: 전용 애니메이션'),
       h('h2', { style: 'margin:8px 0 0' }, '10+1 묶음 (최고 별 고르기)'),
-      h('div.dev-row', ...[1, 2, 3, 4, 5, 6, 7].map(s =>
+      h('div.dev-row', ...[1, 2, 3, 4, 5, 6, 7, 8].map(s =>
         btn(h('span', { style: `color:${STAR_COLOR[s]}` }, `★${s}`), () => play(bundle(s)), '.ghost'))),
       h('h2', { style: 'margin:8px 0 0' }, '★7 각성(큰 별 ★8)'),
       h('div.grid', ...ofStar(7).map(x => heroCard({ save }, x.id, {
@@ -66,7 +66,7 @@ function render() {
       }))),
       h('div.dim', { style: 'font-size:12px' }, '★7 전용 애니메이션 → 카드 → 작은 별 일곱 개가 모여 큰 별 하나 + "각성!"'),
       h('h2', { style: 'margin:8px 0 0' }, '영웅 골라서 보기'),
-      ...[7, 6, 5, 4, 3, 2, 1].flatMap(s => [
+      ...[8, 7, 6, 5, 4, 3, 2, 1].flatMap(s => [
         h('div', { style: 'margin-top:6px' }, stars(s), h('span.dim', ` ${ofStar(s).length}명`)),
         h('div.grid', ...ofStar(s).map(x => heroCard({ save }, x.id, { showLevel: false, onclick: () => play([result(x)]) }))),
       ]),

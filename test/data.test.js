@@ -4,11 +4,12 @@ import { MONSTERS } from '../src/data/monsters.js';
 import { STAGES, STAGE, CHAPTERS } from '../src/data/stages.js';
 
 describe('영웅 데이터', () => {
-  it('영웅은 77명이고 별 분포가 정해진 대로다', () => {
-    expect(HEROES.length).toBe(77);
+  it('영웅은 78명이고 별 분포가 정해진 대로다', () => {
+    expect(HEROES.length).toBe(78);
     const by = {};
     for (const h of HEROES) by[h.star] = (by[h.star] || 0) + 1;
-    expect(by).toEqual({ 1: 10, 2: 10, 3: 10, 4: 10, 5: 11, 6: 21, 7: 5 });
+    expect(by).toEqual({ 1: 10, 2: 10, 3: 10, 4: 10, 5: 11, 6: 21, 7: 5, 8: 1 });
+    expect(HEROES.find(h => h.star === 8).id).toBe('astra');
   });
   it('자력술사는 ★5지만 좀비 생존자 영웅 모습 그대로', () => {
     expect(HERO.magnetist.star).toBe(5);
