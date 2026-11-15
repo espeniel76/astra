@@ -200,9 +200,148 @@ function canopy(ctx) {
   }
 }
 
+// ── ★7 애니메이션 배경 소품(2026-11-15 다시 보기) ──
+let pseed = 3;
+const prnd = () => ((pseed = (pseed * 9301 + 49297) % 233280) / 233280);
+const softBlob = (ctx, x, y, r, rgba) => {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, rgba); g.addColorStop(1, rgba.replace(/[\d.]+\)$/, '0)'));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+};
+
+// 금빛 구름 덩어리(오른쪽이 안쪽 가장자리). 420×700
+function cloudBank(ctx) {
+  pseed = 21;
+  for (let i = 0; i < 46; i++) {
+    const x = 60 + prnd() * 300 + (i % 3) * 20, y = 30 + prnd() * 640, r = 60 + prnd() * 70;
+    softBlob(ctx, x, y, r * 1.15, 'rgba(200,150,40,0.55)');
+  }
+  for (let i = 0; i < 60; i++) {
+    const x = 40 + prnd() * 330, y = 30 + prnd() * 640, r = 40 + prnd() * 60;
+    ctx.fillStyle = ['#fff6d8', '#ffeaa8', '#ffe08a', '#f7d27a'][i % 4];
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  // 안쪽 가장자리 빛
+  const g = ctx.createLinearGradient(260, 0, 420, 0);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0.7)');
+  ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = g; ctx.fillRect(0, 0, 420, 700); ctx.globalCompositeOperation = 'source-over';
+}
+
+// 수호신 뒤의 거대한 황금 후광(룬이 새겨진 고리). 560×560
+function halo(ctx) {
+  const c = 280;
+  softBlob(ctx, c, c, 280, 'rgba(255,240,180,0.55)');
+  for (const [r, w, col] of [[230, 14, '#c8961a'], [230, 9, '#ffe066'], [200, 4, '#fff6c8'], [168, 6, '#e8b923']]) {
+    ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  // 룬 눈금과 작은 별
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    ctx.save(); ctx.translate(c + Math.cos(a) * 215, c + Math.sin(a) * 215); ctx.rotate(a);
+    ctx.fillStyle = '#8a6410'; ctx.fillRect(-2, -8, 4, 16);
+    if (i % 3 === 0) { ctx.fillStyle = '#fff6c8'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+  for (let i = 0; i < 8; i++) { // 바깥으로 뻗는 빛 가시
+    const a = (i / 8) * Math.PI * 2;
+    ctx.save(); ctx.translate(c, c); ctx.rotate(a);
+    const g = ctx.createLinearGradient(240, 0, 280, 0); g.addColorStop(0, 'rgba(255,240,170,0.9)'); g.addColorStop(1, 'rgba(255,240,170,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(236, -10); ctx.lineTo(280, 0); ctx.lineTo(236, 10); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// 성운(보라·파랑 구름 + 별). 720×1280
+function nebula(ctx) {
+  pseed = 33;
+  ctx.fillStyle = '#04030c'; ctx.fillRect(0, 0, 720, 1280);
+  for (let i = 0; i < 26; i++) {
+    const x = prnd() * 720, y = prnd() * 1280, r = 120 + prnd() * 220;
+    softBlob(ctx, x, y, r, ['rgba(120,60,200,0.22)', 'rgba(60,80,200,0.18)', 'rgba(200,80,160,0.14)'][i % 3]);
+  }
+  for (let i = 0; i < 260; i++) {
+    const x = prnd() * 720, y = prnd() * 1280, r = prnd() < 0.08 ? 2.4 : 0.8 + prnd();
+    ctx.fillStyle = prnd() < 0.2 ? '#d8c0ff' : '#ffffff'; ctx.globalAlpha = 0.4 + prnd() * 0.6;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 블랙홀 강착 원반(납작한 빛의 고리 + 흐르는 줄무늬). 720×300, 가운데가 블랙홀
+function accretion(ctx) {
+  pseed = 47;
+  const cx = 360, cy = 150;
+  // 납작한 타원 모양으로 은은하게(캔버스 밖으로 넘치지 않게)
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(1, 0.42);
+  softBlob(ctx, 0, 0, 340, 'rgba(176,106,255,0.35)');
+  ctx.restore();
+  for (let i = 0; i < 160; i++) {
+    const rx = 110 + prnd() * 230, ry = rx * 0.3, a0 = prnd() * Math.PI * 2, len = 0.3 + prnd() * 0.9;
+    const t = (rx - 110) / 230;
+    ctx.strokeStyle = t < 0.25 ? 'rgba(255,240,255,0.9)' : t < 0.55 ? 'rgba(214,150,255,0.75)' : 'rgba(130,70,220,0.5)';
+    ctx.lineWidth = 1.5 + prnd() * 3;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, a0, a0 + len); ctx.stroke();
+  }
+}
+
+// 정의의 저울(은빛, 거대한 실루엣). 600×520
+function scales(ctx) {
+  const cx = 300;
+  const steel = lg(ctx, 0, 0, 600, 0, [[0, '#ffffff'], [0.5, '#c9d0d8'], [1, '#7a828c']]);
+  rr(ctx, cx - 12, 60, 24, 400, 10); fillOut(ctx, steel, 4, '#1a1c20'); // 기둥
+  path(ctx, [[cx - 90, 500], [cx + 90, 500], [cx + 50, 450], [cx - 50, 450]]); fillOut(ctx, steel, 4, '#1a1c20'); // 받침
+  rr(ctx, cx - 260, 92, 520, 18, 9); fillOut(ctx, steel, 4, '#1a1c20'); // 가로대
+  ctx.beginPath(); ctx.arc(cx, 70, 26, 0, Math.PI * 2); fillOut(ctx, steel, 4, '#1a1c20');
+  for (const s of [-1, 1]) {
+    const px = cx + s * 240;
+    ctx.strokeStyle = '#3a3f45'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(px, 108); ctx.lineTo(px - 60, 300); ctx.moveTo(px, 108); ctx.lineTo(px + 60, 300); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(px, 300, 80, 22, 0, 0, Math.PI); fillOut(ctx, steel, 4, '#1a1c20'); // 접시
+  }
+}
+
+// 바다 밑 실루엣(해초·산호). 720×360
+function seabed(ctx) {
+  pseed = 61;
+  ctx.fillStyle = '#021014';
+  ctx.beginPath(); ctx.moveTo(0, 360);
+  for (let x = 0; x <= 720; x += 40) ctx.lineTo(x, 300 + Math.sin(x / 70) * 20 + prnd() * 14);
+  ctx.lineTo(720, 360); ctx.closePath(); ctx.fill();
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 22; i++) { // 해초
+    const x = prnd() * 720, h = 120 + prnd() * 180;
+    ctx.strokeStyle = prnd() < 0.5 ? '#06343a' : '#0a2a26'; ctx.lineWidth = 8 + prnd() * 8;
+    ctx.beginPath(); ctx.moveTo(x, 330);
+    ctx.bezierCurveTo(x + 30, 330 - h * 0.3, x - 30, 330 - h * 0.6, x + 10, 330 - h); ctx.stroke();
+  }
+  for (let i = 0; i < 8; i++) { // 산호 가지
+    const x = 40 + prnd() * 640;
+    ctx.strokeStyle = '#0a3a40'; ctx.lineWidth = 10;
+    for (const [dx, h] of [[0, 90], [-24, 60], [22, 70]]) { ctx.beginPath(); ctx.moveTo(x, 330); ctx.lineTo(x + dx, 330 - h); ctx.stroke(); }
+  }
+  ctx.lineCap = 'butt';
+}
+
+// 거대한 바다 괴물의 그림자(눈이 뜨기 전에 지나감). 900×260
+function leviathan(ctx) {
+  ctx.fillStyle = 'rgba(2,20,24,0.85)';
+  ctx.beginPath();
+  ctx.moveTo(20, 140);
+  ctx.bezierCurveTo(160, 40, 520, 30, 760, 110);
+  ctx.bezierCurveTo(820, 130, 880, 90, 890, 60);
+  ctx.bezierCurveTo(880, 120, 860, 170, 760, 170);
+  ctx.bezierCurveTo(520, 230, 160, 220, 20, 140);
+  ctx.closePath(); ctx.fill();
+  for (const x of [240, 420, 600]) { // 지느러미
+    ctx.beginPath(); ctx.moveTo(x, 70); ctx.lineTo(x + 40, 0); ctx.lineTo(x + 80, 62); ctx.closePath(); ctx.fill();
+  }
+}
+
 const DEFS = {
   spear: [64, 300, spear], sword: [80, 320, sword], shard: [80, 80, shard], feather: [32, 64, feather], petal: [28, 20, petal],
   treeTrunk: [TREE.w, TREE.h, trunk], treeCanopy: [TREE.w, TREE.h, canopy],
+  cloudBank: [420, 700, cloudBank], halo: [560, 560, halo], nebula: [720, 1280, nebula], accretion: [720, 300, accretion],
+  scales: [600, 520, scales], seabed: [720, 360, seabed], leviathan: [900, 260, leviathan],
 };
 
 export function propTex(scene, name) {

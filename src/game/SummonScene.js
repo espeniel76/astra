@@ -308,6 +308,15 @@ export class SummonScene extends Phaser.Scene {
     setBackdrop('#fff6c8', '#fff6c8');
     this.tweens.add({ targets: seam, alpha: 0, duration: 400 });
     if (!skipped) sfx.play('star7');
+    // 금빛 구름이 양쪽으로 갈라지며 하늘 문이 열린다
+    const cloudL = this.add.image(W / 2 + 40, cy, propTex(this, 'cloudBank')).setOrigin(1, 0.5).setScale(TS * 1.25);
+    const cloudR = this.add.image(W / 2 - 40, cy, propTex(this, 'cloudBank')).setOrigin(1, 0.5).setScale(TS * 1.25).setFlipX(true);
+    cloudR.setOrigin(0, 0.5);
+    const cloudLb = this.add.image(W / 2 + 20, cy + 420, propTex(this, 'cloudBank')).setOrigin(1, 0.5).setScale(TS * 1.0);
+    const cloudRb = this.add.image(W / 2 - 20, cy + 420, propTex(this, 'cloudBank')).setOrigin(0, 0.5).setScale(TS * 1.0).setFlipX(true);
+    layer.add([cloudL, cloudR, cloudLb, cloudRb]);
+    this.tweens.add({ targets: [cloudL, cloudLb], x: 120, duration: skipped ? 1 : 2600, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: [cloudR, cloudRb], x: W - 120, duration: skipped ? 1 : 2600, ease: 'Sine.inOut' });
 
     // 3) 후광 고리 + 빛살 + 깃털
     const rays = this.add.container(W / 2, cy);
@@ -321,11 +330,15 @@ export class SummonScene extends Phaser.Scene {
     layer.add(rays);
     this.tweens.add({ targets: rays, alpha: 1, duration: 1400 });
     this.tweens.add({ targets: rays, angle: 360, duration: 24000, repeat: -1 });
-    for (let i = 0; i < 3; i++) {
-      const ring = this.add.circle(W / 2, cy, 120 + i * 70).setStrokeStyle(6 - i, 0xffffff, 0.75 - i * 0.18).setScale(0.4).setAlpha(0);
-      layer.add(ring);
-      this.tweens.add({ targets: ring, scale: 1, alpha: 1, duration: 1800, delay: i * 400, ease: 'Cubic.out' });
-    }
+    const halo = this.add.image(W / 2, cy + 70, propTex(this, 'halo')).setScale(0.3 * TS).setAlpha(0);
+    layer.addAt(halo, layer.getIndex(rays) + 1);
+    this.tweens.add({ targets: halo, scale: 1.15 * TS, alpha: 1, duration: skipped ? 1 : 2200, ease: 'Cubic.out' });
+    this.tweens.add({ targets: halo, angle: 360, duration: 40000, repeat: -1 });
+    // 수호신을 비추는 빛기둥
+    const beam = this.add.image(W / 2, cy + 230, this.pillarTexture('#ffe9a0')).setOrigin(0.5, 1).setBlendMode('ADD').setAlpha(0);
+    beam.setScale((300 / 128) * TS, TS * 1.4);
+    layer.addAt(beam, layer.getIndex(halo) + 1);
+    this.tweens.add({ targets: beam, alpha: 0.85, duration: 1500 });
     const feathers = this.add.particles(0, 0, propTex(this, 'feather'), {
       x: { min: 0, max: W }, y: -40, lifespan: 6000, speedY: { min: 60, max: 120 }, speedX: { min: -30, max: 30 },
       scale: { min: 0.6 * TS, max: 1.1 * TS }, rotate: { start: -30, end: 60 },
@@ -389,7 +402,12 @@ export class SummonScene extends Phaser.Scene {
     hit.setInteractive();
     this.time.delayedCall(400, () => hit.once('pointerdown', () => { skipped = true; }));
     const pause = async ms => { for (let t = 0; t < ms && !skipped; t += 50) await wait(this, 50); };
-    setBackdrop('#000000', '#000000');
+    setBackdrop('#04030c', '#04030c');
+    // 성운 배경이 천천히 드러난다
+    const neb = this.add.image(0, 0, propTex(this, 'nebula')).setOrigin(0, 0).setScale(TS).setAlpha(0);
+    layer.add(neb);
+    this.tweens.add({ targets: neb, alpha: 1, duration: 2000 });
+    this.tweens.add({ targets: neb, x: -20, y: -10, duration: 14000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     // 1) 별들이 떠오른다
     const starDots = [];
@@ -403,13 +421,17 @@ export class SummonScene extends Phaser.Scene {
     await pause(1800);
 
     // 2) 블랙홀이 열리고 별들을 삼킨다
-    const glow = this.add.circle(cx, cy, 200, VIOLET, 0.25).setScale(0.05);
+    const glow = this.add.circle(cx, cy, 200, VIOLET, 0.08).setScale(0.05);
     const hole = this.add.circle(cx, cy, 70, 0x000000, 1).setScale(0.05).setStrokeStyle(5, 0xd8b0ff, 1);
-    const ring = this.add.ellipse(cx, cy, 380, 90).setStrokeStyle(10, VIOLET, 0.9).setScale(0.05).setAngle(-18);
-    const ring2 = this.add.ellipse(cx, cy, 300, 66).setStrokeStyle(4, 0xffffff, 0.7).setScale(0.05).setAngle(-18);
-    layer.add([glow, ring, ring2, hole]);
+    // 강착 원반(뒤쪽 반은 블랙홀 뒤, 앞쪽 반은 앞에 그려 입체감) + 빛 고리
+    const ring = this.add.image(cx, cy, propTex(this, 'accretion')).setScale(0.05 * TS).setAngle(-14).setBlendMode('ADD');
+    const ring2 = this.add.image(cx, cy, propTex(this, 'accretion')).setScale(0.05 * TS).setAngle(-14).setBlendMode('ADD').setFlipX(true).setAlpha(0.6);
+    hole.setStrokeStyle(6, 0xf0d8ff, 1);
+    const photon = this.add.circle(cx, cy, 82).setStrokeStyle(4, 0xffffff, 0.8).setScale(0.05);
+    layer.add([glow, ring, hole, photon, ring2]);
     sfx.play('star7');
-    this.tweens.add({ targets: [glow, hole, ring, ring2], scale: 1, duration: skipped ? 1 : 2200, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: [glow, hole, photon], scale: 1, duration: skipped ? 1 : 2200, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: [ring, ring2], scale: TS, duration: skipped ? 1 : 2200, ease: 'Sine.inOut' });
     this.tweens.add({ targets: glow, alpha: 0.5, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     for (const { s, a, d } of starDots) {
       const o = { t: 0 };
@@ -426,7 +448,8 @@ export class SummonScene extends Phaser.Scene {
     await pause(3200);
 
     // 3) 고리가 돈다(타원 고리를 납작하게 돌리는 느낌으로 기울기를 천천히 바꿈)
-    this.tweens.add({ targets: [ring, ring2], angle: 18, duration: 3000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: [ring, ring2], angle: 10, duration: 3500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: ring2, alpha: 0.3, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     // 4) 블랙홀 속에서 떠오른다
     const img = this.add.image(cx, cy + 170, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(0.1 * TS).setAlpha(0);
@@ -490,6 +513,29 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: [left, right], alpha: 1, duration: fast(1200) });
     this.tweens.add({ targets: slash, width: 14, duration: fast(600), yoyo: true, onComplete: () => this.tweens.add({ targets: slash, alpha: 0, duration: 800 }) });
     setBackdrop('#0a0a0c', '#e8e8ec');
+    // 대리석 결(검은 쪽엔 회색 결, 흰 쪽엔 옅은 회색 결)
+    const veins = this.add.graphics().setAlpha(0);
+    for (let i = 0; i < 14; i++) {
+      const onLeft = i % 2 === 0;
+      veins.lineStyle(1.5 + Math.random() * 2, onLeft ? 0x3a3f45 : 0xb8bec6, 0.8);
+      let x = onLeft ? Math.random() * (W / 2 - 20) : W / 2 + 20 + Math.random() * (W / 2 - 40), y = Math.random() * 200;
+      veins.beginPath(); veins.moveTo(x, y);
+      for (let k = 0; k < 8; k++) { x += (Math.random() - 0.5) * 70; y += 90 + Math.random() * 60; x = onLeft ? Math.min(W / 2 - 6, Math.max(4, x)) : Math.max(W / 2 + 6, Math.min(W - 4, x)); veins.lineTo(x, y); }
+      veins.strokePath();
+    }
+    layer.addAt(veins, layer.getIndex(right) + 1);
+    this.tweens.add({ targets: veins, alpha: 1, duration: fast(1500) });
+    // 뒤에 거대한 정의의 저울이 떠오르고 천천히 흔들린다
+    const scaleImg = this.add.image(cx, cy - 40, propTex(this, 'scales')).setScale(TS * 1.1).setAlpha(0);
+    layer.addAt(scaleImg, layer.getIndex(veins) + 1);
+    this.tweens.add({ targets: scaleImg, alpha: 0.55, y: cy - 70, duration: fast(1800), ease: 'Sine.out' });
+    this.tweens.add({ targets: scaleImg, angle: 4, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    // 재처럼 흩날리는 흰·회색 가루
+    const ash = this.add.particles(0, 0, 'dot', {
+      x: { min: 0, max: W }, y: -20, lifespan: 7000, speedY: { min: 30, max: 70 }, speedX: { min: -15, max: 15 },
+      scale: { min: 0.2, max: 0.5 }, alpha: { start: 0.7, end: 0 }, tint: [0xffffff, 0x8a8f99, 0x3a3f45], frequency: 90,
+    });
+    layer.add(ash);
     await pause(1300);
 
     // 3) 심판의 고리(그려지며 돈다)
@@ -608,6 +654,23 @@ export class SummonScene extends Phaser.Scene {
     sfx.play('summon');
     await tween(this, { targets: lvl, y: -40, duration: fast(2600), ease: 'Sine.inOut' });
     setBackdrop('#1a8a90', '#031418');
+    // 물속: 위에서 비치는 빛줄기(천천히 흔들림) + 바닥의 해초·산호 실루엣
+    for (let i = 0; i < 6; i++) {
+      const sh = this.add.graphics().setBlendMode('ADD').setAlpha(0);
+      const x = 40 + i * 130;
+      sh.fillGradientStyle(0xbff8f4, 0xbff8f4, 0xbff8f4, 0xbff8f4, 0.22, 0.22, 0, 0).fillRect(-30, 0, 60, 900);
+      sh.setPosition(x, -20).setAngle(14);
+      layer.addAt(sh, layer.getIndex(water) + 1);
+      this.tweens.add({ targets: sh, alpha: 1, duration: 1500, delay: i * 150 });
+      this.tweens.add({ targets: sh, angle: 6, x: x + 30, duration: 4000 + i * 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
+    const bed = this.add.image(0, H, propTex(this, 'seabed')).setOrigin(0, 1).setScale(TS).setAlpha(0);
+    layer.add(bed);
+    this.tweens.add({ targets: bed, alpha: 1, duration: 1200 });
+    // 거대한 그림자가 지나간다
+    const lev = this.add.image(W + 500, cy - 60, propTex(this, 'leviathan')).setScale(TS * 1.2);
+    layer.add(lev);
+    await tween(this, { targets: lev, x: -500, duration: fast(3200), ease: 'Sine.inOut' });
 
     // 2) 거대한 눈이 떠진다(흰 눈, 동공 없음 — 게임 그림체 그대로)
     const eyeLid = { open: 0 };
@@ -625,6 +688,9 @@ export class SummonScene extends Phaser.Scene {
       eye.fillStyle(0x7ff0e8, 0.14).fillEllipse(cx, cy, 520, 280);
       eye.fillStyle(0x0e4a50, 1).fillPoints(almond(196, Math.max(14, h + 18)), true); // 눈꺼풀
       eye.lineStyle(4, 0x3fd8d0, 0.9).strokePoints(almond(196, Math.max(14, h + 18)), true);
+      // 눈꺼풀 둘레 비늘
+      const rim = almond(214, Math.max(22, h + 34));
+      for (let i = 0; i < rim.length; i++) { eye.fillStyle(i % 2 ? 0x0e4a50 : 0x1a6a70, 1).fillCircle(rim[i].x, rim[i].y, 15); eye.lineStyle(2, 0x06343a, 1).strokeCircle(rim[i].x, rim[i].y, 15); }
       if (h > 2) {
         eye.fillStyle(0xf4fffe, 1).fillPoints(almond(160, h), true); // 흰 눈(동공 없음)
         eye.fillStyle(0xbff8f4, 0.8).fillEllipse(cx - 40, cy - h * 0.35, 70, Math.max(2, h * 0.28));
@@ -639,9 +705,9 @@ export class SummonScene extends Phaser.Scene {
 
     // 3) 소용돌이
     const swirl = this.add.container(cx, cy + 160).setScale(1, 0.45);
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 12; i++) {
       const g = this.add.graphics();
-      g.lineStyle(8 - i, i % 2 ? 0x7ff0e8 : 0x3fd8d0, 0.8).beginPath().arc(0, 0, 70 + i * 45, i, i + Math.PI * 1.3).strokePath();
+      g.lineStyle(10 - i * 0.6, i % 3 === 0 ? 0xffffff : i % 2 ? 0x7ff0e8 : 0x3fd8d0, 0.85 - i * 0.04).beginPath().arc(0, 0, 50 + i * 26, i * 0.7, i * 0.7 + Math.PI * 1.1).strokePath();
       swirl.add(g);
     }
     swirl.setAlpha(0);
