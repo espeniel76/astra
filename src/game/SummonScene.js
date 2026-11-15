@@ -33,6 +33,15 @@ export class SummonScene extends Phaser.Scene {
       g.generateTexture('dot', 16, 16);
       g.destroy();
     }
+    if (!this.textures.exists('soft')) { // 가장자리가 부드럽게 사라지는 둥근 빛(구름·연기용)
+      const c = document.createElement('canvas');
+      c.width = c.height = 128;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.5, 'rgba(255,255,255,0.6)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+      this.textures.addCanvas('soft', c);
+    }
     this.drawSky();
     this.run();
   }
@@ -214,9 +223,9 @@ export class SummonScene extends Phaser.Scene {
   async mythicReveal(slot, r) {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
-    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a, astra: 'rainbow' }[r.id] ?? 0xffe066) : 0xff3a3a;
+    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a, dragonemperor: 0x4adf8a, phoenixqueen: 0xffa040, chronos: 0x7fe8e0, astra: 'rainbow' }[r.id] ?? 0xffe066) : 0xff3a3a;
     // 번개 바깥 빛: 심판자 회색, 심해의 군주 깊은 청록, 세계수의 여왕 금색
-    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a, astra: 0xffffff }[r.id] ?? col;
+    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a, dragonemperor: 0xffd84a, phoenixqueen: 0xff5a1a, chronos: 0xc9a24a, astra: 0xffffff }[r.id] ?? col;
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
     this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
@@ -242,6 +251,9 @@ export class SummonScene extends Phaser.Scene {
       else if (r.id === 'judge') await this.finalJudgment(r);
       else if (r.id === 'abysslord') await this.abyssRise(r);
       else if (r.id === 'worldtree') await this.worldTreeBloom(r);
+      else if (r.id === 'dragonemperor') await this.dragonAscend(r);
+      else if (r.id === 'phoenixqueen') await this.phoenixRebirth(r);
+      else if (r.id === 'chronos') await this.timeStop(r);
       else if (r.id === 'astra') await this.originBirth(r);
       else await this.eternalDescent(r);
     }
@@ -933,6 +945,238 @@ export class SummonScene extends Phaser.Scene {
     sparkle.stop();
     await tween(this, { targets: layer, alpha: 0, duration: 1200 });
     layer.destroy();
+  }
+
+  // 용의 황제 전용(약 12초): 1) 폭풍 치는 밤하늘, 구름 사이로 거대한 용의 그림자가 지나간다
+  // 2) 가운데에서 접힌 비취빛 날개 두 장이 천천히 활짝 펼쳐진다 3) 날개 사이로 황제가 솟아오르고(쿵)
+  // 4) 포효: 비취빛 고리가 천천히 퍼지고 금빛 비늘이 흩날린다 5) ETERNAL + 이름. 번쩍임 없음.
+  async dragonAscend(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x030a06);
+    const cx = W / 2, cy = H / 2 - 40;
+    setBackdrop('#030a06', '#030a06');
+    // 하늘: 아래가 살짝 밝은 짙은 초록 + 흘러가는 먹구름
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x0a1e14, 0x0a1e14, 0x2e6046, 0x2e6046, 1).fillRect(0, 0, W, H);
+    sky.setAlpha(0);
+    layer.add(sky);
+    this.tweens.add({ targets: sky, alpha: 1, duration: 1200 });
+    const clouds = [];
+    for (let i = 0; i < 9; i++) {
+      const c = this.add.image(Phaser.Math.Between(-100, W + 100), 100 + i * 125, 'soft').setTint(i % 2 ? 0x4a7a5e : 0x3a6a50)
+        .setScale(Phaser.Math.FloatBetween(5, 7.5), Phaser.Math.FloatBetween(1.6, 2.4)).setAlpha(0.45);
+      layer.add(c); clouds.push(c);
+      this.tweens.add({ targets: c, x: c.x + (i % 2 ? 160 : -160), duration: 9000 + i * 600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
+    const embers = this.add.particles(0, 0, 'dot', {
+      x: { min: 0, max: W }, y: H + 10, lifespan: 5000, speedY: { min: -120, max: -50 }, speedX: { min: -20, max: 20 },
+      scale: { min: 0.2, max: 0.5 }, alpha: { start: 0.8, end: 0 }, tint: [0xffd84a, 0x7ff0b0], frequency: 90, blendMode: 'ADD',
+    });
+    layer.add(embers);
+    sfx.play('summon');
+    await pause(900);
+
+    // 1) 용의 그림자가 구름 사이로 지나간다(구름보다 뒤 → 앞 구름 한 겹)
+    const sil = this.add.image(W + 620, cy - 160, propTex(this, 'dragonSil')).setScale(TS * 1.4);
+    layer.addAt(sil, layer.getIndex(clouds[6]));
+    this.tweens.add({ targets: sil, y: cy - 60, duration: 1700, yoyo: true, ease: 'Sine.inOut' });
+    await tween(this, { targets: sil, x: -620, duration: fast(3400), ease: 'Sine.inOut' });
+    sil.destroy();
+
+    // 2) 날개가 펼쳐진다(뿌리는 가운데, 가로로 접혀 있다가 펴짐)
+    const glow = this.add.circle(cx, cy + 40, 160, 0x4adf8a, 0.25).setScale(0.2);
+    layer.add(glow);
+    this.tweens.add({ targets: glow, scale: 2.2, alpha: 0.18, duration: fast(1800), ease: 'Sine.out' });
+    const wings = [-1, 1].map(sx => {
+      const wing = this.add.image(cx + sx * 30, cy - 10, propTex(this, 'dragonWing'))
+        .setOrigin(30 / 520, 400 / 520).setScale(TS * 0.1 * sx, TS * 0.3).setAngle(sx * 30).setAlpha(0);
+      layer.add(wing);
+      return wing;
+    });
+    sfx.play('star7');
+    this.tweens.add({ targets: wings, alpha: 1, duration: 600 });
+    await Promise.all(wings.map((wing, i) => tween(this, {
+      targets: wing, scaleX: TS * 0.68 * (i ? 1 : -1), scaleY: TS * 0.68, angle: 0, duration: fast(1800), ease: 'Back.out',
+    })));
+    wings.forEach((wing, i) => this.tweens.add({ targets: wing, angle: i ? -6 : 6, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' }));
+
+    // 3) 황제가 날개 사이로 솟아오른다
+    const img = this.add.image(cx, cy + 420, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(2.2 * TS).setAlpha(0);
+    layer.add(img);
+    await tween(this, { targets: img, alpha: 1, y: cy + 230, scale: 2.7 * TS, duration: fast(1700), ease: 'Cubic.out' });
+    this.cameras.main.shake(700, this.flash ? 0.016 : 0.008);
+
+    // 4) 포효: 고리 세 겹이 천천히 퍼지고 금빛 비늘이 흩날린다
+    for (let i = 0; i < 3; i++) {
+      const ring = this.add.circle(cx, cy + 40, 80).setStrokeStyle(10 - i * 2, i === 1 ? 0xffd84a : 0x4adf8a, 0.8).setScale(0.3);
+      layer.add(ring);
+      this.tweens.add({ targets: ring, scale: 6, alpha: 0, duration: fast(2200), delay: state.skipped ? 0 : i * 350, ease: 'Sine.out', onComplete: () => ring.destroy() });
+    }
+    const scales = this.add.particles(0, 0, 'dot', {
+      x: { min: 0, max: W }, y: -10, lifespan: 4200, speedY: { min: 80, max: 170 }, speedX: { min: -30, max: 30 },
+      scale: { min: 0.25, max: 0.55 }, rotate: { min: 0, max: 360 }, alpha: { start: 0.95, end: 0.2 },
+      tint: [0xffd84a, 0xfff3c0, 0x4adf8a], frequency: 40,
+    });
+    layer.add(scales);
+    this.tweens.add({ targets: img, y: cy + 216, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    await this.eternalTitle(layer, hero, '#f0fff4', '#06261a', '#ffd84a', pause, () => state.skipped);
+    setBackdrop('#000000', '#000000');
+  }
+
+  // 불사조 여제 전용(약 12초): 1) 어둠 속 잿더미, 불씨 하나가 숨 쉬듯 빛난다 2) 불씨가 불덩이로 커지며 불꽃 고리가 돈다
+  // 3) 불덩이를 깨고 거대한 불사조가 날개를 펴며 솟아오르고 불꽃 깃털이 흩날린다 4) 불사조가 여제의 모습으로 내려앉는다
+  // 5) ETERNAL + 이름. 번쩍임 없음.
+  async phoenixRebirth(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x050202);
+    const cx = W / 2, cy = H / 2 - 40;
+    setBackdrop('#050202', '#050202');
+    // 잿더미(아래쪽 회색 언덕)와 꺼질 듯한 불씨들
+    const ash = this.add.graphics();
+    ash.fillStyle(0x1a1412, 1).fillEllipse(cx, H + 40, W * 1.6, 420);
+    ash.fillStyle(0x2a201c, 1).fillEllipse(cx, H + 70, W * 1.2, 330);
+    layer.add(ash);
+    const sparks = this.add.particles(0, 0, 'dot', {
+      x: { min: 60, max: W - 60 }, y: { min: H - 140, max: H - 40 }, lifespan: 3000, speedY: { min: -60, max: -20 }, speedX: { min: -10, max: 10 },
+      scale: { min: 0.15, max: 0.35 }, alpha: { start: 0.9, end: 0 }, tint: [0xff8a2a, 0xffd84a], frequency: 110, blendMode: 'ADD',
+    });
+    layer.add(sparks);
+    sfx.play('summon');
+
+    // 1) 불씨
+    const ember = this.add.image(cx, cy + 260, 'soft').setTint(0xfff3c0).setScale(0).setBlendMode('ADD');
+    const emberGlow = this.add.image(cx, cy + 260, 'soft').setTint(0xff6a1a).setAlpha(0.8).setScale(0).setBlendMode('ADD');
+    layer.add([emberGlow, ember]);
+    this.tweens.add({ targets: ember, scale: 0.35, duration: fast(1200), ease: 'Sine.out' });
+    await tween(this, { targets: emberGlow, scale: 1, duration: fast(1200), ease: 'Sine.out' });
+    for (let i = 0; i < 2 && !state.skipped; i++) await tween(this, { targets: emberGlow, scale: 1.8, duration: 1100, yoyo: true, ease: 'Sine.inOut' });
+
+    // 2) 불덩이로 커지며 위로 떠오르고, 불꽃 고리가 돈다
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x050202, 0x050202, 0x5a1a06, 0x5a1a06, 1).fillRect(0, 0, W, H);
+    sky.setAlpha(0);
+    layer.addAt(sky, 1);
+    this.tweens.add({ targets: sky, alpha: 1, duration: fast(2400) });
+    this.tweens.add({ targets: [ember, emberGlow], y: cy + 40, duration: fast(2000), ease: 'Sine.inOut' });
+    this.tweens.add({ targets: ember, scale: 2.6, duration: fast(2000), ease: 'Sine.inOut' });
+    this.tweens.add({ targets: emberGlow, scale: 5.5, alpha: 0.6, duration: fast(2000), ease: 'Sine.inOut' });
+    const ring = this.add.container(cx, cy + 40);
+    for (let i = 0; i < 26; i++) {
+      const a = (i / 26) * Math.PI * 2;
+      ring.add(this.add.image(Math.cos(a) * 210, Math.sin(a) * 210, propTex(this, 'flameFeather')).setScale(TS * 1.1).setAngle((a * 180) / Math.PI + 90));
+    }
+    ring.setAlpha(0);
+    layer.add(ring);
+    this.tweens.add({ targets: ring, alpha: 1, duration: fast(1200) });
+    this.tweens.add({ targets: ring, angle: 360, duration: 6000, repeat: -1 });
+    await pause(2200);
+
+    // 3) 불사조가 날개를 펴며 솟아오른다
+    sfx.play('star7');
+    const bird = this.add.image(cx, cy + 60, propTex(this, 'phoenixBird')).setScale(TS * 0.3).setAlpha(0);
+    layer.add(bird);
+    this.tweens.add({ targets: [ember, emberGlow], alpha: 0, duration: 800 });
+    this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: fast(1400) });
+    await tween(this, { targets: bird, alpha: 1, scale: TS * 0.9, y: cy - 60, duration: fast(1800), ease: 'Back.out' });
+    this.cameras.main.shake(600, this.flash ? 0.014 : 0.007);
+    this.tweens.add({ targets: bird, scaleX: TS * 0.95, y: cy - 80, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' }); // 날갯짓
+    const rain = this.add.particles(0, 0, propTex(this, 'flameFeather'), {
+      x: { min: 0, max: W }, y: -40, lifespan: 4500, speedY: { min: 90, max: 180 }, speedX: { min: -40, max: 40 },
+      scale: { min: TS * 0.5, max: TS * 0.9 }, rotate: { min: -40, max: 40 }, alpha: { start: 1, end: 0.2 }, frequency: 120,
+    });
+    layer.add(rain);
+    await pause(2000);
+
+    // 4) 불사조가 빛으로 접혀 여제가 된다
+    const img = this.add.image(cx, cy + 200, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.2 * TS).setAlpha(0);
+    layer.add(img);
+    this.tweens.add({ targets: bird, scale: TS * 0.4, alpha: 0, y: cy + 60, duration: fast(1300), ease: 'Sine.in' });
+    await tween(this, { targets: img, alpha: 1, scale: 2.7 * TS, duration: fast(1500), ease: 'Back.out' });
+    const halo = this.add.circle(cx, cy + 40, 200, 0xffa040, 0.18);
+    layer.addAt(halo, layer.getIndex(img));
+    this.tweens.add({ targets: halo, scale: 1.15, alpha: 0.1, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: img, y: cy + 186, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    await this.eternalTitle(layer, hero, '#fff6e0', '#8a2a06', '#ffd84a', pause, () => state.skipped);
+    setBackdrop('#000000', '#000000');
+  }
+
+  // 시간의 지배자 전용(약 12초): 1) 거대한 시계판이 떠오르고 톱니바퀴들이 돈다, 모래알이 쏟아진다
+  // 2) 바늘이 점점 빨라지다가 — 3) 딱 멈춘다: 떨어지던 모래알도 공중에 멈추고 화면이 청록빛으로 가라앉는다
+  // 4) 바늘이 거꾸로 돌며 시계판이 열리고 지배자가 나타난다 5) 다시 시간이 흐르고 ETERNAL + 이름. 번쩍임 없음.
+  async timeStop(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x02080c);
+    const cx = W / 2, cy = H / 2 - 60;
+    setBackdrop('#02080c', '#02080c');
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x02080c, 0x02080c, 0x0a2a34, 0x0a2a34, 1).fillRect(0, 0, W, H);
+    layer.add(sky);
+    // 톱니바퀴(서로 반대로 돈다)
+    const gears = [[90, 180, 1.2, 1], [640, 260, 0.8, -1], [80, 1050, 1, -1], [660, 1120, 1.4, 1], [600, 640, 0.6, 1]].map(([x, y, sc, dir]) => {
+      const g = this.add.image(x, y, propTex(this, 'gear')).setScale(TS * sc).setAlpha(0);
+      layer.add(g);
+      this.tweens.add({ targets: g, alpha: 0.75, duration: 1200 });
+      g.spin = this.tweens.add({ targets: g, angle: dir * 360, duration: 9000 / sc, repeat: -1 });
+      return g;
+    });
+    // 쏟아지는 모래알
+    const sand = this.add.particles(0, 0, 'dot', {
+      x: { min: 0, max: W }, y: -10, lifespan: 6000, speedY: { min: 140, max: 260 }, speedX: { min: -8, max: 8 },
+      scale: { min: 0.15, max: 0.35 }, alpha: 0.85, tint: [0xffd84a, 0xfff3c0, 0x7fe8e0], frequency: 25,
+    });
+    layer.add(sand);
+    // 1) 시계판
+    const face = this.add.image(cx, cy, propTex(this, 'clockFace')).setScale(TS * 0.3).setAlpha(0);
+    layer.add(face);
+    const hands = this.add.graphics();
+    layer.add(hands);
+    const t = { h: 0, m: 0 };
+    const drawHands = () => {
+      hands.clear();
+      for (const [a, len, w, c] of [[t.h, 130, 14, 0xffd84a], [t.m, 200, 8, 0xe8fffd]]) {
+        const x = cx + Math.cos(a - Math.PI / 2) * len * face.scaleX / TS, y = cy + Math.sin(a - Math.PI / 2) * len * face.scaleX / TS;
+        hands.lineStyle(w + 6, 0x06202a, 1).lineBetween(cx, cy, x, y);
+        hands.lineStyle(w, c, 1).lineBetween(cx, cy, x, y);
+      }
+      hands.fillStyle(0xffd84a, 1).fillCircle(cx, cy, 14 * face.scaleX / TS);
+    };
+    sfx.play('summon');
+    await tween(this, { targets: face, alpha: 1, scale: TS * 1.0, duration: fast(1600), ease: 'Back.out', onUpdate: drawHands });
+    // 2) 바늘이 점점 빨라진다(초침 소리처럼 째깍째깍 → 휘리릭)
+    await tween(this, { targets: t, m: Math.PI * 2 * 6, h: Math.PI * 2 / 2, duration: fast(2600), ease: 'Cubic.in', onUpdate: drawHands });
+
+    // 3) 정지: 모래알·톱니가 그 자리에 멈추고, 화면이 청록빛으로 천천히 가라앉는다
+    sfx.play('star7');
+    sand.pause();
+    gears.forEach(g => g.spin.pause());
+    t.m = 0; t.h = 0; drawHands();
+    const still = this.add.rectangle(W / 2, H / 2, W, H, 0x3fb8b0, 1).setAlpha(0).setBlendMode('MULTIPLY');
+    layer.add(still);
+    this.tweens.add({ targets: still, alpha: 0.6, duration: 900, ease: 'Sine.out' });
+    const ripple = this.add.circle(cx, cy, 120).setStrokeStyle(6, 0xe8fffd, 0.8).setScale(0.4);
+    layer.add(ripple);
+    this.tweens.add({ targets: ripple, scale: 6, alpha: 0, duration: fast(1800), ease: 'Sine.out' });
+    this.cameras.main.shake(400, this.flash ? 0.01 : 0.005);
+    await pause(1600);
+
+    // 4) 바늘이 거꾸로 돌며 시계판이 커지고 흐려진다 → 그 가운데 지배자
+    this.tweens.add({ targets: still, alpha: 0, duration: 1200 });
+    const img = this.add.image(cx, cy + 260, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.2 * TS).setAlpha(0);
+    layer.add(img);
+    this.tweens.add({ targets: t, m: -Math.PI * 2 * 3, h: -Math.PI / 2, duration: fast(1800), ease: 'Sine.inOut', onUpdate: drawHands });
+    this.tweens.add({ targets: [face], scale: TS * 1.5, alpha: 0.35, duration: fast(1800), ease: 'Sine.inOut', onUpdate: drawHands });
+    this.tweens.add({ targets: hands, alpha: 0.35, duration: fast(1800) });
+    await tween(this, { targets: img, alpha: 1, scale: 2.7 * TS, duration: fast(1600), ease: 'Back.out' });
+
+    // 5) 다시 시간이 흐른다
+    sand.resume();
+    gears.forEach(g => g.spin.resume());
+    this.tweens.add({ targets: face, angle: 360, duration: 30000, repeat: -1 });
+    this.tweens.add({ targets: img, y: cy + 246, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    await this.eternalTitle(layer, hero, '#e8fffd', '#06202a', '#ffd84a', pause, () => state.skipped);
+    setBackdrop('#000000', '#000000');
   }
 
   // 각성: 뒤집힌 카드 위로 작은 별 일곱 개가 모여 큰 별 하나가 된다 + '각성!'

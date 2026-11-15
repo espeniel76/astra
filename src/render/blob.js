@@ -358,6 +358,34 @@ function fantasyWeapon(ctx, gun, box) {
       ctx.beginPath(); ctx.arc(26, 0, 7, 0, Math.PI * 2); fillStroke(ctx, '#d8e0ff');
       ctx.fillStyle = '#e8e8f8'; ctx.beginPath(); ctx.arc(29, -1, 6, 0, Math.PI * 2); ctx.fill();
       break;
+    case 'dragonlance': // 용의 황제: 금 자루 + 비취빛 창날 + 날개 받침
+      stick(ctx, -8, 24, '#c9a24a', 3.2);
+      for (const sy of [-1, 1]) poly(ctx, [[22, 0], [16, sy * 9], [26, sy * 3]], '#2a7a4a', 1.2);
+      blade(ctx, 24, 15, 7, '#7ff0b0');
+      circle(ctx, 23, 0, 2.4, '#ffd84a', 1);
+      break;
+    case 'phoenixstaff': { // 불사조 여제: 금 지팡이 끝 불꽃 구슬과 작은 불꽃 날개
+      stick(ctx, -6, 21, '#c8961a', 3.4);
+      const g = ctx.createRadialGradient(28, 0, 1, 28, 0, 12);
+      g.addColorStop(0, 'rgba(255,220,120,0.9)'); g.addColorStop(1, 'rgba(255,140,40,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(28, 0, 12, 0, Math.PI * 2); ctx.fill();
+      for (const sy of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(23, sy * 2); ctx.quadraticCurveTo(22, sy * 12, 30, sy * 13); ctx.quadraticCurveTo(26, sy * 7, 28, sy * 3); ctx.closePath();
+        fillStroke(ctx, '#ffa040', 1.1, '#a8400a');
+      }
+      circle(ctx, 28, 0, 5.2, '#ff7a1a', 1.3);
+      circle(ctx, 27, -1, 2.4, '#fff3c0', 0.4);
+      break;
+    }
+    case 'clockstaff': // 시간의 지배자: 은 지팡이 끝 시계(바늘 두 개)
+      stick(ctx, -6, 21, '#c9d3de', 3.2);
+      circle(ctx, 28, 0, 8, '#c9a24a', 1.4);
+      circle(ctx, 28, 0, 6.2, '#f4fffe', 1);
+      ctx.strokeStyle = '#1a2a3a'; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(28, 0); ctx.lineTo(28, -4.6); ctx.moveTo(28, 0); ctx.lineTo(31.4, 1.6); ctx.stroke();
+      ctx.lineCap = 'butt';
+      for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2; circle(ctx, 28 + Math.cos(a) * 5, Math.sin(a) * 5, 0.7, '#3a6a7a', 0.3); }
+      break;
     case 'starstaff':
       stick(ctx, -6, 22, '#3a2a5a', 3.4);
       star(ctx, 27, 0, 8, '#ffe066');
@@ -640,6 +668,9 @@ const OUTFIT = {
   worldtree: { coat: '#2a5a2a', inner: '#ffd84a', v: 9, trim: '#ffe9a0', collar: '#2a5a2a', belt: ['#5a3a1e', '#ffd84a'], cape: ['#3a7a32', '#c9a24a'] },
   judge: { coat: '#141418', inner: '#f4f4f4', v: 10, ridge: true, trim: '#f4f4f4', collar: '#141418', pauldron: ['#2a2a30', '#ffffff'], belt: ['#08080a', '#d7dde2'], cape: ['#f2f2f2', '#141418'] },
   stareater: { coat: '#140c2a', inner: '#b06aff', v: 10, trim: '#e0c8ff', stars: '#e0c8ff', collar: '#140c2a', cape: ['#0a0618', '#4a1a8a'] },
+  dragonemperor: { coat: '#1a5a3a', inner: '#ffd84a', v: 10, ridge: true, trim: '#ffd84a', scales: '#2a7a4a', collar: '#1a5a3a', pauldron: ['#2a7a4a', '#ffd84a'], cape: ['#0e3a24', '#c9a24a'] },
+  phoenixqueen: { coat: '#fff0d8', inner: '#ff7a1a', v: 9, trim: '#ffd84a', collar: '#fff0d8', belt: ['#c8961a', '#ffd84a'], cape: ['#ff9a3a', '#ffd84a'] },
+  chronos: { coat: '#1a2a3a', inner: '#7fe8e0', v: 10, ridge: true, trim: '#c9d3de', gears: '#c9a24a', collar: '#1a2a3a', pauldron: ['#3a4a5a', '#c9d3de'], cape: ['#0e1a26', '#3a6a7a'] },
   guardian: { coat: '#e8c040', inner: '#ffffff', v: 9, ridge: true, trim: '#fff6c8', pauldron: ['#ffe680', '#fff6c8'], cape: ['#fff3c0', '#e8b923'] },
 };
 export const OUTFIT_IDS = Object.keys(OUTFIT);
@@ -1405,6 +1436,112 @@ function heroDeco(ctx, id, phase) {
         fillStroke(ctx, '#ffffff', 1.6, '#3a3f45');
         ctx.strokeStyle = 'rgba(60,63,69,0.45)'; ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.moveTo(0, top); ctx.quadraticCurveTo(-6, top - 12, 2, top - 22); ctx.stroke();
+      }
+      break;
+    case 'dragonemperor': // 용의 황제: 등 뒤 커다란 비취빛 용 날개(금빛 뼈대) + 용 뿔 달린 금관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 6, 4, 0, BY - 6, R + 26);
+        g.addColorStop(0, 'rgba(74,223,138,0.35)'); g.addColorStop(1, 'rgba(74,223,138,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 6, R + 26, 0, Math.PI * 2); ctx.fill();
+        for (const sx of [-1, 1]) {
+          ctx.save(); ctx.scale(sx * 0.92, 1);
+          ctx.beginPath();
+          ctx.moveTo(8, BY - 8);
+          ctx.quadraticCurveTo(26, BY - 42, 46, BY - 44);
+          ctx.lineTo(44, BY - 28);
+          ctx.quadraticCurveTo(38, BY - 22, 42, BY - 10);
+          ctx.quadraticCurveTo(33, BY - 10, 34, BY + 2);
+          ctx.quadraticCurveTo(25, BY, 22, BY + 12);
+          ctx.quadraticCurveTo(15, BY + 4, 8, BY + 4);
+          ctx.closePath();
+          const wg = ctx.createLinearGradient(8, BY - 40, 44, BY + 10);
+          wg.addColorStop(0, '#3aa86a'); wg.addColorStop(1, '#0e3a24');
+          fillStroke(ctx, wg, 1.6, '#08281a');
+          ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(9, BY - 8); ctx.quadraticCurveTo(26, BY - 42, 46, BY - 44);
+          for (const [x, y] of [[44, BY - 28], [42, BY - 10], [34, BY + 2], [22, BY + 12]]) { ctx.moveTo(28, BY - 34); ctx.lineTo(x, y); }
+          ctx.stroke(); ctx.lineCap = 'butt';
+          ctx.restore();
+        }
+      }
+      if (phase === 'front') {
+        for (const sx of [-1, 1]) { // 뒤로 휜 용 뿔
+          ctx.beginPath(); ctx.moveTo(sx * 7, top + 3); ctx.quadraticCurveTo(sx * 15, top - 4, sx * 22, top - 18);
+          ctx.quadraticCurveTo(sx * 18, top - 3, sx * 13, top + 5); ctx.closePath();
+          fillStroke(ctx, '#fff3c0', 1.4, '#8a6410');
+        }
+        for (const [x, h] of [[-8, 7], [0, 11], [8, 7]]) poly(ctx, [[x - 4, top + 2], [x, top + 2 - h], [x + 4, top + 2]], '#ffd84a', 1.2);
+        rr(ctx, -14, top + 1, 28, 6, 3); fillStroke(ctx, '#ffd84a', 1.4, '#8a6410');
+        circle(ctx, 0, top + 4, 2.8, '#4adf8a', 1);
+        glint(ctx, -0.8, top + 3, 0.9);
+      }
+      break;
+    case 'phoenixqueen': // 불사조 여제: 등 뒤 불꽃 깃털 날개 + 불꽃 깃 장식 금관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 8, 4, 0, BY - 8, R + 28);
+        g.addColorStop(0, 'rgba(255,200,90,0.45)'); g.addColorStop(1, 'rgba(255,120,30,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 8, R + 28, 0, Math.PI * 2); ctx.fill();
+        for (const sx of [-1, 1]) {
+          ctx.save(); ctx.translate(0, BY - 8); ctx.scale(sx, 1);
+          for (const [len, w, col, out] of [[40, 5, '#ff6a1a', '#a8400a'], [30, 4.4, '#ffa040', '#c8601a'], [19, 3.6, '#ffd84a', '#c8961a']]) {
+            for (let k = 0; k < 7; k++) {
+              const a = -0.85 + k * 0.23, L = len - k * 2.6;
+              ctx.save(); ctx.translate(11, 0); ctx.rotate(a);
+              ctx.beginPath(); ctx.ellipse(L / 2 + 2, 0, L / 2, w, 0, 0, Math.PI * 2);
+              fillStroke(ctx, col, 1, out);
+              ctx.restore();
+            }
+          }
+          ctx.restore();
+        }
+      }
+      if (phase === 'front') {
+        const flame = (x, y, h, w, c) => {
+          ctx.beginPath(); ctx.moveTo(x - w * 0.6, y); ctx.quadraticCurveTo(x - w, y - h * 0.5, x, y - h);
+          ctx.quadraticCurveTo(x + w, y - h * 0.5, x + w * 0.6, y); ctx.closePath(); fillStroke(ctx, c, 1.2, '#a8400a');
+        };
+        flame(-8, top + 2, 13, 5, '#ffa040'); flame(8, top + 2, 13, 5, '#ffa040');
+        flame(0, top + 2, 22, 6.5, '#ff6a1a'); flame(0, top + 1, 13, 3.6, '#ffd84a');
+        rr(ctx, -14, top + 1, 28, 5, 2.5); fillStroke(ctx, '#ffd84a', 1.4, '#8a6410');
+        circle(ctx, 0, top + 3.5, 2.4, '#ff7a1a', 1);
+      }
+      break;
+    case 'chronos': // 시간의 지배자: 몸을 두른 커다란 시간의 고리(눈금 열두 개) + 떠 있는 톱니 + 모래시계 왕관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 4, 6, 0, BY - 4, R + 24);
+        g.addColorStop(0, 'rgba(127,232,224,0)'); g.addColorStop(0.7, 'rgba(127,232,224,0.3)'); g.addColorStop(1, 'rgba(127,232,224,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 4, R + 24, 0, Math.PI * 2); ctx.fill();
+        for (const [r, w, c] of [[R + 18, 3, 'rgba(201,211,222,0.95)'], [R + 13, 1.4, 'rgba(127,232,224,0.9)']]) {
+          ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(0, BY - 4, r, 0, Math.PI * 2); ctx.stroke();
+        }
+        for (let k = 0; k < 12; k++) {
+          const a = (k / 12) * Math.PI * 2, r0 = R + 14, r1 = k % 3 ? R + 17 : R + 21;
+          ctx.strokeStyle = k % 3 ? '#c9d3de' : '#ffd84a'; ctx.lineWidth = k % 3 ? 1.4 : 2.4;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, BY - 4 + Math.sin(a) * r0); ctx.lineTo(Math.cos(a) * r1, BY - 4 + Math.sin(a) * r1); ctx.stroke();
+        }
+        ctx.lineCap = 'round';
+        for (const [a, len, w] of [[-2.2, R + 10, 2.6], [-0.6, R + 2, 3.2]]) { // 고리 위의 큰 바늘 두 개
+          ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = w;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a) * (R - 2), BY - 4 + Math.sin(a) * (R - 2)); ctx.lineTo(Math.cos(a) * len, BY - 4 + Math.sin(a) * len); ctx.stroke();
+        }
+        ctx.lineCap = 'butt';
+        for (const [x, y, r] of [[-38, BY + 10, 5], [37, BY - 30, 4]]) { // 떠 있는 톱니
+          ctx.save(); ctx.translate(x, y);
+          for (let k = 0; k < 8; k++) { ctx.save(); ctx.rotate((k / 8) * Math.PI * 2); ctx.fillStyle = '#c9a24a'; ctx.fillRect(-1.2, -r - 2, 2.4, 3); ctx.restore(); }
+          circle(ctx, 0, 0, r, '#c9a24a', 1); circle(ctx, 0, 0, r * 0.4, '#1a2a3a', 0.4);
+          ctx.restore();
+        }
+      }
+      if (phase === 'front') { // 은관 위 모래시계
+        rr(ctx, -14, top + 1, 28, 5, 2.5); fillStroke(ctx, '#c9d3de', 1.4, '#3a4a5a');
+        for (const x of [-9, 9]) circle(ctx, x, top + 3.5, 1.6, '#7fe8e0', 0.6);
+        const y0 = top - 20, y1 = top + 1, ym = (y0 + y1) / 2;
+        poly(ctx, [[-6, y0 + 1], [6, y0 + 1], [1, ym - 1], [1, ym + 1], [6, y1 - 3], [-6, y1 - 3], [-1, ym + 1], [-1, ym - 1]], 'rgba(220,250,248,0.85)', 1.2);
+        poly(ctx, [[-4, y1 - 3], [4, y1 - 3], [0, y1 - 8]], '#ffd84a', 0.4);
+        poly(ctx, [[-4.5, y0 + 3], [4.5, y0 + 3], [0, ym - 1]], '#ffd84a', 0.4);
+        rr(ctx, -8, y0 - 2, 16, 3, 1.5); fillStroke(ctx, '#c9a24a', 1.2, '#6a5010');
+        rr(ctx, -8, y1 - 3, 16, 3, 1.5); fillStroke(ctx, '#c9a24a', 1.2, '#6a5010');
       }
       break;
     case 'stareater': // 별을 삼킨 자: 등 뒤 작은 블랙홀(보랏빛 고리) + 머리 위 떠 있는 별 조각 왕관

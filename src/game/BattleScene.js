@@ -16,12 +16,12 @@ const SLOT_X = [150, 360, 570];
 const STATUS_ICON = {
   taunt: '🛡', stun: '💫', freeze: '❄', sleep: '💤', stone: '🗿', bind: '🪢', charm: '🎭',
   poison: '☠', burn: '🔥', bleed: '🩸', slow: '🐌', vuln: '💔', atkUp: '⚔', defDown: '🔻',
-  crit: '🎯', evade: '👻', reflect: '🪞', doom: '⏳', dragon: '🐉', echo: '🔊', regen: '🌿',
+  crit: '🎯', evade: '👻', reflect: '🪞', doom: '⏳', dragon: '🐉', echo: '🔊', regen: '🌿', timestop: '⏸',
 };
 const STATUS_NAME = {
   taunt: '도발', stun: '기절', freeze: '빙결', sleep: '잠', stone: '석화', bind: '묶임', charm: '조종',
   poison: '독', burn: '화상', bleed: '출혈', slow: '느림', vuln: '약점', atkUp: '공격↑', defDown: '방어↓',
-  crit: '치명타 준비', evade: '회피', reflect: '반사', doom: '선고', dragon: '아기 용', echo: '메아리', regen: '재생',
+  crit: '치명타 준비', evade: '회피', reflect: '반사', doom: '선고', dragon: '아기 용', echo: '메아리', regen: '재생', timestop: '시간 정지',
 };
 
 export class BattleScene extends Phaser.Scene {

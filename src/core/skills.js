@@ -115,6 +115,17 @@ const FX = {
       if (t.alive) break;
     }
   },
+  // 되살리기: 쓰러진 아군을 count명까지 체력 hp 비율로
+  revive(b, u, f, ev) {
+    const dead = b.units.filter(x => x.side === u.side && !x.alive);
+    for (const x of dead.slice(0, f.count || 1)) {
+      x.alive = true;
+      x.hp = Math.max(1, Math.round(x.maxHp * f.hp));
+      x.statuses = [];
+      x.gauge = 0;
+      ev.push({ type: 'revive', from: u.uid, to: x.uid, amount: x.hp });
+    }
+  },
   rage(b, u, f, ev) {
     const [t] = targetsFor(b, u, 'one');
     const lost = 1 - u.hp / u.maxHp;

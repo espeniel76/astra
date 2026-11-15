@@ -7,8 +7,8 @@ import { heroStats } from './progress.js';
 import { makeRng } from './rng.js';
 import { runFx } from './skills.js';
 
-export const DISABLE = new Set(['stun', 'freeze', 'sleep', 'stone', 'bind']);
-export const BAD = new Set(['stun', 'freeze', 'sleep', 'stone', 'bind', 'charm', 'poison', 'burn', 'bleed', 'slow', 'vuln', 'defDown', 'doom']);
+export const DISABLE = new Set(['stun', 'freeze', 'sleep', 'stone', 'bind', 'timestop']);
+export const BAD = new Set(['stun', 'freeze', 'sleep', 'stone', 'bind', 'timestop', 'charm', 'poison', 'burn', 'bleed', 'slow', 'vuln', 'defDown', 'doom']);
 const DOT = new Set(['poison', 'burn', 'bleed']);
 const GAUGE = 1000;
 
@@ -53,6 +53,9 @@ export function createBattle({ team = [], stageId = null, foes = null, seed = Da
   // 최후의 심판자: 전투가 시작되면 적 전체에 선고(방어 -30%, 전투 내내)
   const judge = b.units.find(u => u.side === 'ally' && u.passive?.k === 'sentence');
   if (judge) for (const f of b.units.filter(u => u.side === 'foe')) f.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });
+  // 시간의 지배자: 전투가 시작되면 아군 전체 속도 +v
+  const chrono = b.units.find(u => u.side === 'ally' && u.passive?.k === 'haste');
+  if (chrono) for (const a of b.units.filter(u => u.side === 'ally')) a.spd = Math.round(a.spd * (1 + chrono.passive.v));
   b.attack = (src, tgt, mult, ev, opts) => attack(b, src, tgt, mult, ev, opts);
   b.hurt = (src, tgt, amount, ev, opts) => hurt(b, src, tgt, amount, ev, opts);
   checkEnd(b);
@@ -135,6 +138,8 @@ export function hurt(b, src, tgt, amount, ev, opts = {}) {
   if (tgt.side === 'ally' && alive(b, 'ally').some(u => u.passive?.k === 'guardian')) {
     d = Math.max(1, Math.round(d * (1 - alive(b, 'ally').find(u => u.passive?.k === 'guardian').passive.guard)));
   }
+  // 용의 황제: 용의 비늘(자기가 받는 피해 줄임)
+  if (tgt.passive?.k === 'dragonscale') d = Math.max(1, Math.round(d * (1 - tgt.passive.guard)));
   let absorbed = 0;
   if (tgt.shield > 0) { absorbed = Math.min(tgt.shield, d); tgt.shield -= absorbed; }
   const real = d - absorbed;
@@ -142,6 +147,13 @@ export function hurt(b, src, tgt, amount, ev, opts = {}) {
   ev.push({ type: 'damage', from: src?.uid, to: tgt.uid, amount: d, absorbed, crit: !!opts.crit, dot: opts.dot, reflect: !!opts.reflect });
   if (tgt.hp <= 0) die(b, tgt, ev);
   else afterHit(b, tgt, ev);
+  // 용의 황제: 체력이 처음으로 절반 아래가 되면 용의 포효(아군 전체 공격력↑)
+  const ds = tgt.passive?.k === 'dragonscale' && tgt.passive;
+  if (ds && tgt.alive && !tgt.passiveUsed && tgt.hp <= tgt.maxHp * ds.at) {
+    tgt.passiveUsed = true;
+    ev.push({ type: 'passive', from: tgt.uid, name: '용의 포효' });
+    for (const a of alive(b, 'ally')) addStatus(a, { k: 'atkUp', turns: ds.turns, v: ds.v }, ev);
+  }
   if (tgt.side === 'ally') guardianCheck(b, ev);
   return d;
 }

@@ -251,3 +251,53 @@ describe('세계수의 여왕', () => {
     expect(a.alive).toBe(false);
   });
 });
+
+describe('용의 황제', () => {
+  it('받는 피해 -25%, 체력이 처음 절반 아래가 되면 아군 전체 공격력 +30%', () => {
+    const b = createBattle({ team: team('slinger', 'dragonemperor'), foes: [{ mon: 'golem', lv: 1 }], seed: 70 });
+    const [s, d] = allies(b), g = foes(b)[0], ev = [];
+    const hp = d.hp;
+    b.hurt(g, d, 100, ev);
+    expect(hp - d.hp).toBe(75);
+    b.hurt(g, d, Math.ceil(d.maxHp * 0.7 / 0.75), ev);
+    expect(ev.some(e => e.type === 'passive' && e.name === '용의 포효')).toBe(true);
+    for (const a of [s, d]) expect(a.statuses.find(x => x.k === 'atkUp')?.v).toBe(0.3);
+  });
+});
+
+describe('불사조 여제', () => {
+  it('스킬로 쓰러진 아군 하나를 60%로 되살린다', () => {
+    const b = createBattle({ team: team('slinger', 'herbalist', 'phoenixqueen'), foes: [{ mon: 'golem', lv: 30 }], seed: 71 });
+    const [s, h, p] = allies(b);
+    s.alive = false; s.hp = 0; h.alive = false; h.hp = 0;
+    p.cd = 0; p.queued = true;
+    act(b, p);
+    expect([s, h].filter(x => x.alive).length).toBe(1);
+    const back = [s, h].find(x => x.alive);
+    expect(back.hp).toBe(Math.round(back.maxHp * 0.6));
+  });
+  it('전투마다 한 번, 쓰러지는 아군을 체력 가득 되살린다', () => {
+    const b = createBattle({ team: team('slinger', 'phoenixqueen'), foes: [{ mon: 'golem', lv: 30 }], seed: 72 });
+    const [s] = allies(b), g = foes(b)[0], ev = [];
+    b.hurt(g, s, 1e9, ev);
+    expect(s.alive).toBe(true);
+    expect(s.hp).toBe(s.maxHp);
+  });
+});
+
+describe('시간의 지배자', () => {
+  it('전투가 시작되면 아군 속도 +20%, 스킬은 적을 멈추고 아군이 바로 다시 움직인다', () => {
+    const plain = createBattle({ team: team('slinger'), foes: [{ mon: 'golem', lv: 1 }], seed: 73 });
+    const b = createBattle({ team: team('slinger', 'chronos'), foes: [{ mon: 'golem', lv: 30 }, { mon: 'golem', lv: 30 }], seed: 73 });
+    const [s, c] = allies(b);
+    expect(s.spd).toBe(Math.round(allies(plain)[0].spd * 1.2));
+    c.cd = 0; c.queued = true;
+    act(b, c);
+    for (const f of foes(b)) expect(f.statuses.some(x => x.k === 'timestop')).toBe(true);
+    expect(nextActor(b).side).toBe('ally');
+    const f = foes(b)[0];
+    const ev = act(b, f);
+    expect(ev.some(e => e.type === 'skip')).toBe(true);
+    expect(f.statuses.some(x => x.k === 'timestop')).toBe(false);
+  });
+});
