@@ -23,8 +23,8 @@ export function h(sel, attrs, ...kids) {
 }
 
 // 별 표시. 각성한 ★7은 큰 별 하나(★8)
-export const stars = (n, awakened = false) => (n === 8
-  ? h('span.bigstar.origin', '★')
+export const stars = (n, awakened = false, id = null) => (n === 8
+  ? h(id === 'eclipse' ? 'span.bigstar.eclipse' : 'span.bigstar.origin', '★')
   : awakened
   ? h('span.bigstar', '★')
   : h('span.stars', { style: `color:${STAR_COLOR[n]}` }, '★'.repeat(n)));
@@ -37,7 +37,7 @@ export function heroCard(app, id, { onclick, picked, showLevel = true, silhouett
   const el = h('div.hcard', { style: `border-color:${STAR_COLOR[hero.star]}`, onclick },
     heroCanvas(id, 120, { silhouette }),
     h('div.nm', silhouette ? '???' : hero.name),
-    stars(hero.star, own?.awakened));
+    stars(hero.star, own?.awakened, id));
   if (picked) el.classList.add('picked');
   if (own && showLevel && !silhouette) {
     el.append(h('div.lv', `Lv${own.level}`));

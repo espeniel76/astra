@@ -8,7 +8,7 @@ import { makeRng } from './rng.js';
 import { runFx } from './skills.js';
 
 export const DISABLE = new Set(['stun', 'freeze', 'sleep', 'stone', 'bind', 'timestop']);
-export const BAD = new Set(['stun', 'freeze', 'sleep', 'stone', 'bind', 'timestop', 'charm', 'poison', 'burn', 'bleed', 'slow', 'vuln', 'defDown', 'doom']);
+export const BAD = new Set(['stun', 'freeze', 'sleep', 'stone', 'bind', 'timestop', 'weak', 'charm', 'poison', 'burn', 'bleed', 'slow', 'vuln', 'defDown', 'doom']);
 const DOT = new Set(['poison', 'burn', 'bleed']);
 const GAUGE = 1000;
 
@@ -42,6 +42,11 @@ export function monsterUnit(b, slot, { mon, lv }) {
   });
 }
 
+function endstarCurse(b, foes) {
+  const ec = b.units.find(u => u.side === 'ally' && u.alive && u.passive?.k === 'endstar');
+  if (ec) for (const f of foes) f.statuses.push({ k: 'weak', turns: 999, v: ec.passive.v });
+}
+
 export function createBattle({ team = [], stageId = null, foes = null, seed = Date.now() }) {
   const b = { units: [], rng: makeRng(seed), result: null, goldMul: 1, kills: 0, nextUid: 1, turn: 0, stageId, anyAllyDied: false };
   team.forEach((t, i) => { if (t && HERO[t.id]) b.units.push(heroUnit(b, i, t)); });
@@ -53,6 +58,8 @@ export function createBattle({ team = [], stageId = null, foes = null, seed = Da
   // 최후의 심판자: 전투가 시작되면 적 전체에 선고(방어 -30%, 전투 내내)
   const judge = b.units.find(u => u.side === 'ally' && u.passive?.k === 'sentence');
   if (judge) for (const f of b.units.filter(u => u.side === 'foe')) f.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });
+  // 이클립스: 전투가 시작되면 적 전체 약화(공격력 -v, 전투 내내)
+  endstarCurse(b, b.units.filter(u => u.side === 'foe'));
   // 시간의 지배자: 전투가 시작되면 아군 전체 속도 +v
   const chrono = b.units.find(u => u.side === 'ally' && u.passive?.k === 'haste');
   if (chrono) for (const a of b.units.filter(u => u.side === 'ally')) a.spd = Math.round(a.spd * (1 + chrono.passive.v));
@@ -107,7 +114,7 @@ export function attack(b, src, tgt, mult, ev, opts = {}) {
     if (src.alive) attack(b, tgt, src, 1, ev, { noCounter: true });
     return 0;
   }
-  let atk = src.atk * (1 + (statusOf(src, 'atkUp')?.v || 0));
+  let atk = src.atk * (1 + (statusOf(src, 'atkUp')?.v || 0)) * (1 - (statusOf(src, 'weak')?.v || 0));
   const def = opts.ignoreDef ? 0 : tgt.def * (1 - (statusOf(tgt, 'defDown')?.v || 0));
   let d = atk * mult * (100 / (100 + def)) * (0.95 + b.rng() * 0.1);
   if (opts.noCrit) d = atk * mult * (100 / (100 + def));
@@ -169,6 +176,7 @@ function afterHit(b, u, ev) {
       const m = monsterUnit(b, slot, { mon: sk.mon, lv: u.lv });
       const judge = alive(b, 'ally').find(x => x.passive?.k === 'sentence');
       if (judge) m.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });
+      endstarCurse(b, [m]);
       b.units.push(m);
       ev.push({ type: 'summon', from: u.uid, to: m.uid, name: sk.name });
     }
@@ -283,7 +291,7 @@ function endOfTurn(b, u, ev, usedSkill, before) {
     const pool = enemiesOf(b, u);
     if (pool.length) { ev.push({ type: 'pet', from: u.uid, k: 'storm' }); attack(b, u, pool[Math.floor(b.rng() * pool.length)], u.passive.v, ev); }
   }
-  for (const s of u.statuses) if (s.k !== 'doom' && before.has(s)) s.turns -= 1;
+  for (const s of u.statuses) if (s.k !== 'doom' && s.turns < 999 && before.has(s)) s.turns -= 1;
   u.statuses = u.statuses.filter(s => s.k === 'doom' || s.turns > 0);
   if (!usedSkill && u.cd > 0) u.cd -= 1;
 }

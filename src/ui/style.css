@@ -203,3 +203,5 @@ textarea { width: 100%; min-height: 90px; border-radius: 10px; border: 1px solid
 .bigstar.origin { background: linear-gradient(90deg, #ff6a6a, #ffa33a, #ffe066, #7dff8a, #7fd8ff, #8a9aff, #d08aff); -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)); font-size: 30px; }
 .hstars.big.origin { background: linear-gradient(90deg, #ff6a6a, #ffe066, #7dff8a, #7fd8ff, #d08aff); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+/* 이클립스(★8): 검은 별 + 금빛 테두리와 후광 */
+.bigstar.eclipse, .hstars.big.eclipse { color: #0c0a10; -webkit-text-stroke: 1.6px #ffd84a; text-shadow: 0 0 8px rgba(255,176,32,0.9); background: none; }

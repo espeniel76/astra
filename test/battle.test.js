@@ -314,3 +314,29 @@ describe('천둥의 신', () => {
     expect(ev.some(e => e.type === 'pet' && e.k === 'storm')).toBe(true);
   });
 });
+
+describe('이클립스', () => {
+  it('전투가 시작되면 적 전체 약화(공격력 -25%), 갈라져 나온 적도', () => {
+    const b = createBattle({ team: team('slinger', 'eclipse'), foes: [{ mon: 'kingslime', lv: 10 }], seed: 90 });
+    const k = foes(b)[0];
+    expect(k.statuses.find(s => s.k === 'weak')?.v).toBe(0.25);
+    const [s] = allies(b), ev = [];
+    const plain = createBattle({ team: team('slinger'), foes: [{ mon: 'kingslime', lv: 10 }], seed: 90 });
+    const d1 = b.attack(k, s, 1, [], { noCrit: true });
+    const d0 = plain.attack(foes(plain)[0], allies(plain)[0], 1, [], { noCrit: true });
+    expect(d1).toBeLessThan(d0);
+    b.hurt(s, k, Math.ceil(k.maxHp * 0.6), ev); // 절반 아래 → 슬라임 둘로 갈라짐
+    for (const m of foes(b).filter(x => x.alive && x !== k)) expect(m.statuses.some(st => st.k === 'weak')).toBe(true);
+  });
+  it('종말: 적의 좋은 효과를 지우고, 체력이 적은 적일수록 세게', () => {
+    const b = createBattle({ team: team('eclipse'), foes: [{ mon: 'golem', lv: 40 }, { mon: 'golem', lv: 40 }], seed: 91 });
+    const [e] = allies(b), [g1, g2] = foes(b);
+    g1.statuses.push({ k: 'atkUp', turns: 2, v: 0.3 });
+    g2.hp = Math.round(g2.maxHp * 0.2);
+    e.cd = 0; e.queued = true;
+    const ev = act(b, e);
+    expect(g1.statuses.some(s => s.k === 'atkUp')).toBe(false);
+    const base = id => { const x = ev.find(y => y.type === 'damage' && y.from === e.uid && y.to === id); return x.amount / (x.crit ? 1.5 : 1); }; // 치명타는 빼고 비교
+    expect(base(g2.uid)).toBeGreaterThan(base(g1.uid) * 1.4);
+  });
+});

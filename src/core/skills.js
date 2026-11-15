@@ -126,6 +126,15 @@ const FX = {
       ev.push({ type: 'revive', from: u.uid, to: x.uid, amount: x.hp });
     }
   },
+  // 종말: 적 전체의 좋은 효과를 지우고 때린다. 남은 체력이 적을수록 세게(체력 0에 가까우면 1 + bonus 배)
+  eclipse(b, u, f, ev) {
+    for (const t of enemiesOf(b, u)) {
+      const before = t.statuses.length;
+      t.statuses = t.statuses.filter(s => BAD.has(s.k));
+      if (t.statuses.length !== before) ev.push({ type: 'purge', to: t.uid });
+      hitOne(b, u, t, f.mult * (1 + f.bonus * (1 - t.hp / t.maxHp)), ev);
+    }
+  },
   // 연쇄 번개: 무작위 적을 때리고, 다른 적에게 튀며 jumps번(튈 때마다 decay배). 맞은 적은 stun 확률로 1턴 기절(보스는 버팀)
   chain(b, u, f, ev) {
     let last = null, m = f.mult;

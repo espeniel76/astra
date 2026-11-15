@@ -16,12 +16,12 @@ const SLOT_X = [150, 360, 570];
 const STATUS_ICON = {
   taunt: '🛡', stun: '💫', freeze: '❄', sleep: '💤', stone: '🗿', bind: '🪢', charm: '🎭',
   poison: '☠', burn: '🔥', bleed: '🩸', slow: '🐌', vuln: '💔', atkUp: '⚔', defDown: '🔻',
-  crit: '🎯', evade: '👻', reflect: '🪞', doom: '⏳', dragon: '🐉', echo: '🔊', regen: '🌿', timestop: '⏸',
+  crit: '🎯', evade: '👻', reflect: '🪞', doom: '⏳', dragon: '🐉', echo: '🔊', regen: '🌿', timestop: '⏸', weak: '🌑',
 };
 const STATUS_NAME = {
   taunt: '도발', stun: '기절', freeze: '빙결', sleep: '잠', stone: '석화', bind: '묶임', charm: '조종',
   poison: '독', burn: '화상', bleed: '출혈', slow: '느림', vuln: '약점', atkUp: '공격↑', defDown: '방어↓',
-  crit: '치명타 준비', evade: '회피', reflect: '반사', doom: '선고', dragon: '아기 용', echo: '메아리', regen: '재생', timestop: '시간 정지',
+  crit: '치명타 준비', evade: '회피', reflect: '반사', doom: '선고', dragon: '아기 용', echo: '메아리', regen: '재생', timestop: '시간 정지', weak: '약화',
 };
 
 export class BattleScene extends Phaser.Scene {
@@ -258,6 +258,7 @@ export class BattleScene extends Phaser.Scene {
       case 'gold': this.float(e.from, '골드 ×2!', '#ffd36a', 34); return;
       case 'gauge': this.float(e.to, '밀려남', '#cfe8ff', 24); return;
       case 'cleanse': this.float(e.to, '정화', '#ffffff', 26); return;
+      case 'purge': this.float(e.to, '🌑 효과 지움', '#ffd84a', 24); return;
       case 'pet': this.float(e.from, e.k === 'storm' ? '⚡' : '🐉', e.k === 'storm' ? '#9fdcff' : '#ff8a3a', 40); await wait(this, 150); return;
       case 'passive': {
         const a = this.view(e.from);

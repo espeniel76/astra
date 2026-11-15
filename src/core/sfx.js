@@ -81,6 +81,9 @@ function sweep(dur, { from = 300, to = 4000, gain = 0.2, at = 0, q = 3 } = {}) {
   src.start(t); src.stop(t + dur);
 }
 
+// 이클립스(종말) 전용 음계: 라(D) 단조. 높은 곳에서 하나씩 내려가며 꺼진다
+const ECLIPSE_NOTES = [1760, 1568, 1397, 1175, 1047, 880, 784, 698, 587, 523, 440];
+
 // 아스트라(근원) 전용 음계: 라(D) 장조 오음음계. 모든 별이 하나로 모이는 느낌으로 위로 쌓인다
 const ORIGIN_NOTES = [587, 659, 740, 880, 988, 1175, 1319, 1480, 1760, 1976, 2349];
 
@@ -131,6 +134,40 @@ const SOUNDS = {
     thump(44, { gain: 0.8, decay: 1.2 });
     [146.8, 293.7, 440, 587, 740, 880, 1175, 1480].forEach((f, i) => bell(f, { gain: 0.11, at: i * 0.03, decay: 3.4 }));
     pad([73.4, 146.8, 220, 293.7, 370], { gain: 0.1, attack: 0.4, hold: 1.8, release: 3.2, cutoff: 2200 });
+  },
+  // ── 이클립스(종말) 전용 효과음 ──
+  // 별이 가득한 밤하늘: 높고 여린 반짝임
+  eclipseOpen: () => {
+    pad([587, 880, 1175], { gain: 0.05, attack: 1.2, hold: 1.4, release: 2, cutoff: 3200 });
+    [1760, 2349, 1976].forEach((f, i) => bell(f, { gain: 0.05, at: 0.3 + i * 0.4, decay: 1.6 }));
+  },
+  // 별(일곱 별 영웅의 빛)이 하나씩 꺼질 때: 한 음씩 내려가는 종 + 숨 내쉬는 소리
+  eclipseFade: (i = 0) => {
+    bell(ECLIPSE_NOTES[Math.min(i, ECLIPSE_NOTES.length - 1)], { gain: 0.12, decay: 1.4 });
+    sweep(0.6, { from: 1800, to: 260, gain: 0.07, q: 2 });
+  },
+  // 검은 태양이 떠오를 때: 땅 밑에서 올라오는 아주 낮은 울림 + 단조 합창
+  eclipseRise: () => {
+    pad([55, 82.4, 110, 130.8], { gain: 0.22, attack: 2.2, hold: 2.2, release: 2.6, cutoff: 700 });
+    noise(4, { freq: 160, q: 0.5, type: 'lowpass', gain: 0.22, decay: 3.8 });
+    thump(36, { gain: 0.8, at: 2.4, decay: 1.6 });
+  },
+  // 다이아몬드 반지(테두리의 빛 한 점): 유리 같은 높은 종 + 쿵
+  eclipseRing: () => {
+    thump(42, { gain: 0.9, decay: 1.4 });
+    [1760, 2093, 2637, 3520].forEach((f, i) => bell(f, { gain: 0.07, at: i * 0.05, decay: 2.6 }));
+    pad([146.8, 174.6, 220, 293.7], { gain: 0.1, attack: 0.6, hold: 2, release: 3, cutoff: 1800 });
+  },
+  // OMEGA 글자: 어둡고 웅장한 단조 마무리 화음
+  eclipseTitle: () => {
+    thump(40, { gain: 0.85, decay: 1.4 });
+    [73.4, 146.8, 220, 293.7, 349.2, 440, 587, 698].forEach((f, i) => bell(f, { gain: 0.11, at: i * 0.035, decay: 3.6 }));
+    pad([73.4, 110, 146.8, 174.6, 220], { gain: 0.12, attack: 0.5, hold: 1.8, release: 3.4, cutoff: 1600 });
+  },
+  // 이클립스 카드가 뒤집힐 때
+  eclipseCard: () => {
+    thump(46, { gain: 0.9, decay: 1.1 });
+    [880, 698, 587, 440, 349.2, 293.7].forEach((f, i) => bell(f, { gain: 0.12, at: 0.12 + i * 0.09, decay: 2.8 }));
   },
   // 아스트라 카드가 뒤집힐 때(일반 ★7 대신)
   originCard: () => {

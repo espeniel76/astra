@@ -10,7 +10,7 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
   const own = app.save.heroes[id];
   if (!own) {
     root.append(app.top('???', from), h('div.detail-art', heroCanvas(id, 260, { silhouette: true })),
-      h('div.card.center', stars(hero.star), h('p.dim', '아직 만나지 못한 영웅이에요. 소환에서 만날 수 있어요!')));
+      h('div.card.center', stars(hero.star, false, hero.id), h('p.dim', '아직 만나지 못한 영웅이에요. 소환에서 만날 수 있어요!')));
     return;
   }
   const aw = !!own.awakened;
@@ -47,7 +47,7 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
   root.append(...[
     app.top(hero.name, from),
     h('div.detail-art' + (aw ? '.aw' : ''), heroCanvas(id, 260)),
-    h('div.center', stars(hero.star, aw), ' ', h('span.dim', ROLE_NAME[hero.role])),
+    h('div.center', stars(hero.star, aw, hero.id), ' ', h('span.dim', ROLE_NAME[hero.role])),
     h('div.center', { style: 'font-size:22px;font-weight:900;margin:4px 0' },
       h('span' + (pop ? '.pop' : ''), `Lv ${own.level}`), h('span.dim', { style: 'font-size:15px' }, ` / ${maxLv}`),
       own.dupes ? h('span', { style: 'color:var(--gold);margin-left:8px' }, `+${own.dupes}`) : null),

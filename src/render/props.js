@@ -518,6 +518,28 @@ function originStar(ctx) {
   softBlob(ctx, c, c, 46, 'rgba(255,255,255,0.95)');
 }
 
+// 이클립스: 검은 태양 둘레의 금빛 코로나(가운데는 비어 있음, 반지름 152에 밝은 테). 720×720
+function corona(ctx) {
+  const c = 360;
+  pseed = 91;
+  softBlob(ctx, c, c, 360, 'rgba(255,190,70,0.32)');
+  softBlob(ctx, c, c, 240, 'rgba(255,236,180,0.6)');
+  for (let i = 0; i < 56; i++) {
+    const a = (i / 56) * Math.PI * 2 + prnd() * 0.06, len = 220 + prnd() * 130, w = 5 + prnd() * 11, bend = (prnd() - 0.5) * 0.6;
+    ctx.save(); ctx.translate(c, c); ctx.rotate(a);
+    const g = ctx.createLinearGradient(140, 0, len, 0);
+    g.addColorStop(0, 'rgba(255,250,225,0.95)'); g.addColorStop(0.5, 'rgba(255,214,110,0.55)'); g.addColorStop(1, 'rgba(255,170,50,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(140, -w);
+    ctx.quadraticCurveTo((140 + len) / 2, -w * 0.5 + bend * 50, len, bend * 70);
+    ctx.quadraticCurveTo((140 + len) / 2, w * 0.5 + bend * 50, 140, w);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(255,252,235,1)'; ctx.lineWidth = 9; ctx.beginPath(); ctx.arc(c, c, 152, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,220,120,0.8)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c, c, 162, 0, Math.PI * 2); ctx.stroke();
+}
+
 // 거대한 시계판(바늘 없음). 600×600
 function clockFace(ctx) {
   const c = 300;
@@ -555,7 +577,7 @@ function gear(ctx) {
 
 const DEFS = {
   dragonWing: [520, 520, dragonWing], dragonSil: [900, 520, dragonSil],
-  boltSpear: [140, 560, boltSpear], originStar: [640, 640, originStar], clockFace: [600, 600, clockFace], gear: [200, 200, gear],
+  boltSpear: [140, 560, boltSpear], corona: [720, 720, corona], originStar: [640, 640, originStar], clockFace: [600, 600, clockFace], gear: [200, 200, gear],
   spear: [64, 300, spear], sword: [80, 320, sword], shard: [80, 80, shard], feather: [32, 64, feather], petal: [28, 20, petal],
   treeTrunk: [TREE.w, TREE.h, trunk], treeCanopy: [TREE.w, TREE.h, canopy],
   cloudBank: [420, 700, cloudBank], halo: [560, 560, halo], nebula: [720, 1280, nebula], accretion: [720, 300, accretion],

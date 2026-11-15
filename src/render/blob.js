@@ -395,6 +395,16 @@ function fantasyWeapon(ctx, gun, box) {
       circle(ctx, 20, 0, 2.4, '#9fdcff', 1);
       break;
     }
+    case 'eclipsestaff': { // 이클립스: 검은 금 지팡이 끝에 작은 일식(검은 원 + 금빛 테와 빛살)
+      stick(ctx, -6, 20, '#2a2430', 3.4);
+      const g = ctx.createRadialGradient(28, 0, 4, 28, 0, 14);
+      g.addColorStop(0, 'rgba(255,230,150,0.9)'); g.addColorStop(1, 'rgba(255,180,40,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(28, 0, 14, 0, Math.PI * 2); ctx.fill();
+      for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; poly(ctx, [[28 + Math.cos(a - 0.2) * 7, Math.sin(a - 0.2) * 7], [28 + Math.cos(a) * 12, Math.sin(a) * 12], [28 + Math.cos(a + 0.2) * 7, Math.sin(a + 0.2) * 7]], '#ffd84a', 0.6); }
+      circle(ctx, 28, 0, 6.6, '#08070a', 1.6);
+      ctx.strokeStyle = '#fff3c0'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(28, 0, 6.6, 0, Math.PI * 2); ctx.stroke();
+      break;
+    }
     case 'starstaff':
       stick(ctx, -6, 22, '#3a2a5a', 3.4);
       star(ctx, 27, 0, 8, '#ffe066');
@@ -681,6 +691,7 @@ const OUTFIT = {
   phoenixqueen: { coat: '#fff0d8', inner: '#ff7a1a', v: 9, trim: '#ffd84a', collar: '#fff0d8', belt: ['#c8961a', '#ffd84a'], cape: ['#ff9a3a', '#ffd84a'] },
   chronos: { coat: '#1a2a3a', inner: '#7fe8e0', v: 10, ridge: true, trim: '#c9d3de', gears: '#c9a24a', collar: '#1a2a3a', pauldron: ['#3a4a5a', '#c9d3de'], cape: ['#0e1a26', '#3a6a7a'] },
   thundergod: { coat: '#1a2a4a', inner: '#ffe066', v: 10, ridge: true, trim: '#ffe066', collar: '#1a2a4a', pauldron: ['#2a3a5a', '#ffe066'], belt: ['#0e1626', '#ffe066'], cape: ['#2a4a7a', '#9fdcff'] },
+  eclipse: { coat: '#2a2436', inner: '#ffd84a', v: 10, ridge: true, trim: '#ffd84a', collar: '#0c0a10', pauldron: ['#1c1820', '#ffd84a'], cape: ['#050407', '#c9a24a'] },
   guardian: { coat: '#e8c040', inner: '#ffffff', v: 9, ridge: true, trim: '#fff6c8', pauldron: ['#ffe680', '#fff6c8'], cape: ['#fff3c0', '#e8b923'] },
 };
 export const OUTFIT_IDS = Object.keys(OUTFIT);
@@ -1578,6 +1589,35 @@ function heroDeco(ctx, id, phase) {
         rr(ctx, -14, top + 1, 28, 6, 3); fillStroke(ctx, '#ffe066', 1.4, '#8a6410');
         circle(ctx, 0, top + 4, 2.6, '#9fdcff', 1);
         glint(ctx, -0.8, top + 3, 0.9);
+      }
+      break;
+    case 'eclipse': // 이클립스(종말): 등 뒤 검은 태양(금빛 코로나와 빛살) + 머리 위 작은 일식 관
+      if (phase === 'back') {
+        const cyy = BY - 8;
+        const g = ctx.createRadialGradient(0, cyy, R, 0, cyy, R + 30);
+        g.addColorStop(0, 'rgba(255,230,150,0.75)'); g.addColorStop(0.45, 'rgba(255,190,60,0.35)'); g.addColorStop(1, 'rgba(255,170,40,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, cyy, R + 30, 0, Math.PI * 2); ctx.fill();
+        for (let k = 0; k < 16; k++) { // 코로나 빛살(길고 짧게 번갈아)
+          const a = (k / 16) * Math.PI * 2 + 0.1, r0 = R + 8, r1 = R + (k % 2 ? 18 : 26);
+          poly(ctx, [[Math.cos(a - 0.08) * r0, cyy + Math.sin(a - 0.08) * r0], [Math.cos(a) * r1, cyy + Math.sin(a) * r1], [Math.cos(a + 0.08) * r0, cyy + Math.sin(a + 0.08) * r0]], k % 2 ? '#ffe9a0' : '#ffd84a', 0.8);
+        }
+        ctx.beginPath(); ctx.arc(0, cyy, R + 9, 0, Math.PI * 2); ctx.fillStyle = '#060508'; ctx.fill();
+        ctx.strokeStyle = '#fff3c0'; ctx.lineWidth = 2.6; ctx.stroke();
+        // 다이아몬드 반지(테두리의 빛 한 점)
+        const ga = ctx.createRadialGradient(-22, cyy - 20, 0, -22, cyy - 20, 7);
+        ga.addColorStop(0, 'rgba(255,255,255,1)'); ga.addColorStop(1, 'rgba(255,240,180,0)');
+        ctx.fillStyle = ga; ctx.beginPath(); ctx.arc(-22, cyy - 20, 7, 0, Math.PI * 2); ctx.fill();
+      }
+      if (phase === 'front') { // 금 머리띠 위에 작은 일식(검은 원 + 금빛 테 + 빛살)
+        const y = top - 9;
+        for (let k = 0; k < 10; k++) {
+          const a = (k / 10) * Math.PI * 2, r0 = 6.5, r1 = k % 2 ? 10 : 13;
+          poly(ctx, [[Math.cos(a - 0.16) * r0, y + Math.sin(a - 0.16) * r0], [Math.cos(a) * r1, y + Math.sin(a) * r1], [Math.cos(a + 0.16) * r0, y + Math.sin(a + 0.16) * r0]], '#ffd84a', 0.6);
+        }
+        circle(ctx, 0, y, 6.8, '#060508', 1.2);
+        ctx.strokeStyle = '#fff3c0'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(0, y, 6.8, 0, Math.PI * 2); ctx.stroke();
+        rr(ctx, -14, top + 1, 28, 5, 2.5); fillStroke(ctx, '#ffd84a', 1.4, '#6a4a00');
+        for (const x of [-9, 9]) circle(ctx, x, top + 3.5, 1.6, '#060508', 0.6);
       }
       break;
     case 'stareater': // 별을 삼킨 자: 등 뒤 작은 블랙홀(보랏빛 고리) + 머리 위 떠 있는 별 조각 왕관

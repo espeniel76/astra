@@ -213,7 +213,9 @@ export class SummonScene extends Phaser.Scene {
     g.lineStyle(r.star >= 5 ? 6 : 4, col, 1).strokeRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
     const img = this.add.image(0, slot.h * 0.12, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale((big ? 1.4 : 0.72) * TS);
     const name = text(this, 0, slot.h * 0.3, HERO[r.id].name, big ? 34 : 18, '#ffffff', { wordWrap: { width: slot.w - 10 } });
-    const st = r.star === 8
+    const st = r.id === 'eclipse'
+      ? text(this, 0, slot.h * 0.42, '★', big ? 58 : 32, '#0c0a10', { stroke: '#ffd84a', strokeThickness: 6 }).setShadow(0, 0, '#ffb020', 14, true, true) // 종말: 금빛 테 검은 큰 별
+      : r.star === 8
       ? text(this, 0, slot.h * 0.42, '★', big ? 58 : 32, '#ffffff', { stroke: '#b06aff', strokeThickness: 6 }).setShadow(0, 0, '#ffe066', 12, true, true) // 근원: 무지개빛 큰 별
       : r.awaken
       ? text(this, 0, slot.h * 0.42, '★', big ? 54 : 30, '#ffe066', { stroke: '#8a4a10', strokeThickness: 5 }) // 큰 별 하나 = ★8
@@ -230,9 +232,9 @@ export class SummonScene extends Phaser.Scene {
   async mythicReveal(slot, r) {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
-    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a, dragonemperor: 0x4adf8a, phoenixqueen: 0xffa040, chronos: 0x7fe8e0, thundergod: 0xfff3a0, astra: 'rainbow' }[r.id] ?? 0xffe066) : 0xff3a3a;
+    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a, dragonemperor: 0x4adf8a, phoenixqueen: 0xffa040, chronos: 0x7fe8e0, thundergod: 0xfff3a0, eclipse: 0xffd84a, astra: 'rainbow' }[r.id] ?? 0xffe066) : 0xff3a3a;
     // 번개 바깥 빛: 심판자 회색, 심해의 군주 깊은 청록, 세계수의 여왕 금색
-    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a, dragonemperor: 0xffd84a, phoenixqueen: 0xff5a1a, chronos: 0xc9a24a, thundergod: 0x4aa8ff, astra: 0xffffff }[r.id] ?? col;
+    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a, dragonemperor: 0xffd84a, phoenixqueen: 0xff5a1a, chronos: 0xc9a24a, thundergod: 0x4aa8ff, eclipse: 0x6a4a00, astra: 0xffffff }[r.id] ?? col;
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
     this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
@@ -263,11 +265,12 @@ export class SummonScene extends Phaser.Scene {
       else if (r.id === 'chronos') await this.timeStop(r);
       else if (r.id === 'thundergod') await this.thunderStrike(r);
       else if (r.id === 'astra') await this.originBirth(r);
+      else if (r.id === 'eclipse') await this.eclipseEnd(r);
       else await this.eternalDescent(r);
     }
 
     // 3) 쾅: 번쩍 + 화면 흔들림
-    sfx.play(r.id === 'astra' ? 'originCard' : seven ? 'star7' : 'star6');
+    sfx.play(r.id === 'astra' ? 'originCard' : r.id === 'eclipse' ? 'eclipseCard' : seven ? 'star7' : 'star6');
     this.cameras.main.shake(seven ? 900 : 650, this.flash ? 0.02 : 0.012);
     if (this.flash) {
       // 번쩍임 효과가 켜져 있을 때만 진짜 점멸(세 번)
@@ -1393,6 +1396,111 @@ export class SummonScene extends Phaser.Scene {
     setBackdrop('#000000', '#000000');
   }
 
+  // 이클립스(종말, ★8) 전용(약 20초, 아스트라의 짝). 번쩍임 없음: 빛은 모두 천천히 밝아지고 천천히 사라진다.
+  // 1) 별이 가득한 밤하늘 2) 일곱 별 영웅 아홉 빛깔이 원을 이루고, 별들과 함께 하나씩 꺼진다(한 음씩 내려감)
+  // 3) 완전한 어둠, 아래에서 검은 태양이 떠오르고 금빛 코로나가 번진다 4) 테두리에 다이아몬드 반지처럼 빛 한 점(쿵)
+  // 5) 검은 태양 앞에 이클립스가 나타나고 금빛 재가 위로 흩날린다 6) OMEGA + "모든 별의 끝" + 이름 + 검은 큰 별
+  async eclipseEnd(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x000000);
+    const cx = W / 2, cy = H / 2 - 120;
+    setBackdrop('#000000', '#000000');
+
+    // 1) 밤하늘
+    const neb = this.add.image(0, 0, propTex(this, 'nebula')).setOrigin(0, 0).setScale(TS).setAlpha(0);
+    layer.add(neb);
+    const dots = [];
+    for (let i = 0; i < 80; i++) {
+      const s = this.add.circle(Phaser.Math.Between(16, W - 16), Phaser.Math.Between(16, H - 16), Phaser.Math.FloatBetween(1.4, 3.4), 0xffffff, 1).setAlpha(0);
+      layer.add(s); dots.push(s);
+    }
+    sfx.play('eclipseOpen');
+    this.tweens.add({ targets: neb, alpha: 0.9, duration: fast(1400) });
+    dots.forEach(s => this.tweens.add({ targets: s, alpha: Phaser.Math.FloatBetween(0.5, 1), duration: fast(1200), delay: state.skipped ? 0 : Phaser.Math.Between(0, 700) }));
+    await pause(1800);
+
+    // 2) 아홉 빛깔이 원을 이루고, 하나씩 꺼진다
+    const sevens = HEROES.filter(h => h.star === 7);
+    const lights = sevens.map((h, i) => {
+      const a = -Math.PI / 2 + (i / sevens.length) * Math.PI * 2;
+      const l = this.add.image(cx + Math.cos(a) * 240, cy + 80 + Math.sin(a) * 240, 'soft').setTint(h.look.glow ?? 0xffffff).setScale(0.9).setAlpha(0).setBlendMode('ADD');
+      layer.add(l);
+      return l;
+    });
+    lights.forEach((l, i) => this.tweens.add({ targets: l, alpha: 0.95, duration: fast(700), delay: state.skipped ? 0 : i * 90 }));
+    await pause(1400);
+    const order = Phaser.Utils.Array.Shuffle([...dots]);
+    order.forEach((s, i) => this.tweens.add({ targets: s, alpha: 0, duration: 700, delay: state.skipped ? 0 : 300 + i * 40 }));
+    for (let i = 0; i < lights.length && !state.skipped; i++) {
+      sfx.play('eclipseFade', i);
+      this.tweens.add({ targets: lights[i], alpha: 0, scale: 0.2, duration: 700, ease: 'Sine.in' });
+      await pause(380);
+    }
+    lights.forEach(l => l.setVisible(false));
+    this.tweens.add({ targets: neb, alpha: 0, duration: fast(1500) });
+    await pause(1600);
+
+    // 3) 검은 태양이 떠오르고 코로나가 번진다
+    sfx.play('eclipseRise');
+    const sun = this.add.container(cx, H + 320);
+    const corona = this.add.image(0, 0, propTex(this, 'corona')).setScale(TS * 0.6).setAlpha(0).setBlendMode('ADD');
+    const disc = this.add.circle(0, 0, 150, 0x030205, 1).setStrokeStyle(3, 0xffe9a0, 0.6);
+    sun.add([corona, disc]);
+    layer.add(sun);
+    // 떠오르는 동안 코로나가 조금씩 번진다(어둠 속에서도 검은 태양의 테두리가 보이게)
+    this.tweens.add({ targets: corona, alpha: 0.55, scale: TS * 0.8, duration: fast(2600), ease: 'Sine.in' });
+    await tween(this, { targets: sun, y: cy, duration: fast(2600), ease: 'Sine.out' });
+    this.tweens.add({ targets: corona, alpha: 1, scale: TS * 1.0, duration: fast(1600), ease: 'Sine.out' });
+    this.tweens.add({ targets: corona, angle: 360, duration: 60000, repeat: -1 });
+    await pause(1700);
+
+    // 4) 다이아몬드 반지: 테두리에 빛 한 점이 천천히 밝아진다
+    sfx.play('eclipseRing');
+    const bead = this.add.image(Math.cos(-2.3) * 150, Math.sin(-2.3) * 150, 'soft').setScale(0).setBlendMode('ADD');
+    const beadCore = this.add.circle(Math.cos(-2.3) * 150, Math.sin(-2.3) * 150, 9, 0xffffff, 1).setScale(0);
+    sun.add([bead, beadCore]);
+    this.tweens.add({ targets: beadCore, scale: 1, duration: fast(900), ease: 'Sine.out' });
+    await tween(this, { targets: bead, scale: 1.6, duration: fast(900), ease: 'Sine.out' });
+    this.tweens.add({ targets: bead, scale: 0.9, alpha: 0.75, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.cameras.main.shake(700, this.flash ? 0.014 : 0.007);
+    await pause(900);
+
+    // 5) 이클립스가 검은 태양 앞에 나타난다 + 금빛 재가 위로
+    const ash = this.add.particles(0, 0, 'dot', {
+      x: { min: 0, max: W }, y: H + 10, lifespan: 5200, speedY: { min: -150, max: -60 }, speedX: { min: -25, max: 25 },
+      scale: { start: 0.45, end: 0 }, alpha: { start: 0.9, end: 0 }, tint: [0xffd84a, 0xffb020, 0x6a5a40], frequency: 45,
+    });
+    layer.add(ash);
+    const img = this.add.image(cx, cy + 420, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.4 * TS).setAlpha(0);
+    layer.add(img);
+    await tween(this, { targets: img, alpha: 1, y: cy + 330, scale: 2.9 * TS, duration: fast(2200), ease: 'Sine.out' });
+    this.tweens.add({ targets: img, y: cy + 316, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    // 6) OMEGA + 부제 + 이름 + 검은 큰 별
+    const omega = gradFill(text(this, W / 2, 110, 'OMEGA', 68, '#ffc23a', { stroke: '#000000', strokeThickness: 11 }),
+      [[0, '#fff6d0'], [0.45, '#ffc23a'], [0.6, '#d0861a'], [1, '#6a3a04']]).setShadow(0, 0, '#ffb020', 18, true, true).setAlpha(0).setScale(2);
+    const sub = text(this, W / 2, 175, '모든 별의 끝', 30, '#ffe9a0', { stroke: '#000000', strokeThickness: 6 }).setAlpha(0);
+    const name = gradFill(text(this, W / 2, H - 250, '', 72, '#ffe9a0', { stroke: '#000000', strokeThickness: 11 }),
+      [[0, '#fffbe8'], [0.5, '#ffd870'], [1, '#c8861a']]).setShadow(0, 0, '#ffb020', 12, true, true);
+    const big = text(this, W / 2, H - 160, '★', 84, '#0c0a10', { stroke: '#ffd84a', strokeThickness: 9 }).setShadow(0, 0, '#ffb020', 22, true, true).setAlpha(0).setScale(0.3);
+    layer.add([omega, sub, name, big]);
+    sfx.play('eclipseTitle');
+    await tween(this, { targets: omega, alpha: 1, scale: 1, duration: 1300, ease: 'Back.out' });
+    this.tweens.add({ targets: sub, alpha: 1, duration: 1000 });
+    for (let i = 1; i <= hero.name.length && !state.skipped; i++) {
+      name.setText(hero.name.slice(0, i));
+      gradFill(name, [[0, '#fffbe8'], [0.5, '#ffd870'], [1, '#c8861a']]);
+      await wait(this, 300);
+    }
+    name.setText(hero.name);
+    gradFill(name, [[0, '#fffbe8'], [0.5, '#ffd870'], [1, '#c8861a']]);
+    this.tweens.add({ targets: big, alpha: 1, scale: 1, angle: 360, duration: 1600, ease: 'Back.out' });
+    await pause(4500);
+    ash.stop();
+    await tween(this, { targets: layer, alpha: 0, duration: 1400 });
+    layer.destroy();
+  }
+
   // 각성: 뒤집힌 카드 위로 작은 별 일곱 개가 모여 큰 별 하나가 된다 + '각성!'
   async awakenBurst(card, slot, r) {
     const cx = slot.x, cy = slot.y - slot.h / 2 - 70;
@@ -1478,7 +1586,7 @@ export class SummonScene extends Phaser.Scene {
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0).setInteractive();
     layer.add(dark);
     this.tweens.add({ targets: dark, fillAlpha: 0.9, duration: 600 });
-    sfx.play(r.id === 'astra' ? 'originCard' : seven ? 'star7' : 'star6');
+    sfx.play(r.id === 'astra' ? 'originCard' : r.id === 'eclipse' ? 'eclipseCard' : seven ? 'star7' : 'star6');
 
     // 빛줄기: 천천히 돌며 밝아진다
     const beams = this.add.container(W / 2, 560);
