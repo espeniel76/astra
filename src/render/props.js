@@ -150,29 +150,53 @@ function trunk(ctx) {
   ctx.stroke();
   ctx.lineCap = 'butt';
 }
-// 잎: 화면을 가득 덮는 커다란 수관(작은 잎 뭉치를 겹쳐 결을 냄)
+// 잎: 동그라미가 아니라 진짜 잎사귀 수백 장을 겹쳐 만든 커다란 수관.
+// 뒤(아래·어두움)에서 앞(위·밝음) 순서로 그려 입체감을 낸다.
 function canopy(ctx) {
-  const cx = 360, cy = 250;
-  const blob = (x, y, r, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
-  // 바깥 테두리 겸 그늘
-  for (let i = 0; i < 30; i++) { const a = (i / 30) * Math.PI * 2; blob(cx + Math.cos(a) * 300, cy + Math.sin(a) * 175 + 8, 100, '#10280b'); }
-  for (let i = 0; i < 30; i++) { const a = (i / 30) * Math.PI * 2; blob(cx + Math.cos(a) * 300, cy + Math.sin(a) * 175, 92, '#1e4a16'); }
-  blob(cx, cy, 250, '#1e4a16');
+  const cx = 360, cy = 250, RX = 320, RY = 190;
   let seed = 11;
   const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-  for (let i = 0; i < 120; i++) {
-    const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd());
-    const x = cx + Math.cos(a) * 320 * d, y = cy + Math.sin(a) * 185 * d;
-    const up = (cy + 185 - y) / 370;
-    const r = 18 + rnd() * 22;
-    blob(x, y + 4, r, 'rgba(10,30,8,0.5)'); // 잎 뭉치 아래 그늘(가장자리를 부드럽게)
-    blob(x, y, r, up > 0.78 ? '#7fcf5a' : up > 0.58 ? '#5fae48' : up > 0.38 ? '#43903a' : '#2f6f2a');
+  // 1) 그늘진 바탕 덩어리(가장자리는 잎으로 덮이므로 안쪽만)
+  ctx.fillStyle = '#123010';
+  ctx.beginPath(); ctx.ellipse(cx, cy + 10, RX - 30, RY - 24, 0, 0, Math.PI * 2); ctx.fill();
+  // 2) 잎사귀
+  const leaves = [];
+  for (let i = 0; i < 1100; i++) {
+    const a = rnd() * Math.PI * 2, d = Math.pow(rnd(), 0.6);
+    const x = cx + Math.cos(a) * RX * d, y = cy + Math.sin(a) * RY * d;
+    leaves.push({ x, y, a: rnd() * Math.PI * 2, len: 16 + rnd() * 10, v: rnd() });
   }
-  // 금빛으로 빛나는 잎(가만히 있음)
-  for (let i = 0; i < 18; i++) {
+  leaves.sort((p, q) => q.y - p.y || p.x - q.x); // 아래(뒤)부터
+  const PAL = ['#1e4a16', '#2a5e1e', '#357026', '#43852e', '#559a38', '#6db248', '#88c85a', '#a6dc74'];
+  for (const L of leaves) {
+    const up = 1 - (L.y - (cy - RY)) / (2 * RY); // 위쪽일수록 1
+    const edge = Math.hypot((L.x - cx) / RX, (L.y - cy) / RY); // 가장자리일수록 1
+    let idx = Math.round(up * 5 + L.v * 2.4 - edge * 1.2);
+    idx = Math.max(0, Math.min(PAL.length - 1, idx));
+    ctx.save();
+    ctx.translate(L.x, L.y); ctx.rotate(L.a);
+    ctx.beginPath();
+    ctx.moveTo(-L.len / 2, 0);
+    ctx.quadraticCurveTo(0, -L.len * 0.36, L.len / 2, 0);
+    ctx.quadraticCurveTo(0, L.len * 0.36, -L.len / 2, 0);
+    ctx.closePath();
+    ctx.fillStyle = PAL[idx]; ctx.fill();
+    ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(10,30,8,0.55)'; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-L.len / 2 + 2, 0); ctx.lineTo(L.len / 2 - 2, 0); ctx.stroke();
+    ctx.restore();
+  }
+  // 3) 위쪽에 부드러운 빛(햇살이 닿는 느낌)
+  const g = ctx.createRadialGradient(cx - 60, cy - 120, 10, cx - 60, cy - 120, 260);
+  g.addColorStop(0, 'rgba(255,250,200,0.28)'); g.addColorStop(1, 'rgba(255,250,200,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, cy, RX + 10, RY + 10, 0, 0, Math.PI * 2); ctx.fill();
+  // 4) 금빛으로 빛나는 잎(가만히 있음)
+  for (let i = 0; i < 22; i++) {
     const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd());
-    ctx.fillStyle = 'rgba(255,224,102,0.9)';
-    ctx.beginPath(); ctx.ellipse(cx + Math.cos(a) * 290 * d, cy + Math.sin(a) * 165 * d, 7, 4, rnd() * 3, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.translate(cx + Math.cos(a) * 290 * d, cy + Math.sin(a) * 170 * d); ctx.rotate(rnd() * 3);
+    ctx.beginPath(); ctx.moveTo(-9, 0); ctx.quadraticCurveTo(0, -5, 9, 0); ctx.quadraticCurveTo(0, 5, -9, 0); ctx.closePath();
+    ctx.fillStyle = '#ffe066'; ctx.fill(); ctx.strokeStyle = '#c8961a'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
   }
 }
 

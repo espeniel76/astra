@@ -767,9 +767,10 @@ export class SummonScene extends Phaser.Scene {
     const light = this.add.circle(cx, ground - 60, 40, 0xfff3c0, 0.9).setScale(0.2);
     layer.add(light);
     await tween(this, { targets: light, scale: 3, alpha: 0.35, duration: fast(1200), ease: 'Sine.out' });
-    const img = this.add.image(cx, ground + 10, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.6 * TS).setAlpha(0);
+    const img = this.add.image(cx, ground + 10, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.3 * TS).setAlpha(0);
     layer.add(img);
-    await tween(this, { targets: img, alpha: 1, scale: 2.5 * TS, y: ground - 10, duration: fast(1800), ease: 'Back.out' });
+    // 여왕 머리가 잎에 가리지 않게 조금 작게
+    await tween(this, { targets: img, alpha: 1, scale: 1.9 * TS, y: ground - 10, duration: fast(1800), ease: 'Back.out' });
     this.tweens.add({ targets: img, y: ground - 24, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.tweens.add({ targets: light, alpha: 0.15, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
