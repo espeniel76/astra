@@ -4,6 +4,7 @@ import { h, heroCard, stars } from './ui/app.js';
 import { HEROES, STAR_COLOR } from './data/heroes.js';
 import { defaultSave } from './core/save.js';
 import { startSummon } from './game/phaser.js';
+import { isAdmin, adminForm } from './core/admin.js';
 
 // 가짜 저장(브라우저에 저장하지 않음): 모든 영웅을 가진 상태, 다이아 넉넉히
 const save = defaultSave();
@@ -90,4 +91,15 @@ function render() {
   );
 }
 
-render();
+// 관리자 코드를 맞힌 기기에서만 연다(src/core/admin.js)
+function lockScreen() {
+  root.replaceChildren(
+    h('div.top', IN_APP ? h('button.back', { onclick: toGame, 'aria-label': '게임으로' }, '‹') : null, h('h1', '🔑 관리자 전용')),
+    h('div.card.col', { style: 'margin-top:12px' },
+      h('div.dim', '개발자 미리보기는 관리자만 볼 수 있어요.'),
+      adminForm(h, { onOk: render, onFail: () => { const m = root.querySelector('.lock-msg'); if (m) m.textContent = '코드가 달라요'; } }),
+      h('div.lock-msg', { style: 'color:var(--bad);font-size:14px;min-height:20px' })),
+  );
+}
+
+if (isAdmin()) render(); else lockScreen();

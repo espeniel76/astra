@@ -1,6 +1,7 @@
 import { h } from '../app.js';
 import { exportCode, importCode, defaultSave } from '../../core/save.js';
 import { sfx } from '../../core/sfx.js';
+import { isAdmin, lockAdmin, adminForm } from '../../core/admin.js';
 
 export function render(root, app) {
   const st = app.save.settings;
@@ -44,8 +45,18 @@ export function render(root, app) {
           h('button.btn.grow', { style: 'background:linear-gradient(#ff7a7a,#d84a4a);box-shadow:0 4px 0 #8a2a2a', onclick: () => {
             app.save = defaultSave(); app.persist(); close(); app.toast('새로 시작해요!'); app.show('lobby');
           } }, '다시 시작')))) }, '처음부터 다시 하기'),
-      // 테스트판(?test)과 안드로이드 앱에서만: 개발자 미리보기로 가는 버튼(앱에서 모든 연출을 직접 보려고)
-      /[?&]test\b/.test(location.search) || import.meta.env.MODE === 'app' ? h('a.btn.ghost', { href: './dev.html', style: 'display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:6px' }, '🧪 개발자 미리보기 열기') : null,
+      // 관리자: 코드를 맞힌 기기에서만 개발자 미리보기 버튼이 보인다(src/core/admin.js)
+      isAdmin()
+        ? h('div.col', { style: 'margin-top:6px' },
+          h('a.btn.ghost', { href: './dev.html', style: 'display:flex;align-items:center;justify-content:center;text-decoration:none' }, '🧪 개발자 미리보기 열기'),
+          h('button.btn.ghost', { style: 'font-size:13px;min-height:36px', onclick: () => { lockAdmin(); app.toast('관리자 잠금'); app.refresh(); } }, '🔒 관리자 잠그기'))
+        : h('button.btn.ghost', { style: 'margin-top:6px;font-size:14px;min-height:40px', onclick: () => app.modal(close => h('div.col',
+          h('h2', { style: 'margin:0' }, '🔑 관리자'),
+          adminForm(h, {
+            onOk: () => { close(); app.toast('관리자로 열렸어요'); app.refresh(); },
+            onFail: () => app.toast('코드가 달라요'),
+          }),
+          h('button.btn.ghost', { onclick: close }, '닫기'))) }, '🔑 관리자'),
       h('div.center.dim', { style: 'font-size:12px;margin-top:8px' }, '아스트라 v0.2'),
     ),
   );
