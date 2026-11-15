@@ -4,11 +4,11 @@ import { MONSTERS } from '../src/data/monsters.js';
 import { STAGES, STAGE, CHAPTERS } from '../src/data/stages.js';
 
 describe('영웅 데이터', () => {
-  it('영웅은 81명이고 별 분포가 정해진 대로다', () => {
-    expect(HEROES.length).toBe(81);
+  it('영웅은 82명이고 별 분포가 정해진 대로다', () => {
+    expect(HEROES.length).toBe(82);
     const by = {};
     for (const h of HEROES) by[h.star] = (by[h.star] || 0) + 1;
-    expect(by).toEqual({ 1: 10, 2: 10, 3: 10, 4: 10, 5: 11, 6: 21, 7: 8, 8: 1 });
+    expect(by).toEqual({ 1: 10, 2: 10, 3: 10, 4: 10, 5: 11, 6: 21, 7: 9, 8: 1 });
     expect(HEROES.find(h => h.star === 8).id).toBe('astra');
   });
   it('자력술사는 ★5지만 좀비 생존자 영웅 모습 그대로', () => {
@@ -26,8 +26,8 @@ describe('영웅 데이터', () => {
       expect(h.skill.name && h.skill.desc, h.id).toBeTruthy();
     }
   });
-  it('★7은 여덟 명', () => {
-    expect(HEROES.filter(h => h.star === 7).map(h => h.id)).toEqual(['guardian', 'stareater', 'judge', 'abysslord', 'worldtree', 'dragonemperor', 'phoenixqueen', 'chronos']);
+  it('★7은 아홉 명', () => {
+    expect(HEROES.filter(h => h.star === 7).map(h => h.id)).toEqual(['guardian', 'stareater', 'judge', 'abysslord', 'worldtree', 'dragonemperor', 'phoenixqueen', 'chronos', 'thundergod']);
   });
   it('별 색은 ★1~★7 모두 있다', () => {
     for (let s = 1; s <= 7; s++) expect(STAR_COLOR[s]).toMatch(/^#[0-9a-f]{6}$/);

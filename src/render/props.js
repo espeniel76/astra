@@ -471,6 +471,26 @@ function dragonSil(ctx) {
   softBlob(ctx, 770, 152, 26, 'rgba(255,224,102,0.6)');
 }
 
+// 천둥의 신: 하늘에서 내리꽂히는 번개 창(창끝이 아래). 140×560
+function boltSpear(ctx) {
+  const cx = 70;
+  softBlob(ctx, cx, 300, 140, 'rgba(159,220,255,0.45)');
+  // 자루: 금색 + 감은 띠
+  rr(ctx, cx - 8, 10, 16, 340, 8); fillOut(ctx, lg(ctx, cx - 8, 0, cx + 8, 0, [[0, '#fff6c8'], [0.45, '#e8b923'], [1, '#8a6410']]), 3, '#4a3000');
+  for (let y = 30; y < 330; y += 30) { ctx.strokeStyle = '#bfe9ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx - 8, y); ctx.lineTo(cx + 8, y + 10); ctx.stroke(); }
+  ctx.beginPath(); ctx.arc(cx, 14, 14, 0, Math.PI * 2); fillOut(ctx, lg(ctx, cx - 14, 0, cx + 14, 28, [[0, '#ffffff'], [1, '#9fdcff']]), 3, '#1a3a6a');
+  // 날개 받침
+  for (const s of [-1, 1]) {
+    ctx.beginPath(); ctx.moveTo(cx, 360); ctx.quadraticCurveTo(cx + s * 50, 356, cx + s * 58, 320); ctx.quadraticCurveTo(cx + s * 34, 346, cx + s * 8, 340); ctx.closePath();
+    fillOut(ctx, lg(ctx, cx, 320, cx + s * 58, 360, [[0, '#fff6c8'], [1, '#c8961a']]), 3, '#4a3000');
+  }
+  // 번개 모양 창날
+  path(ctx, [[cx - 22, 350], [cx + 20, 350], [cx + 4, 410], [cx + 30, 410], [cx - 6, 470], [cx + 14, 470], [cx - 16, 556], [cx - 8, 486], [cx - 30, 486], [cx - 4, 428], [cx - 28, 428]]);
+  fillOut(ctx, lg(ctx, cx - 30, 0, cx + 30, 0, [[0, '#ffffff'], [0.5, '#fff3a0'], [1, '#ffd84a']]), 4, '#1a3a6a');
+  ctx.beginPath(); ctx.arc(cx, 352, 10, 0, Math.PI * 2); fillOut(ctx, '#9fdcff', 3, '#1a3a6a');
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(cx - 3, 349, 3, 0, Math.PI * 2); ctx.fill();
+}
+
 // 거대한 시계판(바늘 없음). 600×600
 function clockFace(ctx) {
   const c = 300;
@@ -508,7 +528,7 @@ function gear(ctx) {
 
 const DEFS = {
   dragonWing: [520, 520, dragonWing], dragonSil: [900, 520, dragonSil],
-  clockFace: [600, 600, clockFace], gear: [200, 200, gear],
+  boltSpear: [140, 560, boltSpear], clockFace: [600, 600, clockFace], gear: [200, 200, gear],
   spear: [64, 300, spear], sword: [80, 320, sword], shard: [80, 80, shard], feather: [32, 64, feather], petal: [28, 20, petal],
   treeTrunk: [TREE.w, TREE.h, trunk], treeCanopy: [TREE.w, TREE.h, canopy],
   cloudBank: [420, 700, cloudBank], halo: [560, 560, halo], nebula: [720, 1280, nebula], accretion: [720, 300, accretion],

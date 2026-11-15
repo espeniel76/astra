@@ -278,6 +278,11 @@ function endOfTurn(b, u, ev, usedSkill, before) {
     const pool = enemiesOf(b, u);
     if (pool.length) { ev.push({ type: 'pet', from: u.uid, k: 'dragon' }); attack(b, u, pool[Math.floor(b.rng() * pool.length)], dr.v, ev); }
   }
+  // 천둥의 신: 행동이 끝날 때마다 무작위 적에게 번개
+  if (u.passive?.k === 'storm' && u.alive) {
+    const pool = enemiesOf(b, u);
+    if (pool.length) { ev.push({ type: 'pet', from: u.uid, k: 'storm' }); attack(b, u, pool[Math.floor(b.rng() * pool.length)], u.passive.v, ev); }
+  }
   for (const s of u.statuses) if (s.k !== 'doom' && before.has(s)) s.turns -= 1;
   u.statuses = u.statuses.filter(s => s.k === 'doom' || s.turns > 0);
   if (!usedSkill && u.cd > 0) u.cd -= 1;

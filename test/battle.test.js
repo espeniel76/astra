@@ -301,3 +301,16 @@ describe('시간의 지배자', () => {
     expect(f.statuses.some(x => x.k === 'timestop')).toBe(false);
   });
 });
+
+describe('천둥의 신', () => {
+  it('천벌의 번개: 다섯 번 튀며 같은 적을 연달아 때리지 않는다', () => {
+    const b = createBattle({ team: team('thundergod'), foes: [{ mon: 'golem', lv: 30 }, { mon: 'golem', lv: 30 }, { mon: 'golem', lv: 30 }], seed: 80 });
+    const [t] = allies(b);
+    t.cd = 0; t.queued = true;
+    const ev = act(b, t);
+    const hits = ev.filter(e => e.type === 'damage' && e.from === t.uid && !e.reflect);
+    expect(hits.length).toBe(5 + 1); // 연쇄 5번 + 행동 끝 번개 1번
+    for (let i = 1; i < 5; i++) expect(hits[i].to).not.toBe(hits[i - 1].to);
+    expect(ev.some(e => e.type === 'pet' && e.k === 'storm')).toBe(true);
+  });
+});

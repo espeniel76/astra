@@ -126,6 +126,23 @@ const FX = {
       ev.push({ type: 'revive', from: u.uid, to: x.uid, amount: x.hp });
     }
   },
+  // 연쇄 번개: 무작위 적을 때리고, 다른 적에게 튀며 jumps번(튈 때마다 decay배). 맞은 적은 stun 확률로 1턴 기절(보스는 버팀)
+  chain(b, u, f, ev) {
+    let last = null, m = f.mult;
+    for (let i = 0; i < f.jumps; i++) {
+      const foes = enemiesOf(b, u);
+      if (!foes.length) break;
+      const pool = foes.length > 1 ? foes.filter(x => x !== last) : foes;
+      const t = rand(b, pool);
+      hitOne(b, u, t, m, ev);
+      if (t.alive && f.stun && b.rng() < f.stun) {
+        if (t.boss) ev.push({ type: 'resist', to: t.uid, k: 'stun' });
+        else addStatus(t, { k: 'stun', turns: 1, v: 0 }, ev);
+      }
+      last = t;
+      m *= f.decay;
+    }
+  },
   rage(b, u, f, ev) {
     const [t] = targetsFor(b, u, 'one');
     const lost = 1 - u.hp / u.maxHp;

@@ -223,9 +223,9 @@ export class SummonScene extends Phaser.Scene {
   async mythicReveal(slot, r) {
     const hero = HERO[r.id];
     const seven = r.star >= 7;
-    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a, dragonemperor: 0x4adf8a, phoenixqueen: 0xffa040, chronos: 0x7fe8e0, astra: 'rainbow' }[r.id] ?? 0xffe066) : 0xff3a3a;
+    const col = seven ? ({ stareater: 0xb06aff, judge: 0xffffff, abysslord: 0x3fd8d0, worldtree: 0x9fe07a, dragonemperor: 0x4adf8a, phoenixqueen: 0xffa040, chronos: 0x7fe8e0, thundergod: 0xfff3a0, astra: 'rainbow' }[r.id] ?? 0xffe066) : 0xff3a3a;
     // 번개 바깥 빛: 심판자 회색, 심해의 군주 깊은 청록, 세계수의 여왕 금색
-    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a, dragonemperor: 0xffd84a, phoenixqueen: 0xff5a1a, chronos: 0xc9a24a, astra: 0xffffff }[r.id] ?? col;
+    const outer = { judge: 0x8a8f99, abysslord: 0x0e6a70, worldtree: 0xffd84a, dragonemperor: 0xffd84a, phoenixqueen: 0xff5a1a, chronos: 0xc9a24a, thundergod: 0x4aa8ff, astra: 0xffffff }[r.id] ?? col;
     // 1) 암전: 화면 전체를 까맣게
     const dark = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 1).setAlpha(0).setDepth(140).setInteractive();
     this.tweens.add({ targets: dark, alpha: 1, duration: 900 }); // 화면 전체 암전(카드도 안 보임)
@@ -254,6 +254,7 @@ export class SummonScene extends Phaser.Scene {
       else if (r.id === 'dragonemperor') await this.dragonAscend(r);
       else if (r.id === 'phoenixqueen') await this.phoenixRebirth(r);
       else if (r.id === 'chronos') await this.timeStop(r);
+      else if (r.id === 'thundergod') await this.thunderStrike(r);
       else if (r.id === 'astra') await this.originBirth(r);
       else await this.eternalDescent(r);
     }
@@ -1109,6 +1110,146 @@ export class SummonScene extends Phaser.Scene {
     this.tweens.add({ targets: img, y: cy + 186, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     await this.eternalTitle(layer, hero, '#fff6e0', '#8a2a06', '#ffd84a', pause, () => state.skipped);
+    setBackdrop('#000000', '#000000');
+  }
+
+  // 천둥의 신 전용(약 12초): 1) 양쪽에서 먹구름이 몰려오고 비가 쏟아진다, 구름 속이 천천히 밝아졌다 어두워진다
+  // 2) 먼 곳에 번개가 차례로 내리친다 3) 구름을 뚫고 거대한 번개 창이 땅에 꽂힌다(흔들림 + 퍼지는 빛 고리)
+  // 4) 꽂힌 자리에서 천둥의 신이 일어서고 둘레에 전기가 튄다 5) ETERNAL + 이름.
+  // 번쩍임: 기본은 화면 점멸 없음(번개 선은 0.5초에 걸쳐 그려지고 1초에 걸쳐 사라짐). 번쩍임 설정을 켰을 때만 화면이 하얗게 번쩍.
+  async thunderStrike(r) {
+    const hero = HERO[r.id];
+    const { layer, state, pause, fast } = this.eternalLayer(0x04060c);
+    const cx = W / 2, cy = H / 2 - 40, gy = cy + 240;
+    setBackdrop('#04060c', '#04060c');
+    if (!this.textures.exists('streak')) {
+      const g = this.make.graphics({ add: false });
+      g.fillStyle(0xffffff, 1).fillRect(0, 0, 3, 40);
+      g.generateTexture('streak', 3, 40);
+      g.destroy();
+    }
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x05070e, 0x05070e, 0x1c2c48, 0x1c2c48, 1).fillRect(0, 0, W, H);
+    sky.setAlpha(0);
+    layer.add(sky);
+    this.tweens.add({ targets: sky, alpha: 1, duration: 1400 });
+    // 땅(어두운 언덕)
+    const ground = this.add.graphics();
+    ground.fillStyle(0x0a0e18, 1).fillEllipse(cx, H + 80, W * 1.8, 520);
+    ground.fillStyle(0x121a2a, 1).fillEllipse(cx, gy + 30, 520, 90);
+    layer.add(ground);
+
+    // 1) 먹구름이 양쪽에서 몰려온다 + 비
+    const glows = [];
+    const clouds = [];
+    for (let i = 0; i < 16; i++) {
+      const fromLeft = i % 2 === 0, y = 50 + (i % 8) * 50;
+      const c = this.add.image(fromLeft ? -360 : W + 360, y, 'soft').setTint(i % 3 ? 0x2a3650 : 0x1c2438)
+        .setScale(Phaser.Math.FloatBetween(5, 7), Phaser.Math.FloatBetween(2, 3)).setAlpha(0.95);
+      layer.add(c); clouds.push(c);
+      this.tweens.add({ targets: c, x: 40 + ((i * 97) % 640), duration: fast(2200 + (i % 4) * 250), ease: 'Sine.out' });
+    }
+    for (const [x, y] of [[170, 160], [520, 120], [360, 260]]) {
+      const g = this.add.image(x, y, 'soft').setTint(0x9fdcff).setScale(4, 2.4).setAlpha(0).setBlendMode('ADD');
+      layer.add(g); glows.push(g);
+    }
+    const rain = this.add.particles(0, 0, 'streak', {
+      x: { min: -60, max: W + 160 }, y: -40, lifespan: 1300, speedY: { min: 950, max: 1250 }, speedX: { min: -190, max: -150 },
+      rotate: 9, alpha: { start: 0.4, end: 0.1 }, tint: 0xa8c0e0, frequency: 8,
+    });
+    layer.addAt(rain, 2);
+    sfx.play('summon');
+    await pause(2000);
+    // 구름 속이 천천히 밝아졌다 어두워짐(1.4초씩, 깜빡임 아님)
+    glows.forEach((g, i) => this.tweens.add({ targets: g, alpha: 0.5, duration: 1400, delay: i * 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' }));
+
+    // 번개 한 줄기: 지그재그 점들을 만들고, 위에서 아래로 그려지며 내려왔다가 천천히 사라진다
+    const zig = (x0, y0, x1, y1, n, jit) => {
+      const pts = [[x0, y0]];
+      for (let i = 1; i < n; i++) { const t = i / n; pts.push([x0 + (x1 - x0) * t + (Math.random() - 0.5) * jit, y0 + (y1 - y0) * t]); }
+      pts.push([x1, y1]);
+      return pts;
+    };
+    const strike = (x0, y0, x1, y1, scale = 1) => {
+      const main = zig(x0, y0, x1, y1, 12, 70 * scale);
+      const branches = [3, 6, 8].map(k => { const [bx, by] = main[k]; return zig(bx, by, bx + (Math.random() - 0.5) * 220 * scale, by + 120 * scale, 5, 30 * scale); });
+      const g = this.add.graphics().setBlendMode('ADD');
+      layer.add(g);
+      const p = { v: 0 };
+      const draw = () => {
+        g.clear();
+        for (const [line, wmul] of [[main, 1], ...branches.map(b => [b, 0.45])]) {
+          const k = Math.max(2, Math.ceil(line.length * p.v));
+          for (const [w, c, a] of [[16, 0x4aa8ff, 0.25], [7, 0x9fdcff, 0.8], [2.6, 0xffffff, 1]]) {
+            g.lineStyle(w * wmul * scale, c, a).beginPath(); g.moveTo(line[0][0], line[0][1]);
+            for (let i = 1; i < k; i++) g.lineTo(line[i][0], line[i][1]);
+            g.strokePath();
+          }
+        }
+      };
+      this.tweens.add({ targets: p, v: 1, duration: 500, ease: 'Quad.in', onUpdate: draw, onComplete: () => {
+        if (this.flash) { const f = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.5).setDepth(200); this.tweens.add({ targets: f, alpha: 0, duration: 120, onComplete: () => f.destroy() }); }
+        this.tweens.add({ targets: g, alpha: 0, duration: 1000, delay: 250, onComplete: () => g.destroy() });
+      } });
+      return g;
+    };
+
+    // 2) 먼 곳 번개 세 줄기
+    for (const [x0, x1] of [[150, 90], [560, 640], [300, 210]]) {
+      if (state.skipped) break;
+      strike(x0, 200, x1, gy - 60, 0.6);
+      await pause(800);
+    }
+    await pause(500);
+
+    // 3) 거대한 번개 창이 구름을 뚫고 내리꽂힌다
+    sfx.play('star7');
+    const spear = this.add.image(cx, -360, propTex(this, 'boltSpear')).setOrigin(0.5, 556 / 560).setScale(TS * 1.5);
+    layer.add(spear);
+    await tween(this, { targets: spear, y: gy + 10, duration: fast(650), ease: 'Cubic.in' });
+    strike(cx - 30, 0, cx, gy, 1.2);
+    strike(cx + 40, 0, cx, gy, 0.9);
+    this.cameras.main.shake(800, this.flash ? 0.018 : 0.009);
+    const impact = this.add.image(cx, gy, 'soft').setTint(0x9fdcff).setScale(0.5, 0.2).setAlpha(0.9).setBlendMode('ADD');
+    layer.add(impact);
+    this.tweens.add({ targets: impact, scaleX: 9, scaleY: 2.4, alpha: 0, duration: fast(1600), ease: 'Sine.out' });
+    for (let i = 0; i < 2; i++) {
+      const ring = this.add.ellipse(cx, gy, 160, 46).setStrokeStyle(6 - i * 2, i ? 0xffe066 : 0x9fdcff, 0.9);
+      layer.add(ring);
+      this.tweens.add({ targets: ring, scale: 5, alpha: 0, duration: fast(1700), delay: state.skipped ? 0 : i * 300, ease: 'Sine.out', onComplete: () => ring.destroy() });
+    }
+    // 땅에 남은 전기(0.45초마다 모양만 바뀜, 밝기는 그대로)
+    const sparkG = this.add.graphics().setBlendMode('ADD');
+    layer.add(sparkG);
+    const crackle = () => {
+      sparkG.clear();
+      for (let k = 0; k < 6; k++) {
+        const a = Math.PI + Math.random() * Math.PI, len = 60 + Math.random() * 90;
+        const pts = zig(cx, gy, cx + Math.cos(a) * len * 1.6, gy + Math.sin(a) * len * 0.5 + 30, 5, 22);
+        for (const [w, c, al] of [[6, 0x4aa8ff, 0.35], [2, 0xffffff, 0.9]]) {
+          sparkG.lineStyle(w, c, al).beginPath(); sparkG.moveTo(pts[0][0], pts[0][1]);
+          for (const [x, y] of pts.slice(1)) sparkG.lineTo(x, y);
+          sparkG.strokePath();
+        }
+      }
+    };
+    crackle();
+    const crackTick = this.time.addEvent({ delay: this.flash ? 120 : 450, loop: true, callback: crackle });
+    await pause(1200);
+
+    // 4) 창이 빛으로 사라지고, 그 자리에서 천둥의 신이 일어선다
+    this.tweens.add({ targets: spear, alpha: 0, y: gy - 40, duration: fast(900) });
+    const halo = this.add.image(cx, gy - 160, 'soft').setTint(0x9fdcff).setScale(0.5).setAlpha(0).setBlendMode('ADD');
+    layer.add(halo);
+    this.tweens.add({ targets: halo, scale: 5, alpha: 0.45, duration: fast(1400), ease: 'Sine.out' });
+    const img = this.add.image(cx, gy + 40, heroTex(this, r.id)).setOrigin(0.5, 0.86).setScale(1.2 * TS).setAlpha(0);
+    layer.add(img);
+    await tween(this, { targets: img, alpha: 1, y: cy + 200, scale: 2.7 * TS, duration: fast(1600), ease: 'Back.out' });
+    this.tweens.add({ targets: halo, alpha: 0.25, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: img, y: cy + 186, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    await this.eternalTitle(layer, hero, '#fffbe0', '#1a3a6a', '#ffe066', pause, () => state.skipped);
+    crackTick.remove();
     setBackdrop('#000000', '#000000');
   }
 

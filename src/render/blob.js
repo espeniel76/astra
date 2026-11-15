@@ -386,6 +386,15 @@ function fantasyWeapon(ctx, gun, box) {
       ctx.lineCap = 'butt';
       for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2; circle(ctx, 28 + Math.cos(a) * 5, Math.sin(a) * 5, 0.7, '#3a6a7a', 0.3); }
       break;
+    case 'boltspear': { // 천둥의 신: 금 자루 끝에 번개 모양 창날
+      stick(ctx, -8, 20, '#c9a24a', 3.2);
+      const g = ctx.createRadialGradient(30, 0, 1, 30, 0, 13);
+      g.addColorStop(0, 'rgba(191,233,255,0.8)'); g.addColorStop(1, 'rgba(159,220,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(30, 0, 13, 0, Math.PI * 2); ctx.fill();
+      poly(ctx, [[19, -3], [28, -6], [26, -1], [40, -2], [29, 6], [31, 1], [19, 3]], '#fff3a0', 1.3);
+      circle(ctx, 20, 0, 2.4, '#9fdcff', 1);
+      break;
+    }
     case 'starstaff':
       stick(ctx, -6, 22, '#3a2a5a', 3.4);
       star(ctx, 27, 0, 8, '#ffe066');
@@ -671,6 +680,7 @@ const OUTFIT = {
   dragonemperor: { coat: '#1a5a3a', inner: '#ffd84a', v: 10, ridge: true, trim: '#ffd84a', scales: '#2a7a4a', collar: '#1a5a3a', pauldron: ['#2a7a4a', '#ffd84a'], cape: ['#0e3a24', '#c9a24a'] },
   phoenixqueen: { coat: '#fff0d8', inner: '#ff7a1a', v: 9, trim: '#ffd84a', collar: '#fff0d8', belt: ['#c8961a', '#ffd84a'], cape: ['#ff9a3a', '#ffd84a'] },
   chronos: { coat: '#1a2a3a', inner: '#7fe8e0', v: 10, ridge: true, trim: '#c9d3de', gears: '#c9a24a', collar: '#1a2a3a', pauldron: ['#3a4a5a', '#c9d3de'], cape: ['#0e1a26', '#3a6a7a'] },
+  thundergod: { coat: '#1a2a4a', inner: '#ffe066', v: 10, ridge: true, trim: '#ffe066', collar: '#1a2a4a', pauldron: ['#2a3a5a', '#ffe066'], belt: ['#0e1626', '#ffe066'], cape: ['#2a4a7a', '#9fdcff'] },
   guardian: { coat: '#e8c040', inner: '#ffffff', v: 9, ridge: true, trim: '#fff6c8', pauldron: ['#ffe680', '#fff6c8'], cape: ['#fff3c0', '#e8b923'] },
 };
 export const OUTFIT_IDS = Object.keys(OUTFIT);
@@ -1542,6 +1552,32 @@ function heroDeco(ctx, id, phase) {
         poly(ctx, [[-4.5, y0 + 3], [4.5, y0 + 3], [0, ym - 1]], '#ffd84a', 0.4);
         rr(ctx, -8, y0 - 2, 16, 3, 1.5); fillStroke(ctx, '#c9a24a', 1.2, '#6a5010');
         rr(ctx, -8, y1 - 3, 16, 3, 1.5); fillStroke(ctx, '#c9a24a', 1.2, '#6a5010');
+      }
+      break;
+    case 'thundergod': // 천둥의 신: 등 뒤 먹구름 고리와 작은 번개들 + 번개 가시 금관
+      if (phase === 'back') {
+        const g = ctx.createRadialGradient(0, BY - 8, 4, 0, BY - 8, R + 26);
+        g.addColorStop(0, 'rgba(159,220,255,0.4)'); g.addColorStop(1, 'rgba(159,220,255,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, BY - 8, R + 26, 0, Math.PI * 2); ctx.fill();
+        // 머리 뒤 하늘빛 고리 + 바깥으로 뻗는 번개 여섯 갈래
+        ctx.strokeStyle = 'rgba(159,220,255,0.9)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, BY - 8, R + 12, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,240,160,0.9)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(0, BY - 8, R + 8, 0, Math.PI * 2); ctx.stroke();
+        for (let k = 0; k < 6; k++) {
+          const a = Math.PI * (1.12 + k * 0.152);
+          ctx.save(); ctx.translate(Math.cos(a) * (R + 12), BY - 8 + Math.sin(a) * (R + 12)); ctx.rotate(a);
+          poly(ctx, [[0, -2.5], [8, -4], [6, -0.5], [16, -1.5], [7, 4.5], [9, 1], [0, 2.5]], '#fff3a0', 1.1);
+          ctx.restore();
+        }
+      }
+      if (phase === 'front') { // 번개 가시 금관
+        for (const [x, h, s] of [[-10, 12, -1], [0, 18, 1], [10, 12, 1]]) {
+          poly(ctx, [[x - 3, top + 2], [x + s * 2, top + 2 - h * 0.55], [x - s * 1, top + 2 - h * 0.5], [x + s * 3, top + 2 - h], [x + s * 1, top + 2 - h * 0.4], [x + 3, top + 2]], '#ffe066', 1.2);
+        }
+        rr(ctx, -14, top + 1, 28, 6, 3); fillStroke(ctx, '#ffe066', 1.4, '#8a6410');
+        circle(ctx, 0, top + 4, 2.6, '#9fdcff', 1);
+        glint(ctx, -0.8, top + 3, 0.9);
       }
       break;
     case 'stareater': // 별을 삼킨 자: 등 뒤 작은 블랙홀(보랏빛 고리) + 머리 위 떠 있는 별 조각 왕관
