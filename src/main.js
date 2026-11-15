@@ -13,6 +13,8 @@ import * as settings from './ui/screens/settings.js';
 import * as summon from './ui/screens/summon.js';
 
 import { HEROES } from './data/heroes.js';
+import { isAdmin } from './core/admin.js';
+import { maxAllHeroes } from './core/progress.js';
 
 const TEST = /[?&]test\b/.test(location.search);
 const save = loadSave();
@@ -25,6 +27,8 @@ if (TEST && !save.tips.testInit) {
 }
 // 테스트판: 모든 영웅을 한 명씩 불러 둔다(영웅의 집에서 전부 보기). 새 영웅이 생기면 그 영웅도 들어온다.
 if (TEST) for (const h of HEROES) save.heroes[h.id] ||= { level: 1, dupes: 0 };
+// 관리자 기기: 켤 때마다 모든 영웅 풀강(새 영웅도 바로 들어온다)
+if (isAdmin()) maxAllHeroes(save);
 ensureToday(save);
 writeSave(save);
 sfx.setOn(save.settings.sound);

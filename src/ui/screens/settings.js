@@ -2,6 +2,7 @@ import { h } from '../app.js';
 import { exportCode, importCode, defaultSave } from '../../core/save.js';
 import { sfx } from '../../core/sfx.js';
 import { isAdmin, lockAdmin, adminForm } from '../../core/admin.js';
+import { maxAllHeroes } from '../../core/progress.js';
 
 export function render(root, app) {
   const st = app.save.settings;
@@ -53,7 +54,7 @@ export function render(root, app) {
         : h('button.btn.ghost', { style: 'margin-top:6px;font-size:14px;min-height:40px', onclick: () => app.modal(close => h('div.col',
           h('h2', { style: 'margin:0' }, '🔑 관리자'),
           adminForm(h, {
-            onOk: () => { close(); app.toast('관리자로 열렸어요'); app.refresh(); },
+            onOk: () => { maxAllHeroes(app.save); app.persist(); close(); app.toast('관리자로 열렸어요! 모든 영웅 풀강'); app.refresh(); },
             onFail: () => app.toast('코드가 달라요'),
           }),
           h('button.btn.ghost', { onclick: close }, '닫기'))) }, '🔑 관리자'),

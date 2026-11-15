@@ -104,3 +104,21 @@ describe('★7 각성(큰 별 ★8)', () => {
     expect(levelUp(s, 'guardian')).toEqual({ ok: true });
   });
 });
+
+describe('관리자 풀강', () => {
+  it('모든 영웅이 최대 레벨·겹치기 +5, ★7은 각성(Lv60)', async () => {
+    const { maxAllHeroes, maxLevel } = await import('../src/core/progress.js');
+    const { HEROES } = await import('../src/data/heroes.js');
+    const { defaultSave, normalize } = await import('../src/core/save.js');
+    const s = defaultSave();
+    maxAllHeroes(s);
+    expect(Object.keys(s.heroes).length).toBe(HEROES.length);
+    for (const h of HEROES) {
+      const o = s.heroes[h.id];
+      expect(o.dupes).toBe(5);
+      expect(!!o.awakened).toBe(h.star === 7);
+      expect(o.level).toBe(maxLevel(h.id, h.star === 7));
+    }
+    if (normalize) expect(normalize(JSON.parse(JSON.stringify(s))).heroes).toEqual(s.heroes); // 저장했다 불러와도 그대로
+  });
+});

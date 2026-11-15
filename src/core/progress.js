@@ -51,3 +51,13 @@ export function teamPower(save) {
     return t + (h ? power(id, h.level, h.dupes, h.awakened) : 0);
   }, 0);
 }
+
+// 관리자(src/core/admin.js): 모든 영웅을 가장 세게 — 최대 레벨, 겹치기 +5, ★7은 각성까지(아들 요청, 2026-11-15)
+// 새 영웅이 생겨도 관리자 기기에서 게임을 켜면 다시 불러서 그 영웅도 들어온다.
+export function maxAllHeroes(save) {
+  for (const id of Object.keys(HERO)) {
+    const awakened = HERO[id].star === 7;
+    save.heroes[id] = { level: maxLevel(id, awakened), dupes: DUPE_MAX };
+    if (awakened) save.heroes[id].awakened = true;
+  }
+}
