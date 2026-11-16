@@ -22,10 +22,12 @@ function makeUnit(b, side, slot, o) {
   };
 }
 
-function heroUnit(b, slot, { id, level = 1, dupes = 0, awakened = false }) {
+// side = 'ally'(내 팀) 또는 'foe'(친구 대전의 상대 팀)
+function heroUnit(b, slot, { id, level = 1, dupes = 0, awakened = false, gear = null }, side = 'ally') {
   const h = HERO[id];
-  const st = heroStats(id, level, dupes, awakened);
-  return makeUnit(b, 'ally', slot, {
+  const st = heroStats(id, level, dupes, awakened, gear);
+  return makeUnit(b, side, slot, {
+    hero: true,
     id, name: h.name, star: h.star, role: h.role, ...st,
     skill: h.skill, cdMax: h.skill.cd, cd: 1, passive: h.passive,
   });
@@ -42,27 +44,41 @@ export function monsterUnit(b, slot, { mon, lv }) {
   });
 }
 
-function endstarCurse(b, foes) {
-  const ec = b.units.find(u => u.side === 'ally' && u.alive && u.passive?.k === 'endstar');
-  if (ec) for (const f of foes) f.statuses.push({ k: 'weak', turns: 999, v: ec.passive.v });
+const otherSide = side => (side === 'ally' ? 'foe' : 'ally');
+
+// 이클립스: 상대 편 유닛들에게 약화(공격력 -v, 전투 내내)
+function endstarCurse(b, targets) {
+  for (const t of targets) {
+    const ec = b.units.find(u => u.side !== t.side && u.alive && u.passive?.k === 'endstar');
+    if (ec) t.statuses.push({ k: 'weak', turns: 999, v: ec.passive.v });
+  }
+}
+// 최후의 심판자: 상대 편 유닛들에게 선고(방어 -v, 전투 내내)
+function sentence(b, targets) {
+  for (const t of targets) {
+    const jd = b.units.find(u => u.side !== t.side && u.alive && u.passive?.k === 'sentence');
+    if (jd) t.statuses.push({ k: 'defDown', turns: 999, v: jd.passive.v });
+  }
 }
 
-export function createBattle({ team = [], stageId = null, foes = null, seed = Date.now() }) {
+// foeTeam: 친구 대전 상대 영웅들(영웅 모양 그대로 적 편에 선다). 없으면 foes(몬스터)·스테이지 몬스터
+export function createBattle({ team = [], stageId = null, foes = null, foeTeam = null, seed = Date.now() }) {
   const b = { units: [], rng: makeRng(seed), result: null, goldMul: 1, kills: 0, nextUid: 1, turn: 0, stageId, anyAllyDied: false };
-  team.forEach((t, i) => { if (t && HERO[t.id]) b.units.push(heroUnit(b, i, t)); });
-  const list = foes || STAGE[stageId]?.foes || [];
-  list.forEach((f, i) => b.units.push(monsterUnit(b, i, f)));
-  // 아스트라(근원): 전투가 시작되면 아군 전체에 별빛 보호막(아스트라 공격력 × mult)
-  const origin = b.units.find(u => u.side === 'ally' && u.passive?.k === 'origin');
-  if (origin) for (const a of b.units.filter(u => u.side === 'ally')) a.shield = Math.min(a.maxHp, Math.round(origin.atk * origin.passive.mult));
-  // 최후의 심판자: 전투가 시작되면 적 전체에 선고(방어 -30%, 전투 내내)
-  const judge = b.units.find(u => u.side === 'ally' && u.passive?.k === 'sentence');
-  if (judge) for (const f of b.units.filter(u => u.side === 'foe')) f.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });
-  // 이클립스: 전투가 시작되면 적 전체 약화(공격력 -v, 전투 내내)
-  endstarCurse(b, b.units.filter(u => u.side === 'foe'));
-  // 시간의 지배자: 전투가 시작되면 아군 전체 속도 +v
-  const chrono = b.units.find(u => u.side === 'ally' && u.passive?.k === 'haste');
-  if (chrono) for (const a of b.units.filter(u => u.side === 'ally')) a.spd = Math.round(a.spd * (1 + chrono.passive.v));
+  team.forEach((t, i) => { if (t && HERO[t.id]) b.units.push(heroUnit(b, i, t, 'ally')); });
+  if (foeTeam) foeTeam.forEach((t, i) => { if (t && HERO[t.id]) b.units.push(heroUnit(b, i, t, 'foe')); });
+  else (foes || STAGE[stageId]?.foes || []).forEach((f, i) => b.units.push(monsterUnit(b, i, f)));
+  for (const side of ['ally', 'foe']) {
+    const mine = b.units.filter(u => u.side === side);
+    // 아스트라(근원): 전투가 시작되면 자기 편 전체에 별빛 보호막(아스트라 공격력 × mult)
+    const origin = mine.find(u => u.passive?.k === 'origin');
+    if (origin) for (const a of mine) a.shield = Math.min(a.maxHp, Math.round(origin.atk * origin.passive.mult));
+    // 시간의 지배자: 전투가 시작되면 자기 편 전체 속도 +v
+    const chrono = mine.find(u => u.passive?.k === 'haste');
+    if (chrono) for (const a of mine) a.spd = Math.round(a.spd * (1 + chrono.passive.v));
+  }
+  // 최후의 심판자(방어 -30%)·이클립스(공격력 -25%): 상대 편 전체에 전투 내내
+  sentence(b, b.units);
+  endstarCurse(b, b.units);
   b.attack = (src, tgt, mult, ev, opts) => attack(b, src, tgt, mult, ev, opts);
   b.hurt = (src, tgt, amount, ev, opts) => hurt(b, src, tgt, amount, ev, opts);
   checkEnd(b);
@@ -133,7 +149,7 @@ export function attack(b, src, tgt, mult, ev, opts = {}) {
     hurt(b, tgt, src, Math.max(1, Math.round(dealt * refl.v)), ev, { reflect: true });
   }
   // 심해의 군주: 아군이 맞으면 받은 피해 일부를 물로 되돌린다
-  const tide = tgt.side === 'ally' && src.side === 'foe' && !opts.noCounter && src.alive && dealt > 0 && alive(b, 'ally').find(x => x.passive?.k === 'tide');
+  const tide = tgt.side !== src.side && !opts.noCounter && src.alive && dealt > 0 && alive(b, tgt.side).find(x => x.passive?.k === 'tide');
   if (tide) hurt(b, tide, src, Math.max(1, Math.round(dealt * tide.passive.v)), ev, { reflect: true });
   return dealt;
 }
@@ -142,9 +158,8 @@ export function attack(b, src, tgt, mult, ev, opts = {}) {
 export function hurt(b, src, tgt, amount, ev, opts = {}) {
   if (!tgt.alive) return 0;
   let d = amount;
-  if (tgt.side === 'ally' && alive(b, 'ally').some(u => u.passive?.k === 'guardian')) {
-    d = Math.max(1, Math.round(d * (1 - alive(b, 'ally').find(u => u.passive?.k === 'guardian').passive.guard)));
-  }
+  const guard = alive(b, tgt.side).find(u => u.passive?.k === 'guardian');
+  if (guard) d = Math.max(1, Math.round(d * (1 - guard.passive.guard)));
   // 용의 황제: 용의 비늘(자기가 받는 피해 줄임)
   if (tgt.passive?.k === 'dragonscale') d = Math.max(1, Math.round(d * (1 - tgt.passive.guard)));
   let absorbed = 0;
@@ -159,9 +174,9 @@ export function hurt(b, src, tgt, amount, ev, opts = {}) {
   if (ds && tgt.alive && !tgt.passiveUsed && tgt.hp <= tgt.maxHp * ds.at) {
     tgt.passiveUsed = true;
     ev.push({ type: 'passive', from: tgt.uid, name: '용의 포효' });
-    for (const a of alive(b, 'ally')) addStatus(a, { k: 'atkUp', turns: ds.turns, v: ds.v }, ev);
+    for (const a of alive(b, tgt.side)) addStatus(a, { k: 'atkUp', turns: ds.turns, v: ds.v }, ev);
   }
-  if (tgt.side === 'ally') guardianCheck(b, ev);
+  guardianCheck(b, tgt.side, ev);
   return d;
 }
 
@@ -174,8 +189,7 @@ function afterHit(b, u, ev) {
       const used = new Set(alive(b, 'foe').map(x => x.slot));
       const slot = [0, 1, 2].find(s => !used.has(s));
       const m = monsterUnit(b, slot, { mon: sk.mon, lv: u.lv });
-      const judge = alive(b, 'ally').find(x => x.passive?.k === 'sentence');
-      if (judge) m.statuses.push({ k: 'defDown', turns: 999, v: judge.passive.v });
+      sentence(b, [m]);
       endstarCurse(b, [m]);
       b.units.push(m);
       ev.push({ type: 'summon', from: u.uid, to: m.uid, name: sk.name });
@@ -184,8 +198,8 @@ function afterHit(b, u, ev) {
 }
 
 function die(b, u, ev) {
-  if (u.side === 'ally') {
-    const ph = alive(b, 'ally').find(x => x.passive?.k === 'phoenix' && !x.passiveUsed && x !== u)
+  {
+    const ph = alive(b, u.side).find(x => x.passive?.k === 'phoenix' && !x.passiveUsed && x !== u)
       || (u.passive?.k === 'phoenix' && !u.passiveUsed ? u : null);
     if (ph) {
       ph.passiveUsed = true;
@@ -195,11 +209,11 @@ function die(b, u, ev) {
       return;
     }
     // 세계수의 여왕: 전투마다 한 번, 쓰러지는 아군과 이미 쓰러진 아군을 전부 되살린다
-    const tree = b.units.find(x => x.side === 'ally' && x.passive?.k === 'rebirth' && !x.passiveUsed && (x.alive || x === u));
+    const tree = b.units.find(x => x.side === u.side && x.passive?.k === 'rebirth' && !x.passiveUsed && (x.alive || x === u));
     if (tree) {
       tree.passiveUsed = true;
       ev.push({ type: 'passive', from: tree.uid, name: '세계수의 부활' });
-      for (const x of b.units.filter(y => y.side === 'ally' && (y === u || !y.alive))) {
+      for (const x of b.units.filter(y => y.side === u.side && (y === u || !y.alive))) {
         x.alive = true;
         x.hp = Math.round(x.maxHp * tree.passive.hp);
         x.statuses = x.statuses.filter(st => !BAD.has(st.k));
@@ -213,10 +227,10 @@ function die(b, u, ev) {
   if (u.side === 'ally') b.anyAllyDied = true;
   u.queued = false;
   ev.push({ type: 'death', to: u.uid });
-  if (u.side === 'foe') {
-    b.kills += 1;
-    // 별을 삼킨 자: 적이 쓰러질 때마다 공격력이 오른다(최대 max번)
-    for (const d of alive(b, 'ally').filter(x => x.passive?.k === 'devour')) {
+  if (u.side === 'foe') b.kills += 1;
+  {
+    // 별을 삼킨 자: 상대가 쓰러질 때마다 공격력이 오른다(최대 max번)
+    for (const d of alive(b, otherSide(u.side)).filter(x => x.passive?.k === 'devour')) {
       d.devour = d.devour || 0;
       if (d.devour >= d.passive.max) continue;
       d.devour += 1;
@@ -225,7 +239,7 @@ function die(b, u, ev) {
     }
     const pl = u.statuses.find(s => s.k === 'poison' && s.spread);
     if (pl) {
-      const others = alive(b, 'foe');
+      const others = alive(b, u.side);
       if (others.length) {
         const n = others[Math.floor(b.rng() * others.length)];
         n.statuses = n.statuses.filter(s => s.k !== 'poison');
@@ -236,10 +250,10 @@ function die(b, u, ev) {
   }
 }
 
-function guardianCheck(b, ev) {
-  const g = alive(b, 'ally').find(u => u.passive?.k === 'guardian' && !u.passiveUsed);
+function guardianCheck(b, side, ev) {
+  const g = alive(b, side).find(u => u.passive?.k === 'guardian' && !u.passiveUsed);
   if (!g) return;
-  const all = alive(b, 'ally');
+  const all = alive(b, side);
   const ratio = all.reduce((t, u) => t + u.hp, 0) / all.reduce((t, u) => t + u.maxHp, 0);
   if (ratio > g.passive.at) return;
   g.passiveUsed = true;
@@ -347,7 +361,7 @@ export function act(b, u, { auto = false } = {}) {
   let usedSkill = false;
   if (hasDisable(u)) {
     ev.push({ type: 'skip', from: u.uid, k: u.statuses.find(s => DISABLE.has(s.k)).k });
-  } else if (u.side === 'ally' && u.cd === 0 && (u.queued || auto) && !statusOf(u, 'charm')) {
+  } else if (u.skill && u.cd === 0 && (u.side === 'foe' || u.queued || auto) && !statusOf(u, 'charm')) {
     ev.push({ type: 'skill', from: u.uid, name: u.skill.name });
     runFx(b, u, u.skill.fx, ev);
     u.cd = u.cdMax;

@@ -9,6 +9,9 @@ import { closeStage, setBackdrop } from './phaser.js';
 import { text, button, heroTex, monTex, wait, tween, colorNum, PX, TEXRES, TS, hiDpi } from './ui.js';
 import { bgTexture, addAmbient, BACKDROP } from './backgrounds.js';
 import { starsFor, recordStars } from '../core/stars.js';
+import { dropGear } from '../core/gear.js';
+import { gearName, GRADES } from '../data/gear.js';
+import { winTower, towerSpec, winDungeon, dungeonState, finishPvp } from '../core/modes.js';
 
 const W = 720;
 const FOE_Y = 470, ALLY_Y = 880;
@@ -27,10 +30,12 @@ const STATUS_NAME = {
 export class BattleScene extends Phaser.Scene {
   constructor() { super('battle'); }
 
-  init({ app, stageId }) {
+  // stageId = 모험 스테이지, spec = 도전 모드(무한의 탑·요일 던전·친구 대전, src/core/modes.js)
+  init({ app, stageId = null, spec = null }) {
     this.app = app;
-    this.stageId = stageId;
-    this.stage = STAGE[stageId];
+    this.spec = spec;
+    this.stageId = spec ? null : stageId;
+    this.stage = spec ? null : STAGE[stageId];
     this.settings = app.save.settings;
     this.ended = false;
     this.paused = false; // 같은 씬 객체를 다시 쓰므로 매번 풀어 준다
@@ -44,6 +49,8 @@ export class BattleScene extends Phaser.Scene {
     this.b = createBattle({
       team: s.team.map(id => (id && s.heroes[id] ? { id, ...s.heroes[id] } : null)),
       stageId: this.stageId,
+      foes: this.spec?.foes || null,
+      foeTeam: this.spec?.foeTeam || null,
       seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0,
     });
     this.drawBackground();
@@ -62,7 +69,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   drawBackground() {
-    const kind = CHAPTERS[this.stage.chapter - 1].bg;
+    const kind = this.spec ? this.spec.bg : CHAPTERS[this.stage.chapter - 1].bg;
     setBackdrop(BACKDROP[kind], '#0d1020');
     this.add.rectangle(W / 2, 640, W, 1280, 0x0d1020);
     this.add.image(0, 0, bgTexture(this, kind)).setOrigin(0, 0).setScale(TS);
@@ -78,12 +85,12 @@ export class BattleScene extends Phaser.Scene {
 
   addUnitView(u) {
     const { x, y } = this.pos(u);
-    const key = u.side === 'ally' ? heroTex(this, u.id) : monTex(this, u.id);
+    const key = u.hero ? heroTex(this, u.id) : monTex(this, u.id);
     const scale = 1.05 * TS; // 텍스처가 2배라 0.5배 곱함
     const img = this.add.image(x, y, key).setOrigin(0.5, 0.86).setScale(scale);
     if (u.side === 'foe') img.setFlipX(true);
     const bar = this.add.graphics();
-    const label = text(this, x, y + 40, u.side === 'ally' ? u.name : `${u.name} Lv${u.lv}`, 18, '#ffffff');
+    const label = text(this, x, y + 40, u.side === 'ally' ? u.name : u.hero ? `${u.name}` : `${u.name} Lv${u.lv}`, 18, u.side === 'foe' && u.hero ? '#ffb0b0' : '#ffffff');
     const icons = text(this, x, y - PX * TEXRES * 0.86 * scale - 4, '', 22, '#ffffff', { strokeThickness: 0 });
     const v = { u, img, bar, label, icons, scale, hpShown: u.hp };
     this.views.set(u.uid, v);
@@ -92,7 +99,8 @@ export class BattleScene extends Phaser.Scene {
 
   buildHud() {
     const st = this.stage;
-    text(this, 110, 50, `${st.id}${st.boss ? ' 보스' : ''}`, 30, '#ffffff');
+    if (this.spec) text(this, 20, 50, this.spec.title, 24, '#ffffff', { wordWrap: { width: 300 }, align: 'left' }).setOrigin(0, 0.5);
+    else text(this, 110, 50, `${st.id}${st.boss ? ' 보스' : ''}`, 30, '#ffffff');
     this.autoBtn = button(this, 400, 50, 120, 64, '자동', () => {
       this.settings.auto = !this.settings.auto; this.app.persist(); this.autoBtn.setOn(this.settings.auto);
     }, { size: 24 });
@@ -180,6 +188,7 @@ export class BattleScene extends Phaser.Scene {
   async loop() {
     while (!this.ended && !this.b.result) {
       if (this.paused) { await wait(this, 100); continue; }
+      if (this.spec?.kind === 'pvp' && this.b.turn > 300) { this.b.result = 'draw'; break; }
       const ev = step(this.b, { auto: this.settings.auto });
       for (const e of ev) {
         if (this.ended) return;
@@ -314,7 +323,7 @@ export class BattleScene extends Phaser.Scene {
     this.paused = true;
     const c = this.overlay();
     c.add(text(this, W / 2, 520, '나가면 이번 전투 보상은 없어요.\n나갈까요?', 34, '#ffffff'));
-    const yes = button(this, W / 2 - 130, 680, 220, 90, '나가기', () => { this.ended = true; this.paused = false; closeStage(this.app, 'adventure'); }, { fill: 0x6a2a3a });
+    const yes = button(this, W / 2 - 130, 680, 220, 90, '나가기', () => { this.ended = true; this.paused = false; closeStage(this.app, this.spec?.back || 'adventure'); }, { fill: 0x6a2a3a });
     const no = button(this, W / 2 + 130, 680, 220, 90, '계속 싸우기', () => this.closeExit());
     yes.box.setDepth(101); no.box.setDepth(101);
     this.exitUi = [c, yes, no];
@@ -331,6 +340,7 @@ export class BattleScene extends Phaser.Scene {
   finish(result) {
     this.ended = true;
     this.skillTip?.destroy(); this.skillTip = null;
+    if (this.spec) return this.finishMode(result);
     const s = this.app.save, st = this.stage;
     bump(s, 'battle');
     const c = this.overlay();
@@ -342,6 +352,7 @@ export class BattleScene extends Phaser.Scene {
       const { first } = recordStars(s, st.id, got);
       s.gold += gold;
       s.diamonds += st.dia + (first ? st.firstDia : 0);
+      const drop = st.boss || Math.random() < 0.3 ? dropGear(s, Math.random, Math.min(5, 1 + Math.floor((st.chapter - 1) / 3)), 1) : [];
       this.app.persist();
       const title = add(text(this, W / 2, 300, '승리!', 96, '#ffe066'));
       title.setScale(0.4);
@@ -357,10 +368,11 @@ export class BattleScene extends Phaser.Scene {
         add(text(this, W / 2 + (i - 1) * 120, 500, conds[i], 17, on ? '#ffe9a0' : '#8a90aa', { wordWrap: { width: 116 } }));
       }
       add(text(this, W / 2, 575, `🪙 ${gold.toLocaleString('ko-KR')}${this.b.goldMul > 1 ? ' (×2)' : ''}`, 44, '#ffd36a'));
+      if (drop.length) add(text(this, W / 2, 700, `🎁 ${gearName(drop[0].slot, drop[0].grade)}`, 34, GRADES[drop[0].grade].color));
       add(text(this, W / 2, 640, first ? `💎 ${st.dia} + ${st.firstDia.toLocaleString('ko-KR')} (첫 클리어)` : `💎 ${st.dia}`, 40, '#7fd8ff'));
       const idx = STAGES.indexOf(st);
       const next = STAGES[idx + 1];
-      if (next) add(button(this, W / 2, 780, 420, 100, `다음: ${next.id}${next.boss ? ' 보스' : ''}`, () => this.scene.restart({ app: this.app, stageId: next.id }), { fill: 0x3cb94e }));
+      if (next) add(button(this, W / 2, 780, 420, 100, `다음: ${next.id}${next.boss ? ' 보스' : ''}`, () => this.scene.restart({ app: this.app, stageId: next.id, spec: null }), { fill: 0x3cb94e }));
       else add(text(this, W / 2, 780, '모든 스테이지를 깼어요!', 36, '#ffe066'));
       add(button(this, W / 2, 910, 420, 90, '모험으로', () => closeStage(this.app, 'adventure')));
     } else {
@@ -369,8 +381,43 @@ export class BattleScene extends Phaser.Scene {
       add(text(this, W / 2, 440, '아쉬워요…', 80, '#ff8a8a'));
       add(text(this, W / 2, 560, '영웅을 레벨업하고\n다시 도전해요!', 36, '#ffffff'));
       add(button(this, W / 2, 720, 420, 96, '영웅 키우러 가기', () => closeStage(this.app, 'heroes'), { fill: 0x3cb94e }));
-      add(button(this, W / 2, 840, 420, 90, '다시 도전', () => this.scene.restart({ app: this.app, stageId: st.id })));
+      add(button(this, W / 2, 840, 420, 90, '다시 도전', () => this.scene.restart({ app: this.app, stageId: st.id, spec: null })));
       add(button(this, W / 2, 950, 420, 90, '모험으로', () => closeStage(this.app, 'adventure'), { fill: 0x3a3f55 }));
     }
+  }
+
+  // 도전 모드 결과: 보상 주고, 다음 층·다시 하기·돌아가기
+  finishMode(result) {
+    const s = this.app.save, sp = this.spec;
+    bump(s, 'battle');
+    const c = this.overlay();
+    const add = o => { c.add(o.box || o); return o; };
+    const back = () => closeStage(this.app, sp.back);
+    const again = nextSpec => this.scene.restart({ app: this.app, stageId: null, spec: nextSpec });
+    const lines = [];
+    let r = null;
+    if (result === 'win') {
+      if (sp.kind === 'tower') r = winTower(s, sp.floor, Math.random);
+      else if (sp.kind === 'dungeon') { r = winDungeon(s, sp.key, sp.diff, Math.random); if (!r) lines.push(['오늘 도전 횟수를 다 썼어요', '#cccccc']); }
+      else if (sp.kind === 'pvp') r = finishPvp(s, 'win');
+    } else if (sp.kind === 'pvp') finishPvp(s, result);
+    if (r?.gold) lines.push([`🪙 ${r.gold.toLocaleString('ko-KR')}`, '#ffd36a']);
+    if (r?.dia) lines.push([`💎 ${r.dia}${sp.kind === 'pvp' ? ' (오늘 첫 승리)' : ''}`, '#7fd8ff']);
+    for (const g of r?.gear || []) lines.push([`🎁 ${gearName(g.slot, g.grade)}`, GRADES[g.grade].color]);
+    this.app.persist();
+
+    const win = result === 'win';
+    sfx.play(win ? 'win' : 'lose');
+    const head = win ? (sp.kind === 'tower' ? `${sp.floor}층 돌파!` : '승리!') : result === 'draw' ? '무승부' : sp.kind === 'pvp' ? '패배…' : '아쉬워요…';
+    const title = add(text(this, W / 2, 330, head, 84, win ? '#ffe066' : result === 'draw' ? '#dddddd' : '#ff8a8a'));
+    title.setScale(0.4);
+    this.tweens.add({ targets: title, scale: 1, duration: 450, ease: 'Back.out' });
+    if (sp.kind === 'pvp') add(text(this, W / 2, 420, `${s.pvp.wins}승 ${s.pvp.losses}패`, 32, '#ffffff'));
+    lines.forEach(([t, col], i) => add(text(this, W / 2, 500 + i * 58, t, 36, col)));
+    let y = Math.max(720, 520 + lines.length * 58 + 60);
+    if (sp.kind === 'tower' && win) { add(button(this, W / 2, y, 420, 100, `다음: ${sp.floor + 1}층`, () => again(towerSpec(sp.floor + 1)), { fill: 0x3cb94e })); y += 120; }
+    else if (sp.kind === 'dungeon' && win && dungeonState(s).left > 0) { add(button(this, W / 2, y, 420, 100, `다시 하기 (남은 ${dungeonState(s).left}번)`, () => again(sp), { fill: 0x3cb94e })); y += 120; }
+    else if (!win || sp.kind === 'pvp') { add(button(this, W / 2, y, 420, 100, sp.kind === 'pvp' ? '다시 대전' : '다시 도전', () => again(sp), { fill: 0x3cb94e })); y += 120; }
+    add(button(this, W / 2, y, 420, 90, { tower: '탑으로', dungeon: '던전으로', pvp: '대전으로' }[sp.kind], back, { fill: 0x3a3f55 }));
   }
 }

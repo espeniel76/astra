@@ -4,6 +4,8 @@ import { heroCanvas } from '../../render/portrait.js';
 import { heroStats, levelCost, levelUp, maxLevel, awaken, DUPE_MAX } from '../../core/progress.js';
 import { bump } from '../../core/daily.js';
 import { sfx } from '../../core/sfx.js';
+import { SLOTS, SLOT_IDS, GRADES, gearName, bonusText } from '../../data/gear.js';
+import { bagCount, equip, unequip } from '../../core/gear.js';
 
 export function render(root, app, { id, from = 'heroes', pop = false }) {
   const hero = HERO[id];
@@ -14,7 +16,7 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
     return;
   }
   const aw = !!own.awakened;
-  const st = heroStats(id, own.level, own.dupes, aw);
+  const st = heroStats(id, own.level, own.dupes, aw, own.gear);
   const maxLv = maxLevel(id, aw);
   const maxed = own.level >= maxLv;
   const cost = levelCost(own.level);
@@ -44,6 +46,29 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
         }, own.dupes < DUPE_MAX ? `+${DUPE_MAX - own.dupes} 더 겹치면 각성` : '각성하기'));
   }
 
+  // 장비 세 칸(무기·갑옷·장신구): 누르면 가방에서 골라 낀다
+  const gearModal = slot => app.modal(close => {
+    const cur = own.gear?.[slot] || 0;
+    const pick = gr => () => { if (equip(app.save, id, slot, gr).ok) { app.persist(); sfx.play('click'); close(); app.show('heroDetail', { id, from, pop: true }); } };
+    return h('div.col',
+      h('b', `${SLOTS[slot].icon} ${SLOTS[slot].name} 고르기`),
+      h('div.dim', { style: 'font-size:13px' }, cur ? `지금: ${gearName(slot, cur)} (${bonusText(slot, cur)})` : '장비는 모험 스테이지·요일 던전·무한의 탑에서 얻어요.'),
+      ...[5, 4, 3, 2, 1].map(gr => {
+        const n = bagCount(app.save, slot, gr);
+        return h('button.btn.ghost.gear-pick', { disabled: n < 1 || gr === cur, style: `border-left:6px solid ${GRADES[gr].color}`, onclick: pick(gr) },
+          h('span', { style: `color:${GRADES[gr].color}` }, gearName(slot, gr)), ` ×${n}`, h('small', bonusText(slot, gr)));
+      }),
+      cur ? h('button.btn.ghost', { onclick: () => { unequip(app.save, id, slot); app.persist(); close(); app.show('heroDetail', { id, from }); } }, '빼기') : null,
+      h('button.btn.ghost', { onclick: close }, '닫기'));
+  });
+  const gearRow = h('div.gear-row', ...SLOT_IDS.map(slot => {
+    const g = own.gear?.[slot] || 0;
+    return h('button.gear-slot' + (g ? '' : '.empty'), { style: g ? `border-color:${GRADES[g].color}` : '', onclick: () => gearModal(slot) },
+      h('div.gi', SLOTS[slot].icon),
+      h('div.gn', { style: g ? `color:${GRADES[g].color}` : '' }, g ? GRADES[g].name : SLOTS[slot].name),
+      h('small', g ? bonusText(slot, g) : '비어 있음'));
+  }));
+
   root.append(...[
     app.top(hero.name, from),
     h('div.detail-art' + (aw ? '.aw' : ''), heroCanvas(id, 260)),
@@ -53,6 +78,7 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
       own.dupes ? h('span', { style: 'color:var(--gold);margin-left:8px' }, `+${own.dupes}`) : null),
     h('p.quote', `“${hero.quote}”`),
     h('div.stat', stat('체력', st.hp), stat('공격', st.atk), stat('방어', st.def), stat('속도', st.spd)),
+    gearRow,
     h('div.card.col', { style: `margin-top:10px;border-color:${STAR_COLOR[hero.star]}` },
       h('div.row', h('b.grow', `스킬 · ${hero.skill.name}`), h('span.dim', `쿨타임 ${hero.skill.cd}턴`)),
       h('div', hero.skill.desc)),

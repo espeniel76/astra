@@ -42,6 +42,7 @@ export function render(root, app) {
       h('small', `${next ? `다음: ${next.id}${next.boss ? ' 보스' : ''}` : '모든 스테이지 완료!'} · 팀 전투력 ${fmt(teamPower(s))}`)),
     h('div.icon-row',
       icon('🌟', '소환', 'summon', s.tickets.star4 > 0),
+      icon('🏆', '도전', 'challenge'),
       icon('🏠', '영웅', 'heroes'),
       icon('🛡️', '편성', 'team'),
       icon('📜', '미션', 'missions', missions > 0),

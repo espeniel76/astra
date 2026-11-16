@@ -11,6 +11,10 @@ import * as team from './ui/screens/team.js';
 import * as missions from './ui/screens/missions.js';
 import * as settings from './ui/screens/settings.js';
 import * as summon from './ui/screens/summon.js';
+import * as challenge from './ui/screens/challenge.js';
+import * as tower from './ui/screens/tower.js';
+import * as dungeon from './ui/screens/dungeon.js';
+import * as pvp from './ui/screens/pvp.js';
 
 import { HEROES } from './data/heroes.js';
 import { isAdmin } from './core/admin.js';
@@ -34,10 +38,11 @@ writeSave(save);
 sfx.setOn(save.settings.sound);
 
 const app = createApp(document.getElementById('app'), save,
-  { lobby, adventure, heroes, heroDetail, team, missions, settings, summon });
+  { lobby, adventure, heroes, heroDetail, team, missions, settings, summon, challenge, tower, dungeon, pvp });
 
 // 전투·소환 연출(Phaser)은 처음 쓸 때 불러온다
 app.startBattle = async stageId => (await import('./game/phaser.js')).startBattle(app, stageId);
+app.startMode = async spec => (await import('./game/phaser.js')).startMode(app, spec);
 app.startSummon = async (results, ticket = false) => (await import('./game/phaser.js')).startSummon(app, results, ticket);
 
 if (TEST) window.astra = app; // 테스트판: 개발용 손잡이

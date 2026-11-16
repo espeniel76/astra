@@ -4,6 +4,7 @@ import { HERO } from '../data/heroes.js';
 import { STAGE } from '../data/stages.js';
 import { maxLevel, DUPE_MAX } from './progress.js';
 import { STAGES } from '../data/stages.js';
+import { SLOT_IDS, MAX_GRADE } from '../data/gear.js';
 
 export const VERSION = 2;
 const TEST = typeof location !== 'undefined' && /[?&]test\b/.test(location.search);
@@ -26,6 +27,10 @@ export function defaultSave() {
     daily: { date: '', progress: { battle: 0, summon: 0, levelup: 0 }, claimed: [] },
     settings: { flash: false, sound: true, auto: false, speed: 1 },
     tips: {},
+    gear: {}, // 가방 속 장비 개수: { 'weapon-3': 2 } (src/data/gear.js)
+    tower: { best: 0 }, // 무한의 탑 최고 층
+    dungeon: { date: '', left: 3 }, // 요일 던전: 하루 3번
+    pvp: { name: '', wins: 0, losses: 0, lastWin: '' }, // 친구 대전
   };
 }
 
@@ -48,6 +53,11 @@ export function normalize(raw) {
       const awakened = h.awakened === true && HERO[id].star === 7 && dupes >= DUPE_MAX;
       s.heroes[id] = { level: num(h.level, 1, 1, maxLevel(id, awakened)), dupes };
       if (awakened) s.heroes[id].awakened = true;
+      if (isObj(h.gear)) {
+        const g = {};
+        for (const k of SLOT_IDS) { const v = num(h.gear[k], 0, 0, MAX_GRADE); if (v) g[k] = v; }
+        if (Object.keys(g).length) s.heroes[id].gear = g;
+      }
     }
   }
   if (Array.isArray(raw.team)) {
@@ -78,6 +88,19 @@ export function normalize(raw) {
     if (raw.settings.speed === 1 || raw.settings.speed === 2) s.settings.speed = raw.settings.speed;
   }
   if (isObj(raw.tips)) for (const [k, v] of Object.entries(raw.tips)) if (v === true) s.tips[k] = true;
+  if (isObj(raw.gear)) {
+    for (const [k, v] of Object.entries(raw.gear)) {
+      const m = /^([a-z]+)-(\d)$/.exec(k);
+      if (m && SLOT_IDS.includes(m[1]) && +m[2] >= 1 && +m[2] <= MAX_GRADE) { const n = num(v, 0, 0, 9999); if (n) s.gear[k] = n; }
+    }
+  }
+  if (isObj(raw.tower)) s.tower.best = num(raw.tower.best, 0, 0, 100000);
+  if (isObj(raw.dungeon)) { s.dungeon.date = typeof raw.dungeon.date === 'string' ? raw.dungeon.date : ''; s.dungeon.left = num(raw.dungeon.left, 3, 0, 3); }
+  if (isObj(raw.pvp)) {
+    s.pvp.name = typeof raw.pvp.name === 'string' ? raw.pvp.name.slice(0, 10) : '';
+    s.pvp.wins = num(raw.pvp.wins, 0); s.pvp.losses = num(raw.pvp.losses, 0);
+    s.pvp.lastWin = typeof raw.pvp.lastWin === 'string' ? raw.pvp.lastWin : '';
+  }
   return s;
 }
 

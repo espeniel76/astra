@@ -28,6 +28,8 @@ const WAVES = [
 // 추천 전투력 = 적 전투력 합 × REC_K (추천 전투력 팀이면 대략 80% 이김, scripts/sim.mjs 로 맞춤)
 export const REC_K = 0.95;
 const foePower = f => { const s = monStats(f.mon, f.lv); return s.hp * 0.2 + s.atk * 3 + s.def * 2; };
+// 아무 적 목록의 추천 전투력(무한의 탑·요일 던전도 같은 기준)
+export const recFor = foes => Math.round(foes.reduce((t, f) => t + foePower(f), 0) * REC_K);
 
 export const STAGES = [];
 for (const c of CHAPTERS) {

@@ -54,7 +54,9 @@ async function run(key, data) {
   g.scene.start(key, data);
 }
 
-export const startBattle = (app, stageId) => run('battle', { app, stageId });
+export const startBattle = (app, stageId) => run('battle', { app, stageId, spec: null });
+// 도전 모드(무한의 탑·요일 던전·친구 대전): spec 은 src/core/modes.js
+export const startMode = (app, spec) => run('battle', { app, stageId: null, spec });
 export const startSummon = (app, results, ticket = false) => run('summon', { app, results, ticket });
 
 // 휴대폰 뒤로 가기(앱): 전투 중이면 '나갈까요?' 창을 열고, 이미 열려 있으면 닫는다(계속 싸우기)
