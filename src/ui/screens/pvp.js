@@ -4,6 +4,7 @@ import { HERO } from '../../data/heroes.js';
 import { heroCanvas } from '../../render/portrait.js';
 import { teamPower } from '../../core/progress.js';
 import { teamCode, readTeamCode, friendPower, pvpSpec, PVP_WIN_DIA } from '../../core/modes.js';
+import { challengeArt } from '../../render/challengeArt.js';
 
 let pasted = ''; // 화면을 다시 그려도 붙여넣은 코드가 남게
 
@@ -38,9 +39,10 @@ export function render(root, app) {
 
   root.append(
     app.top('친구 대전', 'challenge'),
-    h('div.card.row', { style: 'margin-bottom:10px;padding:10px 14px' },
+    h('div.card.art-card', { style: 'margin-bottom:10px' }, h('div.art-wrap', challengeArt('arena', 360, 120)),
+      h('div.row.art-info',
       h('div.grow', h('div.dim', { style: 'font-size:12px' }, '전적'), h('b', { style: 'font-size:22px' }, `${s.pvp.wins}승 ${s.pvp.losses}패`)),
-      h('div.dim', { style: 'font-size:12px;text-align:right' }, h('div', '하루 첫 승리'), h('b', { style: 'color:var(--dia)' }, `💎 ${PVP_WIN_DIA}`))),
+      h('div.dim', { style: 'font-size:12px;text-align:right' }, h('div', '하루 첫 승리'), h('b', { style: 'color:var(--dia)' }, `💎 ${PVP_WIN_DIA}`)))),
     h('div.card.col',
       h('b', '1. 내 팀 코드 보내기'),
       h('div.dim', { style: 'font-size:13px' }, '지금 편성한 팀이 코드가 돼요. 복사해서 친구한테 보내 줘요.'),

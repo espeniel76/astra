@@ -5,6 +5,7 @@ import { monsterCanvas } from '../../render/portrait.js';
 import { teamPower } from '../../core/progress.js';
 import { towerFloor, towerSpec } from '../../core/modes.js';
 import { GRADES } from '../../data/gear.js';
+import { challengeArt } from '../../render/challengeArt.js';
 
 const rewardLine = r => [
   `🪙 ${fmt(r.gold)}`,
@@ -22,10 +23,11 @@ export function render(root, app) {
   const upcoming = [1, 2, 3, 4].map(k => towerFloor(f + k));
   root.append(
     app.top('무한의 탑', 'challenge'),
-    h('div.card.center.tower-head',
-      h('div.dim', { style: 'font-size:13px' }, s.tower.best ? `최고 기록 ${s.tower.best}층` : '1층부터 시작해요'),
-      h('div', { style: 'font-size:34px;font-weight:900' }, `🗼 ${f}층${t.boss ? ' 보스' : ''}`),
-      h('div.dim', `적 레벨 ${t.lv}`)),
+    h('div.card.art-card.tower-head',
+      h('div.art-wrap', challengeArt('tower', 360, 240),
+        h('div.tower-floor', h('div', { style: 'font-size:13px;opacity:0.85' }, s.tower.best ? `최고 기록 ${s.tower.best}층` : '1층부터 시작해요'),
+          h('div', { style: 'font-size:36px;font-weight:900' }, `${f}층${t.boss ? ' 👑' : ''}`),
+          h('div', { style: 'font-size:13px;opacity:0.85' }, `적 레벨 ${t.lv}`)))),
     h('div.foes', ...t.foes.map(x => monsterCanvas(x.mon, 110))),
     h('div.center', { style: 'font-size:14px' }, t.foes.map(x => MONSTERS[x.mon].name).join(' · ')),
     h('div.card.row', { style: 'justify-content:space-around;text-align:center;margin-top:8px' },

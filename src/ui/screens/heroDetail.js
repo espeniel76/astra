@@ -6,6 +6,7 @@ import { bump } from '../../core/daily.js';
 import { sfx } from '../../core/sfx.js';
 import { SLOTS, SLOT_IDS, GRADES, gearName, bonusText } from '../../data/gear.js';
 import { bagCount, equip, unequip } from '../../core/gear.js';
+import { gearCanvas } from '../../render/gearArt.js';
 
 export function render(root, app, { id, from = 'heroes', pop = false }) {
   const hero = HERO[id];
@@ -55,8 +56,10 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
       h('div.dim', { style: 'font-size:13px' }, cur ? `지금: ${gearName(slot, cur)} (${bonusText(slot, cur)})` : '장비는 모험 스테이지·요일 던전·무한의 탑에서 얻어요.'),
       ...[5, 4, 3, 2, 1].map(gr => {
         const n = bagCount(app.save, slot, gr);
-        return h('button.btn.ghost.gear-pick', { disabled: n < 1 || gr === cur, style: `border-left:6px solid ${GRADES[gr].color}`, onclick: pick(gr) },
-          h('span', { style: `color:${GRADES[gr].color}` }, gearName(slot, gr)), ` ×${n}`, h('small', bonusText(slot, gr)));
+        return h('button.btn.ghost.gear-pick', { disabled: n < 1 || gr === cur, onclick: pick(gr) },
+          gearCanvas(slot, gr, 46),
+          h('div.grow', h('span', { style: `color:${GRADES[gr].color}` }, gearName(slot, gr)), ` ×${n}`, h('small', bonusText(slot, gr))),
+          gr === cur ? h('span.dim', { style: 'font-size:12px' }, '끼는 중') : null);
       }),
       cur ? h('button.btn.ghost', { onclick: () => { unequip(app.save, id, slot); app.persist(); close(); app.show('heroDetail', { id, from }); } }, '빼기') : null,
       h('button.btn.ghost', { onclick: close }, '닫기'));
@@ -64,7 +67,7 @@ export function render(root, app, { id, from = 'heroes', pop = false }) {
   const gearRow = h('div.gear-row', ...SLOT_IDS.map(slot => {
     const g = own.gear?.[slot] || 0;
     return h('button.gear-slot' + (g ? '' : '.empty'), { style: g ? `border-color:${GRADES[g].color}` : '', onclick: () => gearModal(slot) },
-      h('div.gi', SLOTS[slot].icon),
+      g ? gearCanvas(slot, g, 64) : h('div.gi', SLOTS[slot].icon),
       h('div.gn', { style: g ? `color:${GRADES[g].color}` : '' }, g ? GRADES[g].name : SLOTS[slot].name),
       h('small', g ? bonusText(slot, g) : '비어 있음'));
   }));

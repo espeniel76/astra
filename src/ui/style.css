@@ -237,4 +237,14 @@ input.code { font-size: 22px; padding: 10px 12px; border-radius: 12px; border: 1
 .gear-slot .gi { font-size: 26px; }
 .gear-slot .gn { font-size: 14px; font-weight: 800; }
 .gear-slot small { font-size: 11px; color: var(--dim); }
-.btn.gear-pick { text-align: left; }
+.btn.gear-pick { text-align: left; display: flex; align-items: center; gap: 10px; padding: 6px 12px; min-height: 60px; }
+.btn.gear-pick canvas { flex: none; }
+.gear-slot canvas { display: block; margin: 0 auto 2px; }
+/* 그림 카드(도전 화면): 위에 그림, 아래 글 */
+.art-card { padding: 0; overflow: hidden; text-align: left; color: var(--text); font: inherit; cursor: pointer; display: block; width: 100%; }
+.art-wrap { position: relative; }
+.art-title { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 12px 6px; background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.55)); font-size: 22px; font-weight: 900; text-shadow: 0 2px 0 #000, 0 0 10px rgba(0,0,0,0.8); }
+.art-info { padding: 10px 14px 12px; }
+.dungeon-card { cursor: default; }
+.dungeon-card.closed .art-wrap canvas { filter: grayscale(0.85) brightness(0.6); }
+.tower-floor { position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 0 8px; background: linear-gradient(rgba(8,6,24,0), rgba(8,6,24,0.85)); text-align: center; text-shadow: 0 2px 0 #000, 0 0 12px rgba(0,0,0,0.9); }
