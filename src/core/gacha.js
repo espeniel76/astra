@@ -4,6 +4,7 @@
 // - 10+1 소환에는 ★4 이상이 1명 이상 꼭 들어간다.
 // - 처음 시작 선물: ★4 확정 소환권(save.tickets.star4).
 import { HEROES } from '../data/heroes.js';
+import { countStat } from './achievements.js';
 import { DUPE_MAX } from './progress.js';
 
 // ★8 = 근원(아스트라 한 명): 0.001%(10만 번에 1번). ★1에서 0.001%를 덜어 합 100%
@@ -55,6 +56,7 @@ export function summon(save, count, rng) {
   const cost = COST[count];
   if (!cost || save.diamonds < cost) return { ok: false, reason: 'dia' };
   save.diamonds -= cost;
+  countStat(save, 'summons', count);
   const results = [];
   for (let i = 0; i < count; i++) {
     let min = 1;
@@ -71,5 +73,6 @@ export function summon(save, count, rng) {
 export function useTicket(save, rng) {
   if (!save.tickets || save.tickets.star4 < 1) return { ok: false, reason: 'ticket' };
   save.tickets.star4 -= 1;
+  countStat(save, 'summons', 1);
   return { ok: true, results: [pickHero(save, 4, rng)] };
 }

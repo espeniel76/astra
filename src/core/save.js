@@ -5,6 +5,7 @@ import { STAGE } from '../data/stages.js';
 import { maxLevel, DUPE_MAX } from './progress.js';
 import { STAGES } from '../data/stages.js';
 import { SLOT_IDS, MAX_GRADE } from '../data/gear.js';
+import { ACHV } from './achievements.js';
 
 export const VERSION = 2;
 const TEST = typeof location !== 'undefined' && /[?&]test\b/.test(location.search);
@@ -31,6 +32,9 @@ export function defaultSave() {
     tower: { best: 0 }, // 무한의 탑 최고 층
     dungeon: { date: '', left: 3 }, // 요일 던전: 하루 3번
     pvp: { name: '', wins: 0, losses: 0, lastWin: '' }, // 친구 대전
+    login: { last: '', day: 0, total: 0 }, // 출석 체크(src/core/attendance.js)
+    achv: [], // 받은 업적 id(src/core/achievements.js)
+    stats: { summons: 0, wins: 0 }, // 업적용으로 세는 기록
   };
 }
 
@@ -95,6 +99,13 @@ export function normalize(raw) {
     }
   }
   if (isObj(raw.tower)) s.tower.best = num(raw.tower.best, 0, 0, 100000);
+  if (isObj(raw.login)) {
+    s.login.last = typeof raw.login.last === 'string' ? raw.login.last : '';
+    s.login.day = num(raw.login.day, 0, 0, 6);
+    s.login.total = num(raw.login.total, 0);
+  }
+  if (Array.isArray(raw.achv)) s.achv = [...new Set(raw.achv.filter(x => typeof x === 'string' && ACHV[x]))];
+  if (isObj(raw.stats)) for (const k of Object.keys(s.stats)) s.stats[k] = num(raw.stats[k], 0);
   if (isObj(raw.dungeon)) { s.dungeon.date = typeof raw.dungeon.date === 'string' ? raw.dungeon.date : ''; s.dungeon.left = num(raw.dungeon.left, 3, 0, 3); }
   if (isObj(raw.pvp)) {
     s.pvp.name = typeof raw.pvp.name === 'string' ? raw.pvp.name.slice(0, 10) : '';

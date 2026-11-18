@@ -5,12 +5,18 @@ import { STAGES } from '../../data/stages.js';
 import { claimable } from '../../core/daily.js';
 import { teamPower } from '../../core/progress.js';
 import { startTown } from '../../render/town.js';
+import { loginToday } from '../../core/attendance.js';
+import { achvClaimable } from '../../core/achievements.js';
+import { loginBoard } from './missions.js';
+
+let loginShown = false; // 출석판은 게임을 켤 때 한 번만 저절로 뜬다
 
 export function render(root, app) {
   const s = app.save;
   const owned = Object.keys(s.heroes);
   const next = STAGES.find(st => !s.cleared.includes(st.id));
-  const missions = claimable(s);
+  const loginReady = loginToday(s) !== null;
+  const missions = claimable(s) + achvClaimable(s) + (loginReady ? 1 : 0);
   const hasTeam = s.team.some(Boolean);
 
   // 튜토리얼 안내: 선물 소환권 → 모험의 문
@@ -48,4 +54,13 @@ export function render(root, app) {
       icon('📜', '미션', 'missions', missions > 0),
       icon('⚙️', '설정', 'settings')),
   ].filter(Boolean));
+
+  // 오늘 출석을 아직 안 받았으면 출석판을 띄운다
+  if (loginReady && !loginShown) {
+    loginShown = true;
+    setTimeout(() => {
+      if (app.current !== 'lobby') return;
+      const close = app.modal(h('h2', { style: 'margin:0;text-align:center' }, '📅 출석 체크'), loginBoard(app, () => { close(); app.refresh(); }));
+    }, 400);
+  }
 }

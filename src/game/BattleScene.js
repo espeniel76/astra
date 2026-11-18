@@ -10,6 +10,7 @@ import { text, button, heroTex, monTex, wait, tween, colorNum, PX, TEXRES, TS, h
 import { bgTexture, addAmbient, BACKDROP } from './backgrounds.js';
 import { starsFor, recordStars } from '../core/stars.js';
 import { dropGear } from '../core/gear.js';
+import { countStat } from '../core/achievements.js';
 import { gearName, GRADES } from '../data/gear.js';
 import { winTower, towerSpec, winDungeon, dungeonState, finishPvp } from '../core/modes.js';
 
@@ -495,6 +496,7 @@ export class BattleScene extends Phaser.Scene {
     const c = this.overlay();
     const add = o => { c.add(o.box || o); return o; };
     if (result === 'win') {
+      countStat(s, 'wins');
       sfx.play('win');
       const gold = Math.round(st.gold * this.b.goldMul);
       const got = starsFor(this.b, st);
@@ -545,6 +547,7 @@ export class BattleScene extends Phaser.Scene {
     const again = nextSpec => this.scene.restart({ app: this.app, stageId: null, spec: nextSpec });
     const lines = [];
     let r = null;
+    if (result === 'win') countStat(s, 'wins');
     if (result === 'win') {
       if (sp.kind === 'tower') r = winTower(s, sp.floor, Math.random);
       else if (sp.kind === 'dungeon') { r = winDungeon(s, sp.key, sp.diff, Math.random); if (!r) lines.push(['오늘 도전 횟수를 다 썼어요', '#cccccc']); }
