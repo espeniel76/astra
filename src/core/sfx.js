@@ -1,12 +1,12 @@
 // 합성 효과음(파일 없음). 사각파 삐뽀 대신 잡음·필터·종소리 배음으로 만든다.
-let ctx = null, master = null, on = true;
+let ctx = null, master = null, comp = null, on = true;
 
 function audio() {
   if (!ctx) {
     const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
-    const comp = ctx.createDynamicsCompressor();
+    comp = ctx.createDynamicsCompressor();
     master = ctx.createGain();
     master.gain.value = 0.55;
     master.connect(comp).connect(ctx.destination);
@@ -178,7 +178,10 @@ const SOUNDS = {
 
 // 앱이 뒤로 갈 때 소리 장치를 쉬게 한다(src/core/appBridge.js)
 export const suspendAudio = () => { try { ctx?.suspend(); } catch { /* 없어도 됨 */ } };
-export const resumeAudio = () => { try { if (on) ctx?.resume(); } catch { /* 없어도 됨 */ } };
+export const resumeAudio = () => { try { ctx?.resume(); } catch { /* 없어도 됨 */ } };
+
+// 배경음악(src/core/music.js)도 같은 소리 장치를 쓴다: { ctx, out } (없으면 null)
+export function audioOut() { const c = audio(); return c ? { ctx: c, out: comp } : null; }
 
 export const sfx = {
   setOn(v) { on = v; },

@@ -26,7 +26,7 @@ export function defaultSave() {
     tickets: { star4: 1 }, // 처음 시작 선물: ★4 확정 소환권
     pity: 0,
     daily: { date: '', progress: { battle: 0, summon: 0, levelup: 0 }, claimed: [] },
-    settings: { flash: false, sound: true, auto: false, speed: 1 },
+    settings: { flash: false, sound: true, music: true, auto: false, speed: 1 },
     tips: {},
     gear: {}, // 가방 속 장비 개수: { 'weapon-3': 2 } (src/data/gear.js)
     tower: { best: 0 }, // 무한의 탑 최고 층
@@ -88,7 +88,7 @@ export function normalize(raw) {
     if (Array.isArray(raw.daily.claimed)) s.daily.claimed = raw.daily.claimed.filter(k => k in s.daily.progress);
   }
   if (isObj(raw.settings)) {
-    for (const k of ['flash', 'sound', 'auto']) if (typeof raw.settings[k] === 'boolean') s.settings[k] = raw.settings[k];
+    for (const k of ['flash', 'sound', 'music', 'auto']) if (typeof raw.settings[k] === 'boolean') s.settings[k] = raw.settings[k];
     if (raw.settings.speed === 1 || raw.settings.speed === 2) s.settings.speed = raw.settings.speed;
   }
   if (isObj(raw.tips)) for (const [k, v] of Object.entries(raw.tips)) if (v === true) s.tips[k] = true;

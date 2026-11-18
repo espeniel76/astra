@@ -2,6 +2,7 @@ import './ui/style.css';
 import { loadSave, writeSave } from './core/save.js';
 import { ensureToday } from './core/daily.js';
 import { sfx } from './core/sfx.js';
+import { music } from './core/music.js';
 import { createApp } from './ui/app.js';
 import * as lobby from './ui/screens/lobby.js';
 import * as adventure from './ui/screens/adventure.js';
@@ -36,6 +37,7 @@ if (isAdmin()) maxAllHeroes(save);
 ensureToday(save);
 writeSave(save);
 sfx.setOn(save.settings.sound);
+music.setOn(save.settings.music);
 
 const app = createApp(document.getElementById('app'), save,
   { lobby, adventure, heroes, heroDetail, team, missions, settings, summon, challenge, tower, dungeon, pvp });
@@ -48,6 +50,9 @@ app.startSummon = async (results, ticket = false) => (await import('./game/phase
 if (TEST) window.astra = app; // 테스트판: 개발용 손잡이
 // 안드로이드 앱(플러터)에서는 뒤로 가기·홈 버튼 창구를 켠다
 if (import.meta.env.MODE === 'app') import('./core/appBridge.js').then(m => m.installAppBridge(app));
+// 메뉴 화면(마을·영웅·도전 …)에서는 마을 음악. 전투·소환 음악은 각 장면이 튼다
+const showScreen = app.show;
+app.show = (name, params) => { showScreen(name, params); music.play('town'); };
 app.show('lobby');
 // 탭을 닫거나 다른 앱으로 갈 때 저장
 document.addEventListener('visibilitychange', () => { if (document.hidden) app.persist(); });

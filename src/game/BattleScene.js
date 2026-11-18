@@ -11,6 +11,7 @@ import { bgTexture, addAmbient, BACKDROP } from './backgrounds.js';
 import { starsFor, recordStars } from '../core/stars.js';
 import { dropGear } from '../core/gear.js';
 import { countStat } from '../core/achievements.js';
+import { music } from '../core/music.js';
 import { gearName, GRADES } from '../data/gear.js';
 import { winTower, towerSpec, winDungeon, dungeonState, finishPvp } from '../core/modes.js';
 
@@ -46,6 +47,8 @@ export class BattleScene extends Phaser.Scene {
 
   create() {
     hiDpi(this);
+    // 보스·탑 10층마다·친구 대전은 보스 음악
+    music.play(this.stage?.boss || this.spec?.kind === 'pvp' || (this.spec?.kind === 'tower' && this.spec.floor % 10 === 0) ? 'boss' : 'battle');
     const s = this.app.save;
     this.b = createBattle({
       team: s.team.map(id => (id && s.heroes[id] ? { id, ...s.heroes[id] } : null)),

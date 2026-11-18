@@ -1,6 +1,7 @@
 import { h } from '../app.js';
 import { exportCode, importCode, defaultSave } from '../../core/save.js';
 import { sfx } from '../../core/sfx.js';
+import { music } from '../../core/music.js';
 import { isAdmin, lockAdmin, adminForm } from '../../core/admin.js';
 import { maxAllHeroes } from '../../core/progress.js';
 
@@ -9,7 +10,7 @@ export function render(root, app) {
   const toggle = (key, label, desc) => {
     const box = h('input', { type: 'checkbox' });
     box.checked = st[key];
-    box.addEventListener('change', () => { st[key] = box.checked; if (key === 'sound') sfx.setOn(box.checked); app.persist(); });
+    box.addEventListener('change', () => { st[key] = box.checked; if (key === 'sound') sfx.setOn(box.checked); if (key === 'music') music.setOn(box.checked); app.persist(); });
     return h('label.switch.card', h('div', h('b', label), desc ? h('div.dim', { style: 'font-size:13px' }, desc) : null), box);
   };
   const code = h('textarea', { readonly: true });
@@ -18,7 +19,8 @@ export function render(root, app) {
   root.append(
     app.top('설정'),
     h('div.col',
-      toggle('sound', '소리'),
+      toggle('sound', '효과음'),
+      toggle('music', '배경음악', '마을·전투·보스·소환마다 다른 음악이 나와요.'),
       toggle('flash', '번쩍임 효과', '빠르게 번쩍이는 화면 효과예요. 기본은 꺼져 있어요.'),
       h('div.card.col',
         h('b', '저장 코드 (백업)'),

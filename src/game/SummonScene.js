@@ -7,6 +7,7 @@ import { summon, COST } from '../core/gacha.js';
 import { bump } from '../core/daily.js';
 import { makeRng } from '../core/rng.js';
 import { sfx } from '../core/sfx.js';
+import { music } from '../core/music.js';
 import { closeStage, setBackdrop } from './phaser.js';
 import { text, button, heroTex, wait, tween, colorNum, TS, TEXRES, hiDpi } from './ui.js';
 import { propTex, TREE, TREE_TIPS } from '../render/props.js';
@@ -34,6 +35,7 @@ export class SummonScene extends Phaser.Scene {
 
   create() {
     hiDpi(this);
+    music.play('summon');
     if (!this.textures.exists('dot')) {
       const g = this.make.graphics({ add: false });
       g.fillStyle(0xffffff, 1).fillCircle(8, 8, 8);
